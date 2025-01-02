@@ -1454,7 +1454,7 @@ class SC2Logic:
             self.protoss_competent_anti_air(state)
             or state.has_any({
                 item_names.PHOENIX, item_names.MIRAGE, item_names.CORSAIR, item_names.CARRIER, item_names.SKYLORD,
-                item_names.SCOUT, item_names.DARK_ARCHON, item_names.MOTHERSHIP_TALDARIM
+                item_names.SCOUT, item_names.DARK_ARCHON, item_names.MOTHERSHIP_TALDARIM, item_names.MOTHERSHIP_PURIFIER
             }, self.player)
             or state.has_all({item_names.TRIREME, item_names.TRIREME_SOLAR_BEAM}, self.player)
             or state.has_all({item_names.WRATHWALKER, item_names.WRATHWALKER_AERIAL_TRACKING}, self.player)
