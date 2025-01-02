@@ -1429,7 +1429,8 @@ class SC2Logic:
                 item_names.SCOUT, item_names.ARBITER,
                 item_names.VOID_RAY, item_names.DESTROYER, item_names.INTERCESSOR,
                 item_names.CARRIER, item_names.SKYLORD, item_names.TEMPEST,
-                item_names.MOTHERSHIP,
+                item_names.MOTHERSHIP_TALDARIM, item_names.MOTHERSHIP_PURIFIER,
+                item_names.MOTHERSHIP_AIUR
                 # Buildings
                 item_names.NEXUS_OVERCHARGE, item_names.PHOTON_CANNON, item_names.KHAYDARIN_MONOLITH,
             ), self.player)
@@ -1453,7 +1454,7 @@ class SC2Logic:
             self.protoss_competent_anti_air(state)
             or state.has_any({
                 item_names.PHOENIX, item_names.MIRAGE, item_names.CORSAIR, item_names.CARRIER, item_names.SKYLORD,
-                item_names.SCOUT, item_names.DARK_ARCHON, item_names.MOTHERSHIP
+                item_names.SCOUT, item_names.DARK_ARCHON, item_names.MOTHERSHIP_TALDARIM
             }, self.player)
             or state.has_all({item_names.TRIREME, item_names.TRIREME_SOLAR_BEAM}, self.player)
             or state.has_all({item_names.WRATHWALKER, item_names.WRATHWALKER_AERIAL_TRACKING}, self.player)
