@@ -1430,7 +1430,7 @@ class SC2Logic:
                 item_names.VOID_RAY, item_names.DESTROYER, item_names.INTERCESSOR,
                 item_names.CARRIER, item_names.SKYLORD, item_names.TEMPEST,
                 item_names.MOTHERSHIP_TALDARIM, item_names.MOTHERSHIP_PURIFIER,
-                item_names.MOTHERSHIP_AIUR
+                item_names.MOTHERSHIP_AIUR,
                 # Buildings
                 item_names.NEXUS_OVERCHARGE, item_names.PHOTON_CANNON, item_names.KHAYDARIN_MONOLITH,
             ), self.player)

@@ -789,7 +789,5 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = [
     # Note: This is more an issue of having multiple ults at the same time, rather than solar bombardment in particular.
     # Can be removed from the list if we get an SOA ult combined cooldown or energy cost on it.
     item_names.SOA_SOLAR_BOMBARDMENT,
-
-    # Protoss general
-    item_names.MOTHERSHIP_INTEGRATED_POWER,
+    item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER,
 ]
