@@ -1530,7 +1530,7 @@ class SC2Logic:
                 item_names.SCOUT, item_names.TEMPEST,
                 item_names.CARRIER, item_names.SKYLORD, item_names.TRIREME,
                 item_names.VOID_RAY, item_names.DESTROYER, item_names.INTERCESSOR, item_names.DAWNBRINGER,
-                item_names.MOTHERSHIP,
+                item_names.MOTHERSHIP_TALDARIM, item_names.MOTHERSHIP_PURIFIER, item_names.MOTHERSHIP_AIUR,   
             }, self.player)
             or self.protoss_has_blink(state)
             or (state.has(item_names.WARP_PRISM, self.player)
