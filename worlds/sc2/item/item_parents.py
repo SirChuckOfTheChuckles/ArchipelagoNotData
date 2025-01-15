@@ -226,7 +226,7 @@ parent_present[parent_names.PROTOSS_ATTACKING_BUILDING] = AnyOf(
     main_item=item_names.PHOTON_CANNON,
 )
 parent_present[parent_names.MOTHERSHIP] = AnyOf(
-    (item_names.MOTHERSHIP_AIUR, item_names.MOTHERSHIP_PURIFIER, item_names.MOTHERSHIP_TALDARIM,),
+    (item_names.MOTHERSHIP_AIUR, item_names.MOTHERSHIP_PURIFIER, item_names.MOTHERSHIP_TALDARIM),
     main_item=item_names.MOTHERSHIP_TALDARIM,
 )
 
