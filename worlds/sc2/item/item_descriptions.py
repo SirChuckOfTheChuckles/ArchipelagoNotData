@@ -951,6 +951,7 @@ item_descriptions = {
     item_names.MOTHERSHIP_PURIFIER_PURIFIED_EMBERS: "Purifier Motherships deal 20 damage over 5 seconds to targets they attack. Auxiliary Upgrade.",
     item_names.MOTHERSHIP_AIUR_RECURSIVE_PHOTONS: "Aiur Mothership's weapon will continously deal damage to targets they attack. Auxiliary Upgrade.",
     item_names.MOTHERSHIP_EMPOWERED_TIME_WARP: "Allows Motherships to create a large field that massively slows down enemy units. Utility Ability.",
+    item_names.MOTHERSHIP_NEXUS_RECALL: "Allows Motherships to teleport themselves and nearby friendly units to a Nexus. Utility Ability.",
     item_names.MOTHERSHIP_MASS_RECALL: "Allows Motherships to teleport a group of friendly units to their location. Utility Ability.",
     item_names.MOTHERSHIP_FIGHTER_HANGAR: "Allows Motherships install a Hangar to house fighters, such as Interceptors or Bombers.",
     item_names.MOTHERSHIP_AIUR_RECURSIVE_PHOTONS: "Allows Motherships and friendly units around them to teleport to a friendly Nexus. Utility Ability.",
