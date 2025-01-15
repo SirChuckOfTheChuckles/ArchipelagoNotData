@@ -164,6 +164,7 @@ class ItemGroupNames:
     NERAZIM_UNITS = "Nerazim"
     TAL_DARIM_UNITS = "Tal'Darim"
     PURIFIER_UNITS = "Purifier"
+    NEXUS_UNITS = "Nexus Units"
 
     VANILLA_ITEMS = "Vanilla Items"
     OVERPOWERED_ITEMS = "Overpowered Items"
@@ -669,6 +670,9 @@ item_name_groups[ItemGroupNames.PROPHECY_UNITS] = prophecy_units = [
 ]
 item_name_groups[ItemGroupNames.PROPHECY_BUILDINGS] = prophecy_buildings = [
     item_names.PHOTON_CANNON,
+]
+item_name_groups[ItemGroupNames.NEXUS_UNITS] = nexus_units = [
+    item_names.MOTHERSHIP_PURIFIER, item_names.MOTHERSHIP_AIUR,
 ]
 item_name_groups[ItemGroupNames.GATEWAY_UNITS] = gateway_units = [
     item_names.ZEALOT, item_names.CENTURION, item_names.SENTINEL, item_names.SUPPLICANT,
