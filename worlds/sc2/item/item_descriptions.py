@@ -876,8 +876,8 @@ item_descriptions = {
     item_names.CALADRIUS: "Purifier Scout variant. Has no ground attack, but a stronger air attack, which can be upgraded to hit multiple targets. Can use the Corona Beam ability.",
     item_names.MISTWING: "Nerazim Scout variant. Specialized stealth fighter. Can use the Cloak, Phantom Dash and Pilot (Transport) abilities.",
     item_names.TEMPEST: "Siege artillery craft. Attacks from long range. Can use the Disintegration ability.",
-    item_names.MOTHERSHIP_AIUR: "Ultimate Aiur vessel. Can use Revitalize Shields and Vortex. Cloaks nearby friendly units. Morphed from a Mothership Core. Can install additional upgrades for more power.",
-    item_names.MOTHERSHIP_PURIFIER: "Ultimate Purifier vessel. Can use Overload Weapon Systems and Vortex. Creates a power field. Morphed from a Mothership Core. Can install additional upgrades for more power.",
+    item_names.MOTHERSHIP_AIUR: "Ultimate Aiur vessel. Can use Revitalize Shields, Battery Overcharge, and Vortex. Cloaks nearby friendly units. Morphed from a Mothership Core. Can install additional upgrades for more power.",
+    item_names.MOTHERSHIP_PURIFIER: "Ultimate Purifier vessel. Can use Overload Weapon Systems, Enhanced Power Redirection, and Vortex. Creates a power field. Morphed from a Mothership Core. Can install additional upgrades for more power.",
     item_names.MOTHERSHIP_TALDARIM: "Ultimate Tal'darim vessel. Can use Thermal Lance, Vortex, and Blink. Can install additional upgrades for more power.",
     item_names.ARBITER: "Army support craft. Has the Stasis Field and Recall abilities. Cloaks nearby units.",
     item_names.ORACLE: "Flying caster. Can use the Revelation and Stasis Ward abilities.",
@@ -950,10 +950,10 @@ item_descriptions = {
     item_names.MOTHERSHIP_TALDARIM_HUNGER_FOR_SLAUGHTER: "Taldarim Mothership's primary weapon gains 100% attack speed and deals damage quicker, but has reduced attack damage. Auxiliary Upgrade, installed at an additional resource cost.",
     item_names.MOTHERSHIP_PURIFIER_PURIFIED_EMBERS: "Purifier Motherships deal 20 damage over 5 seconds to targets they attack. Auxiliary Upgrade, installed at an additional resource cost.",
     item_names.MOTHERSHIP_AIUR_RECURSIVE_PHOTONS: "Aiur Mothership's weapon will continously deal damage to targets they attack. Auxiliary Upgrade, installed at an additional resource cost.",
-    item_names.MOTHERSHIP_EMPOWERED_TIME_WARP: "Allows Motherships to create a large field that massively slows down enemy units. Utility Ability.",
+    item_names.MOTHERSHIP_EMPOWERED_TIME_WARP: "Allows Motherships to create a large field that massively slows down enemy units. Utility Ability, installed at an additional resource cost.",
     item_names.MOTHERSHIP_RECALL: "Allows Motherships to install Mass Recall and Nexus Recall. Utility Ability, installed at an additional resource cost.",
     item_names.MOTHERSHIP_TALDARIM_BASE_AUXILIARIES: "Allows Tal'darim Motherships to install Auxiliary upgrades that improve their base stats for a resource cost.",
-    item_names.MOTHERSHIP_FIGHTER_HANGAR: "Allows Motherships install a Hangar to house fighters, such as Interceptors or Bombers.",
+    item_names.MOTHERSHIP_FIGHTER_HANGAR: "Allows Motherships install a Hangar to house fighters, such as Interceptors or Bombers, at an additional resource cost.",
     item_names.VOID_RAY_DESTROYER_INTERCESSOR_DAWNBRINGER_FLUX_VANES: "Increases movement speed of Void Ray variants.",
     item_names.DAWNBRINGER_ANTI_SURFACE_COUNTERMEASURES: "Dawnbringers take reduced damage from non-spell ground sources.",
     item_names.DAWNBRINGER_ENHANCED_SHIELD_GENERATOR: "Increases Dawnbringer maximum shields by +50.",
@@ -1068,7 +1068,6 @@ item_descriptions = {
     item_names.OPPRESSOR_VULCAN_BLASTER: "Oppressor War Council upgrade. " + _ability_desc("Oppressors", "Vulcan Blaster", "activates a powerful short range anti-ground weapon for a limited time. Greatly reduces movement and turning speed, and disables other weapons while active"),
     item_names.CALADRIUS_CORONA_BEAM: "Caladrius War Council upgrade. " + _ability_desc("Caladrius", "Corona Beam", "channels a beam that drains up to 100 of the Caladrius' shields to deal up to 200 damage over time to a single target"),
     item_names.MISTWING_PHANTOM_DASH: "Mist Wing War Council upgrade. " + _ability_desc("Mist Wings", "Phantom Dash", "dashes forward to cover some distance quickly. Deals damage in a line if the Mist Wing is cloaked"),
-
     
     item_names.SOA_CHRONO_SURGE: "The Spear of Adun increases a target structure's unit warp in and research speeds by +1000% for 20 seconds.",
     item_names.SOA_PROGRESSIVE_PROXY_PYLON: inspect.cleandoc("""
