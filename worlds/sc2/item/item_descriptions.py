@@ -900,7 +900,9 @@ item_descriptions = {
     item_names.CALADRIUS: "Purifier Scout variant. Has no ground attack, but a stronger air attack, which can be upgraded to hit multiple targets. Can use the Corona Beam ability.",
     item_names.MISTWING: "Nerazim Scout variant. Specialized stealth fighter. Can use the Cloak, Phantom Dash and Pilot (Transport) abilities.",
     item_names.TEMPEST: "Siege artillery craft. Attacks from long range. Can use the Disintegration ability.",
-    item_names.MOTHERSHIP: "Ultimate Protoss vessel. Can use the Vortex and Mass Recall abilities.",
+    item_names.MOTHERSHIP_AIUR: "Ultimate Aiur vessel. Can use Battery Overcharge, Revitalize Shields, and Vortex. Cloaks nearby friendly units. Morphed from an Aiur Mothership Core.",
+    item_names.MOTHERSHIP_PURIFIER: "Ultimate Purifier vessel. Can use Enhanced Power Redirection, Overload Weapon Systems, and Vortex. Morphed from a Purifier Mothership Core.",
+    item_names.MOTHERSHIP_TALDARIM: "Ultimate Tal'darim vessel. Can use Thermal Lance, Vortex, and Blink.",
     item_names.ARBITER: "Army support craft. Has the Stasis Field and Recall abilities. Cloaks nearby units.",
     item_names.ORACLE: "Flying caster. Can use the Revelation and Stasis Ward abilities.",
     item_names.SKYLORD: "Capital ship. Fires a powerful laser that deals damage in a line. Can use Tactical Jump ability.",
@@ -968,7 +970,11 @@ item_descriptions = {
     item_names.CARRIER_TRIREME_GRAVITON_CATAPULT: "Carriers and Triremes can launch Interceptors and Bombers more quickly.",
     item_names.CARRIER_SKYLORD_TRIREME_HULL_OF_PAST_GLORIES: "Carrier-class ships gain +2 armor.",
     item_names.MOTHERSHIP_TALDARIM_SUMMON_DEATH_FLEET: "Allows Tal'darim Motherships to summon 6 Destroyers with timed life. Costs resources to be able to use.",
+<<<<<<< HEAD
     item_names.MOTHERSHIP_PURIFIER_PLANET_CRACKER: "Allows Purifier Motherships deal massive damage in an increasing area after a brief delay. Costs resources to be able to use.",
+=======
+    item_names.MOTHERSHIP_PURIFIER_PLANET_CRACKER: "Allows Purifier Motherships deal masssive damage in an increasing area after a brief delay. Costs resources to be able to use.",
+>>>>>>> 93b7aa079 (initial commit)
     item_names.MOTHERSHIP_AIUR_ASTRAL_RESTORATION: "Allows Aiur Motherships to temporarily increase the radius of Cloaking Field and heal allies within it. Costs resources to be able to use.",
     item_names.MOTHERSHIP_TALDARIM_BLOOD_FUSED_PARTICLES: "Taldarim Mothership's primary weapon gains massively attacked speed, but has reduced attack damage. Can be toggled on and off. Costs resources to research.",
     item_names.MOTHERSHIP_TALDARIM_SHADOW_OF_DEATH: "Taldarim Motherships slow the attack and movement speed of nearby enemy ground units. Costs resources to research.",
