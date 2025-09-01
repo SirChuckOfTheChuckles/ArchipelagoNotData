@@ -1368,7 +1368,11 @@ API3_TO_API4_COMPAT_ITEMS: typing.Set[CompatItemHolder] = {
     CompatItemHolder(item_names.CARRIER_REPAIR_DRONES),
     CompatItemHolder(item_names.TEMPEST_DISINTEGRATION),
     CompatItemHolder(item_names.ARBITER_VESSEL_OF_THE_CONCLAVE),
-    CompatItemHolder(item_names.MOTHERSHIP_INTEGRATED_POWER),
+    CompatItemHolder(item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER),
+    CompatItemHolder(item_names.MOTHERSHIP_AIUR_VALOROUS_RESOLVE),
+    CompatItemHolder(item_names.MOTHERSHIP_CORE_AIUR_QUANTUM_PROJECTION),
+    CompatItemHolder(item_names.MOTHERSHIP_PURIFIER_MOBILE_POWER_FIELD),
+    CompatItemHolder(item_names.MOTHERSHIP_CORE_PURIFIER_CONTROLLED_BURN),
     # Other items
     CompatItemHolder(item_names.ASCENDANT_ARCHON_MERGE),
     CompatItemHolder(item_names.DARK_TEMPLAR_ARCHON_MERGE),
