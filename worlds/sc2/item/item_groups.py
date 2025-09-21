@@ -834,6 +834,9 @@ item_name_groups[ItemGroupNames.STARGATE_UNITS] = stargate_units = [
     item_names.ARBITER, item_names.ORACLE, item_names.OPPRESSOR,
     item_names.CALADRIUS, item_names.MISTWING,
 ]
+item_name_groups[ItemGroupNames.NEXUS_UNITS] = nexus_units = [
+    item_names.MOTHERSHIP_AIUR, item_names.MOTHERSHIP_PURIFIER,
+]
 item_name_groups[ItemGroupNames.PROTOSS_BUILDINGS] = protoss_buildings = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type == item_tables.ProtossItemType.Building
