@@ -116,7 +116,7 @@ class SC2Mission(Enum):
             return self.mission_name[:self.mission_name.find(' (')]
 
     # Wings of Liberty
-    LIBERATION_DAY = 1, "Liberation Day", SC2Campaign.WOL, "Mar Sara", SC2Race.ANY, MissionPools.STARTER, "ap_liberation_day", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsTerran
+    LIBERATION_DAY = 1, "Liberation Day (Terran)", SC2Campaign.WOL, "Mar Sara", SC2Race.TERRAN, MissionPools.STARTER, "ap_liberation_day", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     THE_OUTLAWS = 2, "The Outlaws (Terran)", SC2Campaign.WOL, "Mar Sara", SC2Race.TERRAN, MissionPools.EASY, "ap_the_outlaws", MissionFlag.Terran|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     ZERO_HOUR = 3, "Zero Hour (Terran)", SC2Campaign.WOL, "Mar Sara", SC2Race.TERRAN, MissionPools.EASY, "ap_zero_hour", MissionFlag.Terran|MissionFlag.TimedDefense|MissionFlag.VsZerg|MissionFlag.HasRaceSwap
     EVACUATION = 4, "Evacuation (Terran)", SC2Campaign.WOL, "Colonist", SC2Race.TERRAN, MissionPools.EASY, "ap_evacuation", MissionFlag.Terran|MissionFlag.AutoScroller|MissionFlag.VsZerg|MissionFlag.HasRaceSwap
@@ -130,7 +130,7 @@ class SC2Mission(Enum):
     MAW_OF_THE_VOID = 12, "Maw of the Void (Terran)", SC2Campaign.WOL, "Artifact", SC2Race.TERRAN, MissionPools.HARD, "ap_maw_of_the_void", MissionFlag.Terran|MissionFlag.VsProtoss|MissionFlag.HasRaceSwap
     DEVILS_PLAYGROUND = 13, "Devil's Playground (Terran)", SC2Campaign.WOL, "Covert", SC2Race.TERRAN, MissionPools.EASY, "ap_devils_playground", MissionFlag.Terran|MissionFlag.VsZerg|MissionFlag.HasRaceSwap
     WELCOME_TO_THE_JUNGLE = 14, "Welcome to the Jungle (Terran)", SC2Campaign.WOL, "Covert", SC2Race.TERRAN, MissionPools.MEDIUM, "ap_welcome_to_the_jungle", MissionFlag.Terran|MissionFlag.VsProtoss|MissionFlag.HasRaceSwap
-    BREAKOUT = 15, "Breakout", SC2Campaign.WOL, "Covert", SC2Race.ANY, MissionPools.STARTER, "ap_breakout", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsTerran
+    BREAKOUT = 15, "Breakout (Terran)", SC2Campaign.WOL, "Covert", SC2Race.TERRAN, MissionPools.STARTER, "ap_breakout", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     GHOST_OF_A_CHANCE = 16, "Ghost of a Chance", SC2Campaign.WOL, "Covert", SC2Race.ANY, MissionPools.STARTER, "ap_ghost_of_a_chance", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.WoLNova
     THE_GREAT_TRAIN_ROBBERY = 17, "The Great Train Robbery (Terran)", SC2Campaign.WOL, "Rebellion", SC2Race.TERRAN, MissionPools.EASY, "ap_the_great_train_robbery", MissionFlag.Terran|MissionFlag.AutoScroller|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     CUTTHROAT = 18, "Cutthroat (Terran)", SC2Campaign.WOL, "Rebellion", SC2Race.TERRAN, MissionPools.MEDIUM, "ap_cutthroat", MissionFlag.Terran|MissionFlag.Countdown|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
@@ -154,7 +154,7 @@ class SC2Mission(Enum):
     RENDEZVOUS = 32, "Rendezvous (Zerg)", SC2Campaign.HOTS, "Umoja", SC2Race.ZERG, MissionPools.EASY, "ap_rendezvous", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.AutoScroller|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     HARVEST_OF_SCREAMS = 33, "Harvest of Screams (Zerg)", SC2Campaign.HOTS, "Kaldir", SC2Race.ZERG, MissionPools.EASY, "ap_harvest_of_screams", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.VsProtoss|MissionFlag.HasRaceSwap
     SHOOT_THE_MESSENGER = 34, "Shoot the Messenger (Zerg)", SC2Campaign.HOTS, "Kaldir", SC2Race.ZERG, MissionPools.EASY, "ap_shoot_the_messenger", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.TimedDefense|MissionFlag.Countdown|MissionFlag.VsProtoss|MissionFlag.HasRaceSwap
-    ENEMY_WITHIN = 35, "Enemy Within", SC2Campaign.HOTS, "Kaldir", SC2Race.ANY, MissionPools.EASY, "ap_enemy_within", MissionFlag.Zerg|MissionFlag.NoBuild|MissionFlag.VsProtoss
+    ENEMY_WITHIN = 35, "Enemy Within (Zerg)", SC2Campaign.HOTS, "Kaldir", SC2Race.ZERG, MissionPools.EASY, "ap_enemy_within", MissionFlag.Zerg|MissionFlag.NoBuild|MissionFlag.VsProtoss|MissionFlag.HasRaceSwap
     DOMINATION = 36, "Domination (Zerg)", SC2Campaign.HOTS, "Char", SC2Race.ZERG, MissionPools.EASY, "ap_domination", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.Countdown|MissionFlag.VsZerg|MissionFlag.HasRaceSwap
     FIRE_IN_THE_SKY = 37, "Fire in the Sky (Zerg)", SC2Campaign.HOTS, "Char", SC2Race.ZERG, MissionPools.MEDIUM, "ap_fire_in_the_sky", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.Countdown|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
     OLD_SOLDIERS = 38, "Old Soldiers (Zerg)", SC2Campaign.HOTS, "Char", SC2Race.ZERG, MissionPools.MEDIUM, "ap_old_soldiers", MissionFlag.Zerg|MissionFlag.Kerrigan|MissionFlag.VsTerran|MissionFlag.HasRaceSwap
@@ -176,7 +176,7 @@ class SC2Mission(Enum):
     EVIL_AWOKEN = 52, "Evil Awoken", SC2Campaign.PROLOGUE, "_3", SC2Race.PROTOSS, MissionPools.STARTER, "ap_evil_awoken", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsProtoss
 
     # LotV
-    FOR_AIUR = 53, "For Aiur!", SC2Campaign.LOTV, "Aiur", SC2Race.ANY, MissionPools.STARTER, "ap_for_aiur", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsZerg
+    FOR_AIUR = 53, "For Aiur! (Protoss)", SC2Campaign.LOTV, "Aiur", SC2Race.ANY, MissionPools.STARTER, "ap_for_aiur", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsZerg|MissionFlag.HasRaceSwap
     THE_GROWING_SHADOW = 54, "The Growing Shadow (Protoss)", SC2Campaign.LOTV, "Aiur", SC2Race.PROTOSS, MissionPools.EASY, "ap_the_growing_shadow", MissionFlag.Protoss|MissionFlag.VsPZ|MissionFlag.HasRaceSwap
     THE_SPEAR_OF_ADUN = 55, "The Spear of Adun (Protoss)", SC2Campaign.LOTV, "Aiur", SC2Race.PROTOSS, MissionPools.EASY, "ap_the_spear_of_adun", MissionFlag.Protoss|MissionFlag.VanillaSoa|MissionFlag.VsPZ|MissionFlag.HasRaceSwap
     SKY_SHIELD = 56, "Sky Shield (Protoss)", SC2Campaign.LOTV, "Korhal", SC2Race.PROTOSS, MissionPools.MEDIUM, "ap_sky_shield", MissionFlag.Protoss|MissionFlag.VanillaSoa|MissionFlag.Countdown|MissionFlag.VsTerran|MissionFlag.AiTerranAlly|MissionFlag.HasRaceSwap
@@ -213,7 +213,8 @@ class SC2Mission(Enum):
     END_GAME = 83, "End Game", SC2Campaign.NCO, "_3", SC2Race.TERRAN, MissionPools.VERY_HARD, "ap_end_game", MissionFlag.Terran|MissionFlag.Nova|MissionFlag.Defense|MissionFlag.VsTerran
 
     # Race-Swapped Variants
-    # 84/85 - Liberation Day
+    LIBERATION_DAY_Z = 84, "Liberation Day (Zerg)", SC2Campaign.WOL, "Mar Sara", SC2Race.ZERG, MissionPools.STARTER, "ap_liberation_day", MissionFlag.Zerg|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.RaceSwap
+    LIBERATION_DAY_P = 85, "Liberation Day (Protoss)", SC2Campaign.WOL, "Mar Sara", SC2Race.PROTOSS, MissionPools.STARTER, "ap_liberation_day", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.RaceSwap
     THE_OUTLAWS_Z = 86, "The Outlaws (Zerg)", SC2Campaign.WOL, "Mar Sara", SC2Race.ZERG, MissionPools.EASY, "ap_the_outlaws", MissionFlag.Zerg|MissionFlag.VsTerran|MissionFlag.RaceSwap
     THE_OUTLAWS_P = 87, "The Outlaws (Protoss)", SC2Campaign.WOL, "Mar Sara", SC2Race.PROTOSS, MissionPools.EASY, "ap_the_outlaws", MissionFlag.Protoss|MissionFlag.VsTerran|MissionFlag.RaceSwap
     ZERO_HOUR_Z = 88, "Zero Hour (Zerg)", SC2Campaign.WOL, "Mar Sara", SC2Race.ZERG, MissionPools.MEDIUM, "ap_zero_hour", MissionFlag.Zerg|MissionFlag.TimedDefense|MissionFlag.VsZerg|MissionFlag.RaceSwap
@@ -240,7 +241,8 @@ class SC2Mission(Enum):
     DEVILS_PLAYGROUND_P = 109, "Devil's Playground (Protoss)", SC2Campaign.WOL, "Covert", SC2Race.PROTOSS, MissionPools.EASY, "ap_devils_playground", MissionFlag.Protoss|MissionFlag.VsZerg|MissionFlag.RaceSwap
     WELCOME_TO_THE_JUNGLE_Z = 110, "Welcome to the Jungle (Zerg)", SC2Campaign.WOL, "Covert", SC2Race.ZERG, MissionPools.HARD, "ap_welcome_to_the_jungle", MissionFlag.Zerg|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     WELCOME_TO_THE_JUNGLE_P = 111, "Welcome to the Jungle (Protoss)", SC2Campaign.WOL, "Covert", SC2Race.PROTOSS, MissionPools.MEDIUM, "ap_welcome_to_the_jungle", MissionFlag.Protoss|MissionFlag.VsProtoss|MissionFlag.RaceSwap
-    # 112/113 - Breakout
+    BREAKOUT_Z = 112, "Breakout (Zerg)", SC2Campaign.WOL, "Covert", SC2Race.ZERG, MissionPools.STARTER, "ap_breakout", MissionFlag.Zerg|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.RaceSwap
+    BREAKOUT_P = 113, "Breakout (Protoss)", SC2Campaign.WOL, "Covert", SC2Race.PROTOSS, MissionPools.STARTER, "ap_breakout", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsTerran|MissionFlag.RaceSwap
     # 114/115 - Ghost of a Chance
     THE_GREAT_TRAIN_ROBBERY_Z = 116, "The Great Train Robbery (Zerg)", SC2Campaign.WOL, "Rebellion", SC2Race.ZERG, MissionPools.EASY, "ap_the_great_train_robbery", MissionFlag.Zerg|MissionFlag.AutoScroller|MissionFlag.VsTerran|MissionFlag.RaceSwap
     THE_GREAT_TRAIN_ROBBERY_P = 117, "The Great Train Robbery (Protoss)", SC2Campaign.WOL, "Rebellion", SC2Race.PROTOSS, MissionPools.EASY, "ap_the_great_train_robbery", MissionFlag.Protoss|MissionFlag.AutoScroller|MissionFlag.VsTerran|MissionFlag.RaceSwap
@@ -274,7 +276,8 @@ class SC2Mission(Enum):
     HARVEST_OF_SCREAMS_P = 149, "Harvest of Screams (Protoss)", SC2Campaign.HOTS, "Kaldir", SC2Race.PROTOSS, MissionPools.EASY, "ap_harvest_of_screams", MissionFlag.Protoss|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     SHOOT_THE_MESSENGER_T = 150, "Shoot the Messenger (Terran)", SC2Campaign.HOTS, "Kaldir", SC2Race.TERRAN, MissionPools.MEDIUM, "ap_shoot_the_messenger", MissionFlag.Terran|MissionFlag.TimedDefense|MissionFlag.Countdown|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     SHOOT_THE_MESSENGER_P = 151, "Shoot the Messenger (Protoss)", SC2Campaign.HOTS, "Kaldir", SC2Race.PROTOSS, MissionPools.EASY, "ap_shoot_the_messenger", MissionFlag.Protoss|MissionFlag.TimedDefense|MissionFlag.Countdown|MissionFlag.VsProtoss|MissionFlag.RaceSwap
-    # 152/153 - Enemy Within
+    ENEMY_WITHIN_T = 152, "Enemy Within (Terran)", SC2Campaign.HOTS, "Kaldir", SC2Race.TERRAN, MissionPools.EASY, "ap_enemy_within", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsProtoss|MissionFlag.RaceSwap
+    ENEMY_WITHIN_P = 153, "Enemy Within (Protoss)", SC2Campaign.HOTS, "Kaldir", SC2Race.PROTOSS, MissionPools.EASY, "ap_enemy_within", MissionFlag.Protoss|MissionFlag.NoBuild|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     DOMINATION_T = 154, "Domination (Terran)", SC2Campaign.HOTS, "Char", SC2Race.TERRAN, MissionPools.EASY, "ap_domination", MissionFlag.Terran|MissionFlag.Countdown|MissionFlag.VsZerg|MissionFlag.RaceSwap
     DOMINATION_P = 155, "Domination (Protoss)", SC2Campaign.HOTS, "Char", SC2Race.PROTOSS, MissionPools.EASY, "ap_domination", MissionFlag.Protoss|MissionFlag.Countdown|MissionFlag.VsZerg|MissionFlag.RaceSwap
     FIRE_IN_THE_SKY_T = 156, "Fire in the Sky (Terran)", SC2Campaign.HOTS, "Char", SC2Race.TERRAN, MissionPools.MEDIUM, "ap_fire_in_the_sky", MissionFlag.Terran|MissionFlag.Countdown|MissionFlag.VsTerran|MissionFlag.RaceSwap
@@ -305,7 +308,8 @@ class SC2Mission(Enum):
     GHOSTS_IN_THE_FOG_T = 184, "Ghosts in the Fog (Terran)", SC2Campaign.PROLOGUE, "_2", SC2Race.TERRAN, MissionPools.HARD, "ap_ghosts_in_the_fog", MissionFlag.Terran|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     GHOSTS_IN_THE_FOG_Z = 185, "Ghosts in the Fog (Zerg)", SC2Campaign.PROLOGUE, "_2", SC2Race.ZERG, MissionPools.HARD, "ap_ghosts_in_the_fog", MissionFlag.Zerg|MissionFlag.VsProtoss|MissionFlag.RaceSwap
     # 186/187 - Evil Awoken
-    # 188/189 - For Aiur!
+    FOR_AIUR_T = 188, "For Aiur! (Terran)", SC2Campaign.LOTV, "Aiur", SC2Race.TERRAN, MissionPools.STARTER, "ap_for_aiur", MissionFlag.Terran|MissionFlag.NoBuild|MissionFlag.VsZerg|MissionFlag.RaceSwap
+    FOR_AIUR_Z = 189, "For Aiur! (Zerg)", SC2Campaign.LOTV, "Aiur", SC2Race.ZERG, MissionPools.STARTER, "ap_for_aiur", MissionFlag.Zerg|MissionFlag.NoBuild|MissionFlag.VsZerg|MissionFlag.RaceSwap
     THE_GROWING_SHADOW_T = 190, "The Growing Shadow (Terran)", SC2Campaign.LOTV, "Aiur", SC2Race.TERRAN, MissionPools.EASY, "ap_the_growing_shadow", MissionFlag.Terran|MissionFlag.VsPZ|MissionFlag.RaceSwap
     THE_GROWING_SHADOW_Z = 191, "The Growing Shadow (Zerg)", SC2Campaign.LOTV, "Aiur", SC2Race.ZERG, MissionPools.EASY, "ap_the_growing_shadow", MissionFlag.Zerg|MissionFlag.VsPZ|MissionFlag.RaceSwap
     THE_SPEAR_OF_ADUN_T = 192, "The Spear of Adun (Terran)", SC2Campaign.LOTV, "Aiur", SC2Race.TERRAN, MissionPools.MEDIUM, "ap_the_spear_of_adun", MissionFlag.Terran|MissionFlag.VsPZ|MissionFlag.RaceSwap
