@@ -169,8 +169,8 @@ ITEM_NAME_ANNOTATIONS = {
     item_names.TRIREME:               "(Stargate, Purifier)",
     item_names.TEMPEST:               "(Stargate, Purifier)",
     item_names.MOTHERSHIP_TALDARIM:   "(Stargate, Tal'darim)",
-    item_names.MOTHERSHIP_PURIFIER:   "(Stargate, Tal'darim)",
-    item_names.MOTHERSHIP_AIUR:       "(Stargate, Tal'darim)",
+    item_names.MOTHERSHIP_PURIFIER:   "(Nexus, Purifier)",
+    item_names.MOTHERSHIP_AIUR:       "(Nexus, Aiur)",
     item_names.ARBITER:               "(Stargate, Aiur)",
     item_names.ORACLE:                "(Stargate, Nerazim)",
 

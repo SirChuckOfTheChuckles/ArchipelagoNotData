@@ -970,7 +970,7 @@ item_descriptions = {
     item_names.CARRIER_TRIREME_GRAVITON_CATAPULT: "Carriers and Triremes can launch Interceptors and Bombers more quickly.",
     item_names.CARRIER_SKYLORD_TRIREME_HULL_OF_PAST_GLORIES: "Carrier-class ships gain +2 armor.",
     item_names.MOTHERSHIP_TALDARIM_SUMMON_DEATH_FLEET: "Allows Tal'darim Motherships to summon 6 Destroyers with timed life. Costs resources to be able to use.",
-    item_names.MOTHERSHIP_PURIFIER_PLANET_CRACKER: "Allows Purifier Motherships deal masssive damage in an increasing area after a brief delay. Costs resources to be able to use.",
+    item_names.MOTHERSHIP_PURIFIER_PLANET_CRACKER: "Allows Purifier Motherships deal massive damage in an increasing area after a brief delay. Costs resources to be able to use.",
     item_names.MOTHERSHIP_AIUR_ASTRAL_RESTORATION: "Allows Aiur Motherships to temporarily increase the radius of Cloaking Field and heal allies within it. Costs resources to be able to use.",
     item_names.MOTHERSHIP_TALDARIM_BLOOD_FUSED_PARTICLES: "Taldarim Mothership's primary weapon gains massively attacked speed, but has reduced attack damage. Can be toggled on and off. Costs resources to research.",
     item_names.MOTHERSHIP_TALDARIM_SHADOW_OF_DEATH: "Taldarim Motherships slow the attack and movement speed of nearby enemy ground units. Costs resources to research.",
