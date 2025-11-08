@@ -1096,8 +1096,6 @@ item_descriptions = {
     item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER: "Tal'darim Mothership War Council upgrade.\nAllows Tal'darim Motherships to move at full speed outside pylon power.",
     item_names.MOTHERSHIP_AIUR_VALOROUS_RESOLVE: "Aiur Mothership War Council upgrade.\nAiur Motherships also grant shield armor to friendly units in it's Cloaking Field.",
     item_names.MOTHERSHIP_PURIFIER_MOBILE_POWER_FIELD: "Purifier Mothership War Council upgrade.\nPurifier Motherships passively project a power source around them.",
-    item_names.MOTHERSHIP_CORE_AIUR_QUANTUM_PROJECTION: "Aiur Mothership Core War Council upgrade.\nAiur Mothership Cores gain increased range for Battery Overcharge, Deceleration Field, Nexus Recall.",
-    item_names.MOTHERSHIP_CORE_PURIFIER_CONTROLLED_BURN: "Purifier Mothership Core War Council upgrade.\nPurifier Mothership Cores gain +2 range and +25% attack speed.",
     item_names.OPPRESSOR_VULCAN_BLASTER: "Oppressor War Council ability.\n" + _ability_desc("Oppressors", "Vulcan Blaster", "activates a powerful short range anti-ground weapon for a limited time. Greatly reduces movement and turning speed, and disables other weapons while active"),
     item_names.CALADRIUS_CORONA_BEAM: "Caladrius War Council ability.\n" + _ability_desc("Caladrius", "Corona Beam", "channels a beam that drains up to 100 of the Caladrius' shields to deal up to 200 damage over time to a single target"),
     item_names.MISTWING_PHANTOM_DASH: "Mist Wing War Council ability.\n" + _ability_desc("Mist Wings", "Phantom Dash", "dashes forward to cover some distance quickly. Deals damage in a line if the Mist Wing is cloaked"),
