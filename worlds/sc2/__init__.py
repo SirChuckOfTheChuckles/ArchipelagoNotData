@@ -222,7 +222,7 @@ class SC2World(World):
             slot_data["use_nova_wol_fallback"] = True
         slot_data["final_mission_ids"] = self.custom_mission_order.get_final_mission_ids()
         slot_data["custom_mission_order"] = self.custom_mission_order.get_slot_data()
-        slot_data["version"] = 4
+        slot_data["version"] = 5
 
         if SC2Campaign.HOTS not in enabled_campaigns:
             slot_data["kerrigan_presence"] = KerriganPresence.option_not_present
