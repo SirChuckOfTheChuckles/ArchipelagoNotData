@@ -1,4 +1,4 @@
-from typing import NamedTuple, Dict, List, Set, Union, Literal, Iterable, Optional
+from typing import NamedTuple, Union, Literal, Iterable
 from enum import IntEnum, Enum, IntFlag, auto
 
 
@@ -8,11 +8,12 @@ class SC2Race(IntEnum):
     ZERG = 2
     PROTOSS = 3
 
-    def get_title(self):
+    def get_title(self) -> str:
         return self.name.lower().capitalize()
 
-    def get_mission_flag(self):
+    def get_mission_flag(self) -> 'MissionFlag':
         return MissionFlag.__getitem__(self.get_title())
+
 
 class MissionPools(IntEnum):
     STARTER = 0
@@ -66,19 +67,21 @@ class SC2CampaignGoalPriority(IntEnum):
 
 class SC2Campaign(Enum):
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> 'SC2Campaign':
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
-    def __init__(self, campaign_id: int, name: str, goal_priority: SC2CampaignGoalPriority,  race: SC2Race):
+    def __init__(
+        self, campaign_id: int, name: str, goal_priority: SC2CampaignGoalPriority, race: SC2Race
+    ) -> None:
         self.id = campaign_id
         self.campaign_name = name
         self.goal_priority = goal_priority
         self.race = race
 
-    def __lt__(self, other: "SC2Campaign"):
+    def __lt__(self, other: "SC2Campaign") -> bool:
         return self.id < other.id
 
     GLOBAL = 0, "Global", SC2CampaignGoalPriority.NONE, SC2Race.ANY
@@ -93,13 +96,23 @@ class SC2Campaign(Enum):
 
 class SC2Mission(Enum):
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> 'SC2Mission':
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
-    def __init__(self, mission_id: int, name: str, campaign: SC2Campaign, area: str, race: SC2Race, pool: MissionPools, map_file: str, flags: MissionFlag):
+    def __init__(
+        self,
+        mission_id: int,
+        name: str,
+        campaign: SC2Campaign,
+        area: str,
+        race: SC2Race,
+        pool: MissionPools,
+        map_file: str,
+        flags: MissionFlag,
+    ) -> None:
         self.id = mission_id
         self.mission_name = name
         self.campaign = campaign
@@ -109,7 +122,7 @@ class SC2Mission(Enum):
         self.map_file = map_file
         self.flags = flags
 
-    def get_short_name(self):
+    def get_short_name(self) -> str:
         if self.mission_name.find(' (') == -1:
             return self.mission_name
         else:
@@ -358,11 +371,11 @@ class MissionConnection:
     campaign: SC2Campaign
     connect_to: int  # -1 connects to Menu
 
-    def __init__(self, connect_to, campaign = SC2Campaign.GLOBAL):
+    def __init__(self, connect_to: int, campaign: SC2Campaign = SC2Campaign.GLOBAL) -> None:
         self.campaign = campaign
         self.connect_to = connect_to
 
-    def _asdict(self):
+    def _asdict(self) -> dict[Literal["campaign", "connect_to"], int]:
         return {
             "campaign": self.campaign.id,
             "connect_to": self.connect_to
@@ -371,7 +384,7 @@ class MissionConnection:
 
 class MissionInfo(NamedTuple):
     mission: SC2Mission
-    required_world: List[Union[MissionConnection, Dict[Literal["campaign", "connect_to"], int]]]
+    required_world: list[Union[MissionConnection, dict[Literal["campaign", "connect_to"], int]]]
     category: str
     number: int = 0  # number of worlds need beaten
     completion_critical: bool = False  # missions needed to beat game
@@ -380,11 +393,11 @@ class MissionInfo(NamedTuple):
 
 
 
-lookup_id_to_mission: Dict[int, SC2Mission] = {
+lookup_id_to_mission: dict[int, SC2Mission] = {
     mission.id: mission for mission in SC2Mission
 }
 
-lookup_name_to_mission: Dict[str, SC2Mission] = {
+lookup_name_to_mission: dict[str, SC2Mission] = {
     mission.mission_name: mission for mission in SC2Mission
 }
 for mission in SC2Mission:
@@ -393,19 +406,21 @@ for mission in SC2Mission:
         short_name = mission.get_short_name()
         lookup_name_to_mission[short_name] = mission
 
-lookup_id_to_campaign: Dict[int, SC2Campaign] = {
+lookup_id_to_campaign: dict[int, SC2Campaign] = {
     campaign.id: campaign for campaign in SC2Campaign
 }
 
 
-campaign_mission_table: Dict[SC2Campaign, Set[SC2Mission]] = {
+campaign_mission_table: dict[SC2Campaign, set[SC2Mission]] = {
     campaign: set() for campaign in SC2Campaign
 }
 for mission in SC2Mission:
     campaign_mission_table[mission.campaign].add(mission)
 
 
-def get_campaign_difficulty(campaign: SC2Campaign, excluded_missions: Iterable[SC2Mission] = ()) -> MissionPools:
+def get_campaign_difficulty(
+    campaign: SC2Campaign, excluded_missions: Iterable[SC2Mission] = ()
+) -> MissionPools:
     """
 
     :param campaign:
@@ -417,7 +432,9 @@ def get_campaign_difficulty(campaign: SC2Campaign, excluded_missions: Iterable[S
     return max([mission.pool for mission in included_missions])
 
 
-def get_campaign_goal_priority(campaign: SC2Campaign, excluded_missions: Iterable[SC2Mission] = ()) -> SC2CampaignGoalPriority:
+def get_campaign_goal_priority(
+    campaign: SC2Campaign, excluded_missions: Iterable[SC2Mission] = ()
+) -> SC2CampaignGoalPriority:
     """
     Gets a modified campaign goal priority.
     If all the campaign's goal missions are excluded, it's ineligible to have the goal
@@ -451,7 +468,7 @@ class SC2CampaignGoal(NamedTuple):
     location: str
 
 
-campaign_final_mission_locations: Dict[SC2Campaign, Optional[SC2CampaignGoal]] = {
+campaign_final_mission_locations: dict[SC2Campaign, SC2CampaignGoal | None] = {
     SC2Campaign.WOL: SC2CampaignGoal(SC2Mission.ALL_IN, f'{SC2Mission.ALL_IN.mission_name}: Victory'),
     SC2Campaign.PROPHECY: SC2CampaignGoal(SC2Mission.IN_UTTER_DARKNESS, f'{SC2Mission.IN_UTTER_DARKNESS.mission_name}: Defeat'),
     SC2Campaign.HOTS: SC2CampaignGoal(SC2Mission.THE_RECKONING, f'{SC2Mission.THE_RECKONING.mission_name}: Victory'),
@@ -461,7 +478,7 @@ campaign_final_mission_locations: Dict[SC2Campaign, Optional[SC2CampaignGoal]] =
     SC2Campaign.NCO: SC2CampaignGoal(SC2Mission.END_GAME, f'{SC2Mission.END_GAME.mission_name}: Victory'),
 }
 
-campaign_alt_final_mission_locations: Dict[SC2Campaign, Dict[SC2Mission, str]] = {
+campaign_alt_final_mission_locations: dict[SC2Campaign, dict[SC2Mission, str]] = {
     SC2Campaign.WOL: {
         SC2Mission.MAW_OF_THE_VOID: f'{SC2Mission.MAW_OF_THE_VOID.mission_name}: Victory',
         SC2Mission.ENGINE_OF_DESTRUCTION: f'{SC2Mission.ENGINE_OF_DESTRUCTION.mission_name}: Victory',
@@ -529,12 +546,12 @@ campaign_alt_final_mission_locations: Dict[SC2Campaign, Dict[SC2Mission, str]] =
     }
 }
 
-campaign_race_exceptions: Dict[SC2Mission, SC2Race] = {
+campaign_race_exceptions: dict[SC2Mission, SC2Race] = {
     SC2Mission.WITH_FRIENDS_LIKE_THESE: SC2Race.TERRAN
 }
 
 
-def get_goal_location(mission: SC2Mission) -> Union[str, None]:
+def get_goal_location(mission: SC2Mission) -> str | None:
     """
 
     :param mission:
@@ -555,13 +572,13 @@ def get_goal_location(mission: SC2Mission) -> Union[str, None]:
         else mission.mission_name + ": Victory"
 
 
-def get_campaign_potential_goal_missions(campaign: SC2Campaign) -> List[SC2Mission]:
+def get_campaign_potential_goal_missions(campaign: SC2Campaign) -> list[SC2Mission]:
     """
 
     :param campaign:
     :return: All missions that can be the campaign's goal
     """
-    missions: List[SC2Mission] = list()
+    missions: list[SC2Mission] = []
     primary_goal_mission = campaign_final_mission_locations[campaign]
     if primary_goal_mission is not None:
         missions.append(primary_goal_mission.mission)
@@ -573,5 +590,5 @@ def get_campaign_potential_goal_missions(campaign: SC2Campaign) -> List[SC2Missi
     return missions
 
 
-def get_missions_with_any_flags_in_list(flags: MissionFlag) -> List[SC2Mission]:
+def get_missions_with_any_flags_in_list(flags: MissionFlag) -> list[SC2Mission]:
     return [mission for mission in SC2Mission if flags & mission.flags]
