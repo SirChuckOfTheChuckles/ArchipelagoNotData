@@ -2400,6 +2400,55 @@ class SC2Logic:
             or (self.advanced_tactics and state.has(item_names.INFESTOR, self.player))
         )
 
+    def terran_enemy_within_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant
+            or state.has_any({
+                item_names.MARINE, 
+                item_names.MARAUDER, 
+                item_names.REAPER, 
+                item_names.GHOST, 
+                item_names.SPECTRE, 
+                item_names.DOMINION_TROOPER, 
+                item_names.SIEGE_TANK, 
+                item_names.VIKING, 
+                item_names.PREDATOR, 
+                item_names.DIAMONDBACK, 
+                item_names.GOLIATH, 
+                item_names.CYCLONE, 
+                item_names.WARHOUND, 
+            }, self.player)
+            or (self.advanced_tactics and state.has(item_names.VULTURE, self.player))
+        )
+    
+    def protoss_enemy_within_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant
+            or state.has_any({
+                item_names.ZEALOT, 
+                item_names.CENTURION, 
+                item_names.STALKER, 
+                item_names.INSTIGATOR, 
+                item_names.SLAYER, 
+                item_names.DRAGOON, 
+                item_names.ADEPT, 
+                item_names.DARK_TEMPLAR, 
+                item_names.AVENGER, 
+                item_names.BLOOD_HUNTER, 
+                item_names.IMMORTAL, 
+                item_names.ANNIHILATOR, 
+                item_names.STALWART, 
+                item_names.VANGUARD, 
+                item_names.REAVER, 
+            }, self.player)
+            or (self.advanced_tactics and state.has_any({
+                item_names.HIGH_TEMPLAR, 
+                item_names.SIGNIFIER,
+                item_names.ASCENDANT,
+                item_names.DISRUPTOR,
+            }, self.player))
+        )
+     
     def supreme_requirement(self, state: CollectionState) -> bool:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
