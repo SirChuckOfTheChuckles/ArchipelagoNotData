@@ -949,7 +949,7 @@ item_name_groups[ItemGroupNames.PROTOSS_LADDER_UNITS] = [
     item_names.ORACLE,
     item_names.CARRIER,
     item_names.TEMPEST,
-    item_names.MOTHERSHIP,  # Replace: Aiur Mothership
+    item_names.MOTHERSHIP_AIUR,  # Replace: Aiur Mothership
 ]
 
 item_name_groups[ItemGroupNames.VANILLA_ITEMS] = vanilla_items = (
