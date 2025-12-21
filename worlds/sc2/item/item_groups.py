@@ -181,13 +181,10 @@ class ItemGroupNames:
     NERAZIM_UNITS = "Nerazim"
     TAL_DARIM_UNITS = "Tal'Darim"
     PURIFIER_UNITS = "Purifier"
-<<<<<<< HEAD
     PROTOSS_SC1_UNITS = "Protoss SC1 Units"
     PROTOSS_SC1_BUILDINGS = "Protoss SC1 Buildings"
     PROTOSS_LADDER_UNITS = "Protoss Ladder Units"
-=======
     NEXUS_UNITS = "Nexus Units"
->>>>>>> 93b7aa079 (initial commit)
 
     VANILLA_ITEMS = "Vanilla Items"
     OVERPOWERED_ITEMS = "Overpowered Items"
