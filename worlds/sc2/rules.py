@@ -821,7 +821,7 @@ class SC2Logic:
                 ),
                 self.player,
             )
-            or state.has_all((item_names.SWARM_QUEEN_DEEP_TUNNEL, item_names.OVERLORD_OVERSEER_ASPECT), self.player)  # Deep tunnel to a creep tumor
+            or state.has_all((item_names.SWARM_QUEEN_DEEP_TUNNEL, item_names.OVERSEER), self.player)  # Deep tunnel to a creep tumor
         )
 
     def zerg_has_infested_scv(self, state: CollectionState) -> bool:
@@ -934,47 +934,47 @@ class SC2Logic:
         )
 
     def morph_baneling(self, state: CollectionState) -> bool:
-        return (state.has(item_names.ZERGLING, self.player) or self.morphling_enabled) and state.has(item_names.ZERGLING_BANELING_ASPECT, self.player)
+        return (state.has(item_names.ZERGLING, self.player) or self.morphling_enabled) and state.has(item_names.BANELING, self.player)
 
     def morph_ravager(self, state: CollectionState) -> bool:
-        return (state.has(item_names.ROACH, self.player) or self.morphling_enabled) and state.has(item_names.ROACH_RAVAGER_ASPECT, self.player)
+        return (state.has(item_names.ROACH, self.player) or self.morphling_enabled) and state.has(item_names.RAVAGER, self.player)
 
     def morph_brood_lord(self, state: CollectionState) -> bool:
         return (state.has_any({item_names.MUTALISK, item_names.CORRUPTOR}, self.player) or self.morphling_enabled) and state.has(
-            item_names.MUTALISK_CORRUPTOR_BROOD_LORD_ASPECT, self.player
+            item_names.BROOD_LORD, self.player
         )
 
     def morph_guardian(self, state: CollectionState) -> bool:
         return (state.has_any({item_names.MUTALISK, item_names.CORRUPTOR}, self.player) or self.morphling_enabled) and state.has(
-            item_names.MUTALISK_CORRUPTOR_GUARDIAN_ASPECT, self.player
+            item_names.GUARDIAN, self.player
         )
 
     def morph_viper(self, state: CollectionState) -> bool:
         return (state.has_any({item_names.MUTALISK, item_names.CORRUPTOR}, self.player) or self.morphling_enabled) and state.has(
-            item_names.MUTALISK_CORRUPTOR_VIPER_ASPECT, self.player
+            item_names.VIPER, self.player
         )
 
     def morph_devourer(self, state: CollectionState) -> bool:
         return (state.has_any({item_names.MUTALISK, item_names.CORRUPTOR}, self.player) or self.morphling_enabled) and state.has(
-            item_names.MUTALISK_CORRUPTOR_DEVOURER_ASPECT, self.player
+            item_names.DEVOURER, self.player
         )
 
     def morph_impaler(self, state: CollectionState) -> bool:
         return (state.has(item_names.HYDRALISK, self.player) or self.morphling_enabled) and state.has(
-            item_names.HYDRALISK_IMPALER_ASPECT, self.player
+            item_names.IMPALER, self.player
         )
 
     def morph_lurker(self, state: CollectionState) -> bool:
-        return (state.has(item_names.HYDRALISK, self.player) or self.morphling_enabled) and state.has(item_names.HYDRALISK_LURKER_ASPECT, self.player)
+        return (state.has(item_names.HYDRALISK, self.player) or self.morphling_enabled) and state.has(item_names.LURKER, self.player)
 
     def morph_impaler_or_lurker(self, state: CollectionState) -> bool:
         return self.morph_impaler(state) or self.morph_lurker(state)
 
     def morph_igniter(self, state: CollectionState) -> bool:
-        return (state.has(item_names.ROACH, self.player) or self.morphling_enabled) and state.has(item_names.ROACH_PRIMAL_IGNITER_ASPECT, self.player)
+        return (state.has(item_names.ROACH, self.player) or self.morphling_enabled) and state.has(item_names.PRIMAL_IGNITER, self.player)
 
     def morph_tyrannozor(self, state: CollectionState) -> bool:
-        return state.has(item_names.ULTRALISK_TYRANNOZOR_ASPECT, self.player) and (
+        return state.has(item_names.TYRANNOZOR, self.player) and (
             state.has(item_names.ULTRALISK, self.player) or self.morphling_enabled
         )
 
@@ -1029,7 +1029,7 @@ class SC2Logic:
 
     def spread_creep(self, state: CollectionState, free_creep_tumor=True) -> bool:
         return (self.advanced_tactics and free_creep_tumor) or state.has_any(
-            {item_names.SWARM_QUEEN, item_names.OVERLORD_OVERSEER_ASPECT}, self.player
+            {item_names.SWARM_QUEEN, item_names.OVERSEER}, self.player
         )
 
     def zerg_mineral_dump(self, state: CollectionState) -> bool:
@@ -2394,60 +2394,49 @@ class SC2Logic:
             # Insufficient: Wild Mutation, Assimilation Aura
         )
 
+    def zerg_enemy_within_advanced_tactics_requirement(self, state: CollectionState) -> bool:
+        return (
+            state.has(item_names.INFESTOR, self.player)
+            or (self.morphling_enabled
+                and state.has_any(item_groups.ENEMY_WITHIN_ZERG_MORPHLING_UNITS, self.player)
+            )
+        )
+
     def zerg_pass_vents(self, state: CollectionState) -> bool:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
-            or state.has_any({item_names.ZERGLING, item_names.HYDRALISK, item_names.ROACH}, self.player)
-            or (self.advanced_tactics and state.has(item_names.INFESTOR, self.player))
+            or state.has_any(item_groups.ENEMY_WITHIN_ZERG_STANDARD_UNITS, self.player)
+            or (self.advanced_tactics
+                and self.zerg_enemy_within_advanced_tactics_requirement(state)
+            )
+        )
+    
+    def zerg_enemy_within_victory_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant
+            or state.has_any(item_groups.ENEMY_WITHIN_ZERG_STANDARD_UNITS[1:], self.player)
+            or state.has_all((item_names.ZERGLING, item_names.ZERGLING_RAPTOR_STRAIN), self.player)
+            or (self.advanced_tactics
+                and self.zerg_enemy_within_advanced_tactics_requirement(state)
+            )
         )
 
     def terran_enemy_within_requirement(self, state: CollectionState) -> bool:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
-            or state.has_any({
-                item_names.MARINE, 
-                item_names.MARAUDER, 
-                item_names.REAPER, 
-                item_names.GHOST, 
-                item_names.SPECTRE, 
-                item_names.DOMINION_TROOPER, 
-                item_names.SIEGE_TANK, 
-                item_names.VIKING, 
-                item_names.PREDATOR, 
-                item_names.DIAMONDBACK, 
-                item_names.GOLIATH, 
-                item_names.CYCLONE, 
-                item_names.WARHOUND, 
-            }, self.player)
-            or (self.advanced_tactics and state.has(item_names.VULTURE, self.player))
+            or state.has_any(item_groups.ENEMY_WITHIN_TERRAN_UNITS, self.player)
+            or (self.advanced_tactics
+                and state.has_any(item_groups.ENEMY_WITHIN_TERRAN_ADVANCED_UNITS, self.player)
+            )
         )
     
     def protoss_enemy_within_requirement(self, state: CollectionState) -> bool:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
-            or state.has_any({
-                item_names.ZEALOT, 
-                item_names.CENTURION, 
-                item_names.STALKER, 
-                item_names.INSTIGATOR, 
-                item_names.SLAYER, 
-                item_names.DRAGOON, 
-                item_names.ADEPT, 
-                item_names.DARK_TEMPLAR, 
-                item_names.AVENGER, 
-                item_names.BLOOD_HUNTER, 
-                item_names.IMMORTAL, 
-                item_names.ANNIHILATOR, 
-                item_names.STALWART, 
-                item_names.VANGUARD, 
-                item_names.REAVER, 
-            }, self.player)
-            or (self.advanced_tactics and state.has_any({
-                item_names.HIGH_TEMPLAR, 
-                item_names.SIGNIFIER,
-                item_names.ASCENDANT,
-                item_names.DISRUPTOR,
-            }, self.player))
+            or state.has_any(item_groups.ENEMY_WITHIN_PROTOSS_STANDARD_UNITS, self.player)
+            or (self.advanced_tactics
+                and state.has_any(item_groups.ENEMY_WITHIN_PROTOSS_ADVANCED_UNITS, self.player)
+            )
         )
      
     def supreme_requirement(self, state: CollectionState) -> bool:
@@ -2458,7 +2447,7 @@ class SC2Logic:
                         item_names.KERRIGAN_LEAPING_STRIKE,
                         item_names.OVERLORD_VENTRAL_SACS,
                         item_names.YGGDRASIL,
-                        item_names.MUTALISK_CORRUPTOR_VIPER_ASPECT,
+                        item_names.VIPER,
                         item_names.NYDUS_WORM,
                         item_names.BULLFROG,
                     ), self.player)
@@ -2558,15 +2547,12 @@ class SC2Logic:
                 self.grant_story_tech == GrantStoryTech.option_grant
                 or not self.kerrigan_unit_available
                 or (
-                    state.has_any(
-                        (
-                            item_names.KERRIGAN_KINETIC_BLAST,
-                            item_names.KERRIGAN_SPAWN_BANELINGS,
-                            item_names.KERRIGAN_LEAPING_STRIKE,
-                            item_names.KERRIGAN_SPAWN_LEVIATHAN,
-                        ),
-                        self.player,
-                    )
+                    state.has_any((
+                        item_names.KERRIGAN_KINETIC_BLAST,
+                        item_names.KERRIGAN_SPAWN_BANELINGS,
+                        item_names.KERRIGAN_LEAPING_STRIKE,
+                        item_names.KERRIGAN_SPAWN_LEVIATHAN,
+                    ), self.player)
                     and self.basic_kerrigan(state)
                 )
             )
@@ -2576,20 +2562,7 @@ class SC2Logic:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
             or self.advanced_tactics
-            or (
-                state.has_any((
-                    item_names.IMMORTAL,
-                    item_names.ANNIHILATOR,
-                    item_names.VANGUARD,
-                    item_names.COLOSSUS,
-                    item_names.WRATHWALKER,
-                    item_names.REAVER,
-                    item_names.DARK_TEMPLAR,
-                    item_names.HIGH_TEMPLAR,
-                    item_names.ENERGIZER,
-                    item_names.SENTRY,
-                ), self.player)
-            )
+            or state.has_any(item_groups.TEMPLARS_RETURN_PROTOSS_UNITS, self.player)
         )
 
     def templars_return_phase_3_reach_colossus_requirement(self, state: CollectionState) -> bool:
@@ -3178,6 +3151,24 @@ class SC2Logic:
             )
         )
 
+    def terran_into_the_void_requirement(self, state: CollectionState) -> bool:
+        if not self.terran_very_hard_mission_weapon_armor_level(state):
+            return False
+        if self.take_over_ai_allies and not (
+            self.zerg_very_hard_mission_weapon_armor_level(state) and self.protoss_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        return self.terran_competent_comp(state) and self.terran_competent_anti_air(state) and self.terran_power_rating(state) >= 6 
+    
+    def zerg_into_the_void_requirement(self, state: CollectionState) -> bool:
+        if not self.zerg_very_hard_mission_weapon_armor_level(state):
+            return False
+        if self.take_over_ai_allies and not (
+            self.terran_very_hard_mission_weapon_armor_level(state) and self.protoss_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        return self.zerg_competent_comp(state) and self.zerg_competent_anti_air(state) and self.zerg_power_rating(state) >= 6 
+
     def essence_of_eternity_requirement(self, state: CollectionState) -> bool:
         if not self.terran_very_hard_mission_weapon_armor_level(state):
             return False
@@ -3202,7 +3193,41 @@ class SC2Logic:
             )
             and self.terran_power_rating(state) >= 6
         )
-
+    
+    def zerg_essence_of_eternity_requirement(self, state: CollectionState) -> bool:
+        if not self.zerg_very_hard_mission_weapon_armor_level(state):
+            return False
+        if self.take_over_ai_allies and not (
+            self.terran_very_hard_mission_weapon_armor_level(state) and self.protoss_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        defense_score = self.zerg_defense_rating(state, False, True)
+        if self.take_over_ai_allies:
+            defense_score = max(defense_score, self.terran_defense_rating(state, False, True))
+            if self.protoss_static_defense(state):
+                defense_score += 2
+        return (
+            defense_score >= 12
+            and self.zerg_competent_anti_air(state) 
+            and self.zerg_power_rating(state) >= 6
+        )
+    
+    def protoss_essence_of_eternity_requirement(self, state: CollectionState) -> bool:
+        if not self.protoss_very_hard_mission_weapon_armor_level(state):
+            return False
+        if self.take_over_ai_allies and not (
+            self.terran_very_hard_mission_weapon_armor_level(state) and self.zerg_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        defense_score = self.protoss_defense_rating(state, False)
+        if self.take_over_ai_allies:
+            defense_score = max(defense_score, self.terran_defense_rating(state, False, True))
+        return (
+            defense_score >= 12
+            and self.protoss_competent_anti_air(state) 
+            and self.protoss_power_rating(state) >= 6
+        )
+    
     def amons_fall_requirement(self, state: CollectionState) -> bool:
         if not self.zerg_very_hard_mission_weapon_armor_level(state):
             return False
@@ -3251,6 +3276,44 @@ class SC2Logic:
                 )
                 or (self.advanced_tactics and self.spread_creep(state, False) and self.zerg_big_monsters(state))
             ) and self.zerg_competent_comp(state)
+        
+    def terran_amons_fall_requirement(self, state: CollectionState) -> bool:
+        if not self.terran_very_hard_mission_weapon_armor_level(state):
+            return False
+        if not self.terran_competent_anti_air(state):
+            return False
+        if self.terran_power_rating(state) < 6:
+            return False
+        if self.take_over_ai_allies and not (
+            self.zerg_very_hard_mission_weapon_armor_level(state) and self.protoss_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        if self.take_over_ai_allies:
+            return (
+                self.terran_beats_protoss_deathball(state) and self.zerg_competent_comp(state) 
+                and (self.protoss_deathball(state) or self.protoss_fleet(state))
+            )
+        else:
+            return self.terran_beats_protoss_deathball(state)
+
+    def protoss_amons_fall_requirement(self, state: CollectionState) -> bool:
+        if not self.protoss_very_hard_mission_weapon_armor_level(state):
+            return False
+        if not self.protoss_competent_anti_air(state):
+            return False
+        if self.protoss_power_rating(state) < 6:
+            return False
+        if self.take_over_ai_allies and not (
+            self.terran_very_hard_mission_weapon_armor_level(state) and self.zerg_very_hard_mission_weapon_armor_level(state)
+        ):
+            return False
+        if self.take_over_ai_allies:
+            return (
+                self.terran_beats_protoss_deathball(state) and self.zerg_competent_comp(state) 
+                and (self.protoss_deathball(state) or self.protoss_fleet(state))
+            )
+        else:
+            return self.protoss_deathball(state) or self.protoss_fleet(state)
 
     def the_escape_stuff_granted(self) -> bool:
         """
@@ -3596,7 +3659,7 @@ class SC2Logic:
         def _has_zerg_units(state: CollectionState) -> bool:
             num_units = (
                 state.count_from_list_unique(
-                    item_groups.zerg_nonmorph_units + item_groups.zerg_buildings + [item_names.OVERLORD_OVERSEER_ASPECT],
+                    item_groups.zerg_nonmorph_units + item_groups.zerg_buildings + [item_names.OVERSEER],
                     self.player
                 )
                 + self.morph_baneling(state)

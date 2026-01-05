@@ -66,8 +66,8 @@ class TestItemFiltering(Sc2SetupTestBase):
                 item_names.THOR: -1,
                 item_names.GHOST: -1,
                 item_names.SPECTRE: -1,
-                item_groups.ItemGroupNames.MENGSK_UNITS: -1,
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: -1,
+                item_groups.ItemGroupNames.COOP_MENGSK_UNITS: -1,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: -1,
             },
             'unexcluded_items': {
                 item_names.NOVA_PLASMA_RIFLE: 1,       # Necessary to pass logic
@@ -201,9 +201,12 @@ class TestItemFiltering(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'maximum_campaign_size': options.MaximumCampaignSize.range_end,
             'excluded_missions': [
-                mission.mission_name for mission in mission_tables.SC2Mission
-                if mission_tables.MissionFlag.Terran in mission.flags
-                    and mission_tables.MissionFlag.NoBuild not in mission.flags
+                SC2Mission.ENEMY_WITHIN_T.mission_name,
+                *[
+                    mission.mission_name for mission in mission_tables.SC2Mission
+                    if mission_tables.MissionFlag.Terran in mission.flags
+                        and mission_tables.MissionFlag.NoBuild not in mission.flags
+                ]
             ],
         }
         self.generate_world(world_options)
@@ -284,6 +287,7 @@ class TestItemFiltering(Sc2SetupTestBase):
                     if mission.race == mission_tables.SC2Race.PROTOSS
                         and mission_tables.MissionFlag.NoBuild not in mission.flags],
                 mission_tables.SC2Mission.TEMPLAR_S_RETURN.mission_name,
+                mission_tables.SC2Mission.ENEMY_WITHIN_P.mission_name,
             ],
         }
         self.generate_world(world_options)
@@ -515,9 +519,9 @@ class TestItemFiltering(Sc2SetupTestBase):
         itempool = [item.name for item in self.multiworld.itempool]
         self.assertTrue(itempool)
         aspects_in_pool = list(set(itempool).intersection(set(item_groups.zerg_morphs)))
-        if item_names.OVERLORD_OVERSEER_ASPECT in aspects_in_pool:
+        if item_names.OVERSEER in aspects_in_pool:
             # Overseer morphs from Overlord, that's available always
-            aspects_in_pool.remove(item_names.OVERLORD_OVERSEER_ASPECT)
+            aspects_in_pool.remove(item_names.OVERSEER)
         self.assertFalse(aspects_in_pool)
         units_in_pool = list(set(itempool).intersection(set(item_groups.zerg_units))
                              .difference(set(item_groups.zerg_morphs)))
@@ -1001,7 +1005,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
             # Exclude many items to get filler to generate
             'excluded_items': {
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: 0,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: 0,
             },
             'max_number_of_upgrades': 2,
             'mission_order': options.MissionOrder.option_grid,
@@ -1037,7 +1041,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
             # Exclude many items to get filler to generate
             'excluded_items': {
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: 0,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: 0,
                 item_groups.ItemGroupNames.ZERG_MORPHS: 0,
             },
             'max_number_of_upgrades': 2,
