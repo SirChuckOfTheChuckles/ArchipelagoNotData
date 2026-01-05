@@ -1132,7 +1132,7 @@ item_name_groups[ItemGroupNames.COOP_ALARAK_UNITS] = [
     item_names.VANGUARD,
     item_names.WARP_PRISM,
     item_names.DESTROYER,  # Death Fleet, P3
-    item_names.MOTHERSHIP,  # Death Fleet, P3
+    item_names.MOTHERSHIP_TALDARIM,  # Death Fleet, P3
 ]
 item_name_groups[ItemGroupNames.COOP_FENIX_UNITS] = [
     item_names.SENTINEL,  # Legionnaire
