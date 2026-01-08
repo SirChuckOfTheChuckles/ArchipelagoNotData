@@ -9,9 +9,9 @@ from .. import mission_groups, mission_tables, options, locations, SC2Mission, S
     RequiredTactics
 from ..item import item_groups, item_tables, item_names
 from .. import get_all_missions, get_random_first_mission
-from ..options import EnabledCampaigns, NovaGhostOfAChanceVariant, MissionOrder, ExcludeOverpoweredItems, \
+from ..options import EnabledCampaigns, MissionOrder, ExcludeOverpoweredItems, \
     VanillaItemsOnly, MaximumCampaignSize
-
+from ..tables import NovaPresenceOptions
 
 class TestItemFiltering(Sc2SetupTestBase):
     def test_explicit_locks_excludes_interact_and_set_flags(self):
@@ -192,7 +192,8 @@ class TestItemFiltering(Sc2SetupTestBase):
         self.assertTrue(self.multiworld.itempool)
         world_items = [(item.name, item_tables.item_table[item.name]) for item in self.multiworld.itempool]
         for item_name, item_data in world_items:
-            self.assertNotIn(item_data.type, item_tables.TerranItemType, f"Item '{item_name}' included when all terran missions are excluded")
+            if (item_name not in item_tables.nova_equipment): # Skip Nova items, they can generate for other races
+                self.assertNotIn(item_data.type, item_tables.TerranItemType, f"Item '{item_name}' included when all terran missions are excluded")
 
     def test_excluding_all_terran_build_missions_excludes_all_terran_units(self) -> None:
         world_options = {
@@ -1106,7 +1107,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_auto,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',
@@ -1128,14 +1129,15 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_nco,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE, NovaPresenceOptions.NCO_TERRAN},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',
-                    'size': 2,
+                    'size': 3,
                     'mission_pool': [
                         SC2Mission.LIBERATION_DAY.mission_name, # Starter mission
                         SC2Mission.GHOST_OF_A_CHANCE.mission_name,
+                        SC2Mission.FLASHPOINT.mission_name, # A NCO mission. Grants Nova story tech otherwise
                     ]
                 }
             }
@@ -1150,7 +1152,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_auto,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO, NovaPresenceOptions.NCO_TERRAN},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',

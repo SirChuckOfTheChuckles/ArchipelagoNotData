@@ -4,14 +4,16 @@ from Options import OptionError
 from BaseClasses import Location
 from .locations import LocationData
 from .mission_tables import (
-    SC2Mission, SC2Campaign, MissionFlag, get_campaign_goal_priority,
+    SC2Mission, SC2Campaign, MissionFlag, SC2Race, get_campaign_goal_priority,
     campaign_final_mission_locations, campaign_alt_final_mission_locations
 )
+from .tables import NovaPresenceOptions
 from .options import (
     ShuffleNoBuild, RequiredTactics, ShuffleCampaigns,
-    kerrigan_unit_available, TakeOverAIAllies, MissionOrder, get_excluded_missions, get_enabled_campaigns,
+    kerrigan_unit_available, TakeOverAIAllies, MissionOrder,
+    get_excluded_missions, get_enabled_campaigns, get_enabled_races,
     static_mission_orders,
-    TwoStartPositions, KeyMode, EnableMissionRaceBalancing, EnableRaceSwapVariants, NovaGhostOfAChanceVariant,
+    TwoStartPositions, KeyMode, EnableMissionRaceBalancing, EnableRaceSwapVariants, NovaPresence,
     WarCouncilNerfs, GrantStoryTech
 )
 from .mission_order.options import CustomMissionOrder
@@ -92,7 +94,7 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
         world.options.kerrigan_presence.value not in kerrigan_unit_available
         or SC2Campaign.HOTS not in enabled_campaigns
     )
-
+    nova_grant_story_tech = world.logic.nova_grant_story_tech
     # General changes for standard tactics
     if world.options.required_tactics.value == RequiredTactics.option_standard:
         pools.move_mission(SC2Mission.SMASH_AND_GRAB, Difficulty.STARTER, Difficulty.EASY)
@@ -117,13 +119,8 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
 
     # Don't start on Ghost of a Chance if it will require Nova items
     if (grant_story_tech != GrantStoryTech.option_grant
-        and (
-            world.options.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_nco
-            or (
-                SC2Campaign.NCO in enabled_campaigns
-                and world.options.nova_ghost_of_a_chance_variant.value == NovaGhostOfAChanceVariant.option_auto
-            )
-        )
+        and not nova_grant_story_tech 
+        and NovaPresenceOptions.GHOST_OF_A_CHANCE in world.options.nova_presence
     ):
         # Using NCO tech for this mission that must be acquired
         pools.move_mission(SC2Mission.GHOST_OF_A_CHANCE, Difficulty.STARTER, Difficulty.MEDIUM)
@@ -136,10 +133,12 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
     ):
         pools.move_mission(SC2Mission.DARK_WHISPERS, Difficulty.EASY, Difficulty.STARTER)
 
-    # Grant Story Tech
     if grant_story_tech == GrantStoryTech.option_grant:
         # Additional starter mission if player is granted story tech
         pools.move_mission(SC2Mission.ENEMY_WITHIN, Difficulty.EASY, Difficulty.STARTER)
+        pools.move_mission(SC2Mission.TEMPLAR_S_RETURN, Difficulty.MEDIUM, Difficulty.STARTER)
+    if grant_story_tech == GrantStoryTech.option_grant or nova_grant_story_tech:
+        # Additional starter mission if player is granted story tech, or Nova only appears in no-builds
         pools.move_mission(SC2Mission.THE_ESCAPE, Difficulty.MEDIUM, Difficulty.STARTER)
         pools.move_mission(SC2Mission.IN_THE_ENEMY_S_SHADOW, Difficulty.MEDIUM, Difficulty.STARTER)
     if not war_council_nerfs or grant_story_tech == GrantStoryTech.option_grant:
@@ -149,8 +148,10 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
         pools.move_mission(SC2Mission.SUPREME, Difficulty.MEDIUM, Difficulty.STARTER)
         pools.move_mission(SC2Mission.THE_INFINITE_CYCLE, Difficulty.HARD, Difficulty.STARTER)
         pools.move_mission(SC2Mission.CONVICTION, Difficulty.MEDIUM, Difficulty.STARTER)
-    
-    # Take over AI allies
+    if  (grant_story_tech != GrantStoryTech.option_grant and not nova_grant_story_tech 
+        and NovaPresenceOptions.GHOST_OF_A_CHANCE in world.options.nova_presence):
+        # Using NCO tech for this mission that must be acquired
+        pools.move_mission(SC2Mission.GHOST_OF_A_CHANCE, Difficulty.STARTER, Difficulty.MEDIUM)
     if world.options.take_over_ai_allies.value == TakeOverAIAllies.option_true:
         pools.move_mission(SC2Mission.HARBINGER_OF_OBLIVION, Difficulty.MEDIUM, Difficulty.STARTER)
 

@@ -5,6 +5,7 @@ from .. import options
 from Options import Accessibility, ProgressionBalancing
 from .. import item_names
 from ..mission_tables import SC2Race, SC2Campaign
+from ..tables import NovaPresenceOptions
 
 from ..options import ( 
     # avoid import *
@@ -17,7 +18,7 @@ from ..options import (
     KerriganLevelsPerMissionCompletedCap, KerriganLevelItemSum, KerriganLevelItemDistribution, KerriganTotalLevelCap, StartPrimaryAbilities, 
     KerriganPrimalStatus, KerriganMaxActiveAbilities, KerriganMaxPassiveAbilities, EnableMorphling, WarCouncilNerfs, SpearOfAdunPresence, 
     SpearOfAdunPresentInNoBuild, SpearOfAdunPassiveAbilityPresence, SpearOfAdunPassivesPresentInNoBuild, SpearOfAdunMaxActiveAbilities, 
-    SpearOfAdunMaxAutocastAbilities, GrantStoryTech, GrantStoryLevels, NovaMaxWeapons, NovaMaxGadgets, NovaGhostOfAChanceVariant, 
+    SpearOfAdunMaxAutocastAbilities, GrantStoryTech, GrantStoryLevels, NovaMaxWeapons, NovaMaxGadgets, NovaPresence, 
     TakeOverAIAllies, LockedItems, ExcludedItems, UnexcludedItems, ExcludedMissions, DifficultyCurve, ExcludeVeryHardMissions, VanillaItemsOnly, 
     ExcludeOverpoweredItems, VictoryCache, VanillaLocations, ExtraLocations, ChallengeLocations, MasteryLocations, BasebustLocations, 
     SpeedrunLocations, PreventativeLocations, FillerPercentage, MineralsPerItem, VespenePerItem, StartingSupplyPerItem, MaximumSupplyPerItem, 
@@ -38,7 +39,6 @@ template_settings = {
     OPTION_NAME[KeyMode]:                               KeyMode.option_disabled,
     OPTION_NAME[MaximumCampaignSize]:                   25,
     OPTION_NAME[StarterUnit]:                           StarterUnit.option_balanced,
-    OPTION_NAME[NovaGhostOfAChanceVariant]:             NovaGhostOfAChanceVariant.option_wol,
     OPTION_NAME[TakeOverAIAllies]:                      TakeOverAIAllies.option_false,
     OPTION_NAME[DifficultyCurve]:                       DifficultyCurve.option_standard,
     OPTION_NAME[MasteryLocations]:                      MasteryLocations.option_disabled,
@@ -225,7 +225,10 @@ bread_and_butter_settings = {
     OPTION_NAME[ChallengeLocations]:                    ChallengeLocations.option_enabled,
     OPTION_NAME[MasteryLocations]:                      MasteryLocations.option_disabled,
     OPTION_NAME[WarCouncilNerfs]:                       WarCouncilNerfs.option_true,
-    OPTION_NAME[NovaGhostOfAChanceVariant]:             NovaGhostOfAChanceVariant.option_nco,
+    OPTION_NAME[NovaPresence]: {
+        NovaPresenceOptions.NCO_TERRAN,
+        NovaPresenceOptions.GHOST_OF_A_CHANCE,
+    },
     OPTION_NAME[GenericUpgradeItems]:                   GenericUpgradeItems.option_individual_items,
     OPTION_NAME[MinNumberOfUpgrades]:                   1,
     OPTION_NAME[MaxNumberOfUpgrades]:                   4,
@@ -347,7 +350,7 @@ evil_logic_settings = {
     OPTION_NAME[ChallengeLocations]:                    ChallengeLocations.option_enabled,
     OPTION_NAME[MasteryLocations]:                      MasteryLocations.option_enabled,
     OPTION_NAME[WarCouncilNerfs]:                       WarCouncilNerfs.option_true,
-    OPTION_NAME[NovaGhostOfAChanceVariant]:             NovaGhostOfAChanceVariant.option_nco,
+    OPTION_NAME[NovaPresence]:                          {},
     OPTION_NAME[GenericUpgradeItems]:                   GenericUpgradeItems.option_individual_items,
     OPTION_NAME[MinNumberOfUpgrades]:                   1,
     OPTION_NAME[MaxNumberOfUpgrades]:                   2,
@@ -385,7 +388,7 @@ evil_logic_settings = {
 }
 
 full_campaign_settings = {
-    # mandatory full campaign, not recommended, but will be expected. 195 mission grid, all races. Reduced locations and filler values
+    # mandatory full campaign, not recommended, but will be expected. Max size mission grid, all races. Reduced locations and filler values
     OPTION_NAME[Accessibility]:                         Accessibility.option_full,
     OPTION_NAME[ProgressionBalancing]:                  ProgressionBalancing.default,
     OPTION_NAME[GameDifficulty]:                        GameDifficulty.option_normal,
@@ -399,7 +402,7 @@ full_campaign_settings = {
     OPTION_NAME[TwoStartPositions]:                     TwoStartPositions.option_true,
     OPTION_NAME[StarterUnit]:                           StarterUnit.option_off,
     OPTION_NAME[EnableMorphling]:                       EnableMorphling.option_true,
-    OPTION_NAME[NovaGhostOfAChanceVariant]:             NovaGhostOfAChanceVariant.option_nco,
+    OPTION_NAME[NovaPresence]:                          NovaPresence.valid_keys,          
     OPTION_NAME[GrantStoryTech]:                        GrantStoryTech.option_allow_substitutes,
     OPTION_NAME[TakeOverAIAllies]:                      TakeOverAIAllies.option_false,
     OPTION_NAME[DifficultyCurve]:                       DifficultyCurve.option_standard,

@@ -25,13 +25,14 @@ from .options import (
     get_enabled_campaigns, SpearOfAdunPassiveAbilityPresence, Starcraft2Options,
     GrantStoryTech, GenericUpgradeResearch, RequiredTactics,
     upgrade_included_names, EnableVoidTrade, FillerItemsDistribution, MissionOrderScouting, option_groups,
-    NovaGhostOfAChanceVariant, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems,
+    NovaPresence, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems,
     is_mission_in_soa_presence,
 )
 from .rules import get_basic_units, SC2Logic
 from . import settings
 from .pool_filter import filter_items
 from .mission_tables import SC2Campaign, SC2Mission, SC2Race, MissionFlag
+from .tables import NovaPresenceOptions
 from .regions import create_mission_order
 from .mission_order import SC2MissionOrder
 from worlds.LauncherComponents import components, Component, launch as launch_component
@@ -122,13 +123,14 @@ class SC2World(World):
         self.custom_mission_order = create_mission_order(
             self, get_locations(self), self.location_cache
         )
-        self.logic.nova_used = (
-                MissionFlag.Nova in self.custom_mission_order.get_used_flags()
-                or (
-                        MissionFlag.WoLNova in self.custom_mission_order.get_used_flags()
-                        and self.options.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_nco
-                )
-        )
+        if (
+            NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO in self.options.nova_presence
+            and MissionFlag.Nova in self.custom_mission_order.get_used_flags() 
+            and not self.logic.nova_grant_story_tech
+        ):
+            # check if Nova is used anywhere and just modify the option
+            self.options.nova_presence.value.add(NovaPresenceOptions.GHOST_OF_A_CHANCE)
+
 
     def create_items(self) -> None:
         # Starcraft 2-specific item setup:
@@ -207,19 +209,8 @@ class SC2World(World):
 
         enabled_campaigns = get_enabled_campaigns(self)
         slot_data["plando_locations"] = get_plando_locations(self)
-        slot_data["use_nova_nco_fallback"] = (
-                enabled_campaigns == {SC2Campaign.NCO}
-                and self.options.mission_order == MissionOrder.option_vanilla
-        )
-        if (self.options.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_nco
-                or (
-                        self.options.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_auto
-                        and MissionFlag.Nova in self.custom_mission_order.get_used_flags().keys()
-                )
-        ):
-            slot_data["use_nova_wol_fallback"] = False
-        else:
-            slot_data["use_nova_wol_fallback"] = True
+        slot_data["nova_presence"] = self.options.nova_presence.value
+        slot_data["nova_grant_story_tech"] = self.logic.nova_grant_story_tech
         slot_data["final_mission_ids"] = self.custom_mission_order.get_final_mission_ids()
         slot_data["custom_mission_order"] = self.custom_mission_order.get_slot_data()
         slot_data["version"] = 5
@@ -601,16 +592,34 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: List[FilterItem
     nova_missions = [
         mission for mission in missions
         if MissionFlag.Nova in mission.flags
-           or (
-                   world.options.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_nco
-                   and MissionFlag.WoLNova in mission.flags
-           )
+            and ( 
+               (
+                    MissionFlag.Terran in mission.flags
+                    and NovaPresenceOptions.NCO_TERRAN in world.options.nova_presence
+                )
+                or (MissionFlag.Zerg in mission.flags
+                    and NovaPresenceOptions.NCO_ZERG in world.options.nova_presence
+                )
+                or (MissionFlag.Protoss in mission.flags
+                    and NovaPresenceOptions.NCO_PROTOSS in world.options.nova_presence
+                )
+            )
+        or (
+            NovaPresenceOptions.GHOST_OF_A_CHANCE in world.options.nova_presence
+            and MissionFlag.WoLNova in mission.flags
+        )
     ]
+    nova_build_missions = [mission for mission in nova_missions if MissionFlag.NoBuild not in mission.flags]
 
     kerrigan_is_present = (
-            len(kerrigan_missions) > 0
-            and world.options.kerrigan_presence in kerrigan_unit_available
-            and SC2Campaign.HOTS in get_enabled_campaigns(world) # TODO: Kerrigan available all Zerg/Everywhere
+        len(kerrigan_missions) > 0
+        and world.options.kerrigan_presence in kerrigan_unit_available
+        and SC2Campaign.HOTS in get_enabled_campaigns(world) # TODO: Kerrigan available all Zerg/Everywhere
+    )
+
+    nova_is_present = (
+        # for now, no-builds will force grant story tech, if there is no build mission with nova
+        len(nova_build_missions) > 0
     )
 
     # TvX build missions -- check flags
@@ -669,6 +678,11 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: List[FilterItem
         )
     )
 
+    remove_nova_items = (
+        # If handling of Nova no-builds is changed, this might need to get more complex
+        not nova_is_present
+    )
+
     for item in item_list:
         # Filter Nova equipment if you never get Nova
         if not nova_missions and (item.name in item_groups.nova_equipment):
@@ -681,8 +695,12 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: List[FilterItem
         ):
             item.flags |= ItemFilterFlags.FilterExcluded
 
-        # Remove Kerrigan abilities if there's no kerrigan
+        # Remove Kerrigan abilities if there's no Kerrigan
         if item.data.type == item_tables.ZergItemType.Ability and remove_kerrigan_abils:
+            item.flags |= ItemFilterFlags.FilterExcluded
+
+        # Remove Nova items if there's no Nova
+        if item.data.type == item_tables.nova_equipment and remove_nova_items:
             item.flags |= ItemFilterFlags.FilterExcluded
 
         # Remove Spear of Adun if it's off
@@ -818,13 +836,21 @@ def flag_start_unit(world: SC2World, item_list: List[FilterItem], starter_unit: 
         unit.flags |= ItemFilterFlags.StartInventory
 
         # NCO-only specific rules
-        if first_mission == SC2Mission.SUDDEN_STRIKE:
+        if ( first_mission == SC2Mission.SUDDEN_STRIKE and NovaPresenceOptions.NCO_TERRAN in world.options.nova_presence
+            or first_mission == SC2Mission.SUDDEN_STRIKE_Z and NovaPresenceOptions.NCO_ZERG in world.options.nova_presence
+            or first_mission == SC2Mission.SUDDEN_STRIKE_P and NovaPresenceOptions.NCO_PROTOSS in world.options.nova_presence
+        ):
             if unit.name in nco_support_items:
                 support_item = possible_starter_items[nco_support_items[unit.name]]
                 support_item.flags |= ItemFilterFlags.StartInventory
             if item_names.NOVA_JUMP_SUIT_MODULE in possible_starter_items:
                 possible_starter_items[item_names.NOVA_JUMP_SUIT_MODULE].flags |= ItemFilterFlags.StartInventory
-        if MissionFlag.Nova in first_mission.flags:
+        if ( MissionFlag.Nova in first_mission.flags 
+            and (
+                MissionFlag.Terran in first_mission.flags and NovaPresenceOptions.NCO_TERRAN in world.options.nova_presence
+                    or MissionFlag.Zerg in first_mission.flags and NovaPresenceOptions.NCO_ZERG in world.options.nova_presence
+                    or MissionFlag.Protoss in first_mission.flags and NovaPresenceOptions.NCO_PROTOSS in world.options.nova_presence
+        )):
             possible_starter_weapons = (
                 item_names.NOVA_HELLFIRE_SHOTGUN,
                 item_names.NOVA_PLASMA_RIFLE,

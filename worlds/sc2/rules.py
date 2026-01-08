@@ -14,7 +14,8 @@ from .options import (
     SpearOfAdunPresence,
     MissionOrder,
     EnableMorphling,
-    NovaGhostOfAChanceVariant,
+    EnableRaceSwapVariants,
+    NovaPresence,
     get_enabled_campaigns,
     get_enabled_races,
 )
@@ -28,6 +29,7 @@ from .item.item_tables import (
     WEAPON_ARMOR_UPGRADE_MAX_LEVEL,
 )
 from .mission_tables import SC2Race, SC2Campaign
+from .tables import NovaPresenceOptions
 from .item import item_groups, item_names
 
 if TYPE_CHECKING:
@@ -67,18 +69,38 @@ class SC2Logic:
             SpearOfAdunPassiveAbilityPresence.default if world is None else world.options.spear_of_adun_passive_ability_presence.value
         )
         self.enabled_campaigns = get_enabled_campaigns(world)
+        self.enabled_races = get_enabled_races(world)
+        self.enabled_raceswaps = False if world is None else world.options.enable_race_swap.value != EnableRaceSwapVariants.option_disabled
+
         self.mission_order = MissionOrder.default if world is None else world.options.mission_order.value
         self.generic_upgrade_missions = 0 if world is None else world.options.generic_upgrade_missions.value
         self.all_in_map = AllInMap.option_ground if world is None else world.options.all_in_map.value
-        self.nova_ghost_of_a_chance_variant = NovaGhostOfAChanceVariant.option_wol if world is None else world.options.nova_ghost_of_a_chance_variant.value
+        self.nova_presence = NovaPresence.default if world is None else world.options.nova_presence.value
+
+        # If Nova is only used in no-build missions, she will be granted story tech for those missions for now
+        # Currently, this is determined only by the options, not by the actual missions rolled
+        # This can break, if players manually exclude missions, or the mission order happens to not roll NCO build missions
+        # TODO: consider actual missions rolled, also allow this behavior to be turned off
+        self.nova_grant_story_tech = (
+            False if world is None else (
+                SC2Campaign.NCO not in get_enabled_campaigns(world)
+                or not (
+                    (NovaPresenceOptions.NCO_TERRAN in self.nova_presence and SC2Race.TERRAN in self.enabled_races)
+                    or (
+                        self.enabled_raceswaps
+                        and (
+                            (NovaPresenceOptions.NCO_ZERG in self.nova_presence and SC2Race.ZERG in self.enabled_races)
+                            or (NovaPresenceOptions.NCO_PROTOSS in self.nova_presence and SC2Race.PROTOSS in self.enabled_races)
+                        )
+                    )
+                )
+            )
+        )
         self.war_council_upgrades = True if world is None else not world.options.war_council_nerfs.value
         self.base_power_rating = 2 if self.advanced_tactics else 0
 
         # Must be set externally for accurate logic checking of upgrade level when generic_upgrade_missions is checked
         self.total_mission_count = 1
-
-        # Must be set externally
-        self.nova_used = True
 
         # Conditionally set to False by the world after culling items
         self.has_barracks_unit: bool = True
@@ -573,6 +595,12 @@ class SC2Logic:
 
     def terran_mobile_detector(self, state: CollectionState) -> bool:
         return state.has_any({item_names.RAVEN, item_names.SCIENCE_VESSEL, item_names.COMMAND_CENTER_SCANNER_SWEEP}, self.player)
+    
+    def zerg_mobile_detector(self, state: CollectionState) -> bool:
+        return state.has_any({item_names.OVERSEER, item_names.BROOD_QUEEN}, self.player)
+    
+    def protoss_mobile_detector(self, state: CollectionState) -> bool:
+        return state.has_any({item_names.OBSERVER, item_names.ORACLE,}, self.player)
 
     def can_nuke(self, state: CollectionState) -> bool:
         """
@@ -1670,8 +1698,7 @@ class SC2Logic:
     def ghost_of_a_chance_requirement(self, state: CollectionState) -> bool:
         return (
             self.grant_story_tech == GrantStoryTech.option_grant
-            or self.nova_ghost_of_a_chance_variant == NovaGhostOfAChanceVariant.option_wol
-            or not self.nova_used
+            or NovaPresenceOptions.GHOST_OF_A_CHANCE not in self.nova_presence
             or (
                 self.nova_ranged_weapon(state)
                 and state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_C20A_CANISTER_RIFLE}, self.player)
@@ -3314,13 +3341,17 @@ class SC2Logic:
             )
         else:
             return self.protoss_deathball(state) or self.protoss_fleet(state)
-
+        
     def the_escape_stuff_granted(self) -> bool:
         """
         The NCO first mission requires having too much stuff first before actually able to do anything
         :return:
         """
-        return self.grant_story_tech == GrantStoryTech.option_grant or (self.mission_order == MissionOrder.option_vanilla and self.enabled_campaigns == {SC2Campaign.NCO})
+        return ( 
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.mission_order == MissionOrder.option_vanilla and self.enabled_campaigns == {SC2Campaign.NCO}
+            or self.nova_grant_story_tech
+        )
 
     def the_escape_first_stage_requirement(self, state: CollectionState) -> bool:
         return self.the_escape_stuff_granted() or (self.nova_ranged_weapon(state) and (self.nova_full_stealth(state) or self.nova_heal(state)))
@@ -3328,26 +3359,106 @@ class SC2Logic:
     def the_escape_requirement(self, state: CollectionState) -> bool:
         return self.the_escape_first_stage_requirement(state) and (self.the_escape_stuff_granted() or self.nova_splash(state))
 
+    def the_escape_hard_rule(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.nova_grant_story_tech
+            or self.nova_any_nobuild_damage(state)
+        )
+
     def terran_able_to_snipe_defiler(self, state: CollectionState) -> bool:
         return (
             state.has(item_names.BANSHEE, self.player)
+            or (state.has_all({item_names.SIEGE_TANK, item_names.SIEGE_TANK_MAELSTROM_ROUNDS, item_names.SIEGE_TANK_JUMP_JETS}, self.player))
             or (
                 state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
                 and (state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_C20A_CANISTER_RIFLE, item_names.NOVA_PULSE_GRENADES}, self.player))
+                and NovaPresenceOptions.NCO_TERRAN in self.nova_presence
             )
-            or (state.has_all({item_names.SIEGE_TANK, item_names.SIEGE_TANK_MAELSTROM_ROUNDS, item_names.SIEGE_TANK_JUMP_JETS}, self.player))
         )
 
-    def sudden_strike_requirement(self, state: CollectionState) -> bool:
+    def zerg_handle_defiler(self, state: CollectionState) -> bool:
         return (
-            self.terran_able_to_snipe_defiler(state)
-            and (self.terran_cliffjumper(state) or state.has(item_names.BANSHEE, self.player))
-            and self.nova_splash(state)
-            and self.terran_defense_rating(state, True, False) >= 3
-            and (self.advanced_tactics
-                or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+            state.has(item_names.ABERRATION,self.player)
+            or state.has(item_names.ULTRALISK,self.player)
+            or self.morph_tyrannozor(state)
+            or (self.advanced_tactics 
+                and (
+                    state.has_any({item_names.INFESTOR, item_names.BROOD_QUEEN},self.player)
+                    or self.morph_viper(state)
+                )
+            )
+            or (
+                NovaPresenceOptions.NCO_ZERG in self.nova_presence
+                and state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                and (state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_C20A_CANISTER_RIFLE, item_names.NOVA_PULSE_GRENADES}, self.player))
             )
         )
+    
+    def protoss_handle_defiler(self, state: CollectionState) -> bool:
+        return (
+            state.has_all({item_names.COLOSSUS,item_names.COLOSSUS_FIRE_LANCE},self.player)
+            or (self.advanced_tactics and state.has_any({item_names.HIGH_TEMPLAR, item_names.ASCENDANT, item_names.DISRUPTOR},self.player))
+            or (
+                NovaPresenceOptions.NCO_PROTOSS in self.nova_presence
+                and state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                and (state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_C20A_CANISTER_RIFLE, item_names.NOVA_PULSE_GRENADES}, self.player))
+            )
+        )
+    
+    def sudden_strike_requirement(self, state: CollectionState) -> bool:
+        if NovaPresenceOptions.NCO_TERRAN in self.nova_presence:
+            return (
+                self.terran_able_to_snipe_defiler(state)
+                and (self.terran_cliffjumper(state) or state.has(item_names.BANSHEE, self.player))
+                and self.terran_defense_rating(state, True, False) >= 3
+                and self.nova_splash(state)
+                and (self.advanced_tactics
+                    or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                )
+            )
+        else:
+            return (
+                self.terran_able_to_snipe_defiler(state)
+                and self.terran_competent_comp(state)
+                and (self.terran_cliffjumper(state) or state.has(item_names.BANSHEE, self.player))
+                and self.terran_defense_rating(state, True, False) >= 5
+            )
+
+    
+    def zerg_sudden_strike_requirement(self, state: CollectionState) -> bool:
+        if NovaPresenceOptions.NCO_ZERG in self.nova_presence:
+            return (
+                self.zerg_handle_defiler(state)
+                and self.zerg_defense_rating(state, True, False) >= 3
+                and self.nova_splash(state)
+                and (self.advanced_tactics
+                    or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                )
+            )
+        else:
+            return (
+                self.zerg_handle_defiler(state)
+                and self.zerg_competent_comp(state)
+                and self.zerg_defense_rating(state, True, False) >= 5
+            )
+
+    def protoss_sudden_strike_requirement(self, state: CollectionState) -> bool:
+        if NovaPresenceOptions.NCO_PROTOSS in self.nova_presence:
+            return (
+                self.protoss_handle_defiler(state)
+                and self.protoss_defense_rating(state,True) >= 3
+                and self.nova_splash(state)
+                and (self.advanced_tactics
+                    or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                )
+            )
+        else:
+            return (
+                self.protoss_handle_defiler(state)
+                and self.protoss_competent_comp(state)
+                and self.protoss_defense_rating(state,True) >= 5
+            )
 
     def enemy_intelligence_garrisonable_unit(self, state: CollectionState) -> bool:
         """
@@ -3367,6 +3478,11 @@ class SC2Logic:
                 item_names.DIAMONDBACK,
                 item_names.VIKING,
                 item_names.DOMINION_TROOPER,
+                item_names.SIEGE_TANK,
+                item_names.WIDOW_MINE,
+                item_names.THOR,
+                item_names.VULTURE,
+                item_names.CYCLONE,
             ), self.player)
             or (self.advanced_tactics
                 and state.has(item_names.ROGUE_FORCES, self.player)
@@ -3377,28 +3493,124 @@ class SC2Logic:
                     item_names.SPARTAN_COMPANY,
                     item_names.HELS_ANGELS,
                     item_names.BRYNHILDS,
+                    item_names.SIEGE_BREAKERS,
+                    item_names.JOTUN,
                 ), self.player) >= 3
             )
         )
-
+    
+    def zerg_enemy_intelligence_garrisonable_unit(self, state: CollectionState) -> bool:
+        """
+        Has zerg unit usable as a Garrison in Enemy Intelligence
+        """
+        return (
+            state.has_any((
+                item_names.ROACH,
+                item_names.HYDRALISK,
+                item_names.SWARM_QUEEN,
+                item_names.INFESTED_MARINE,
+                item_names.INFESTED_DIAMONDBACK,
+                item_names.INFESTED_SIEGE_TANK,
+            ), self.player)
+            or state.has_all({item_names.SWARM_HOST, item_names.SWARM_HOST_CARRION_STRAIN}, self.player)
+            or self.morph_lurker(state)
+            or self.morph_impaler(state)
+            or (self.advanced_tactics
+                and state.has(item_names.UNRESTRICTED_MUTATION, self.player)
+                and state.count_from_list((
+                    item_names.HUNTER_KILLERS,
+                    item_names.INFESTED_SIEGE_BREAKERS,
+                    item_names.CAUSTIC_HORRORS,
+                ), self.player) >= 3
+            )
+        )
+    
+    def protoss_enemy_intelligence_garrisonable_unit(self, state: CollectionState) -> bool:
+        """
+        Has zerg unit usable as a Garrison in Enemy Intelligence
+        """
+        return (
+            state.has_any((
+                item_names.ADEPT,
+                item_names.SENTRY,
+                item_names.ENERGIZER,
+                item_names.HIGH_TEMPLAR,
+                item_names.SIGNIFIER,
+                item_names.ASCENDANT,
+                item_names.STALKER,
+                item_names.SLAYER,
+                item_names.INSTIGATOR,
+                item_names.DRAGOON,
+                item_names.IMMORTAL,
+                item_names.ANNIHILATOR,
+                item_names.VANGUARD,
+                item_names.COLOSSUS,
+                item_names.WRATHWALKER,
+                item_names.REAVER,
+            ), self.player)
+        )
+    
     def enemy_intelligence_cliff_garrison(self, state: CollectionState) -> bool:
         return (
-            state.has_any((item_names.REAPER, item_names.VIKING), self.player)
-            or (state.has_any((item_names.MEDIVAC, item_names.HERCULES), self.player)
+            state.has_any({item_names.REAPER, item_names.VIKING}, self.player)
+            or (state.has_any({item_names.MEDIVAC, item_names.HERCULES}, self.player)
                 and self.enemy_intelligence_garrisonable_unit(state)
             )
             or state.has_all({item_names.GOLIATH, item_names.GOLIATH_JUMP_JETS}, self.player)
             or (self.advanced_tactics and state.has_any({item_names.HELS_ANGELS, item_names.BRYNHILDS}, self.player))
         )
+    
+    def zerg_enemy_intelligence_cliff_garrison(self, state: CollectionState) -> bool:
+        return ([
+            state.has_any({
+                item_names.YGGDRASIL, 
+                item_names.OVERLORD_VENTRAL_SACS, 
+                item_names.BULLFROG,
+            }, self.player)
+            or (self.morph_viper(state))]
+            and self.zerg_enemy_intelligence_garrisonable_unit(state) # consider Creep Teleport + Overlord creep?
+        ) 
+    
+    def protoss_enemy_intelligence_cliff_garrison(self, state: CollectionState) -> bool:
+        return (
+            state.has_any({
+                item_names.STALKER, 
+                item_names.INSTIGATOR,
+                item_names.COLOSSUS,
+                item_names.WRATHWALKER,
+            }, self.player)
+            or state.has_all({item_names.SLAYER, item_names.SLAYER_PHASE_BLINK}, self.player)
+            or state.has_any({item_names.WARP_PRISM}, self.player)
+            and self.protoss_enemy_intelligence_garrisonable_unit(state) # consider SoA pylon + warpable unit/reinforcements?
+        )
+
 
     def enemy_intelligence_first_stage_requirement(self, state: CollectionState) -> bool:
         return (
             self.enemy_intelligence_garrisonable_unit(state)
             and (
                 self.terran_competent_comp(state)
-                or (self.terran_common_unit(state) and self.terran_competent_anti_air(state) and state.has(item_names.NOVA_NUKE, self.player))
+                or (
+                    NovaPresenceOptions.NCO_TERRAN in self.nova_presence
+                    and self.terran_common_unit(state) 
+                    and self.terran_competent_anti_air(state) 
+                    and state.has(item_names.NOVA_NUKE, self.player)
+                )
             )
             and self.terran_defense_rating(state, True, True) >= 5
+        )
+    
+    def zerg_enemy_intelligence_first_stage_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.zerg_enemy_intelligence_garrisonable_unit(state) 
+            # TODO: adjust to Nova presence, revisit defense ratings
+            and self.zerg_competent_comp(state) and self.zerg_defense_rating(state, True, True) >= 5
+        )
+    
+    def protoss_enemy_intelligence_first_stage_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.protoss_enemy_intelligence_garrisonable_unit(state) 
+            and self.protoss_competent_comp(state) and self.protoss_defense_rating(state, True) >= 5
         )
 
     def enemy_intelligence_second_stage_requirement(self, state: CollectionState) -> bool:
@@ -3406,7 +3618,36 @@ class SC2Logic:
             self.enemy_intelligence_first_stage_requirement(state)
             and self.enemy_intelligence_cliff_garrison(state)
             and (
-                self.grant_story_tech == GrantStoryTech.option_grant
+                NovaPresenceOptions.NCO_TERRAN not in self.nova_presence
+                or self.grant_story_tech == GrantStoryTech.option_grant
+                or (
+                    self.nova_any_weapon(state)
+                    and (self.nova_full_stealth(state) or (self.nova_heal(state) and self.nova_splash(state) and self.nova_ranged_weapon(state)))
+                )
+            )
+        )
+    
+    def zerg_enemy_intelligence_second_stage_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.zerg_enemy_intelligence_first_stage_requirement(state)
+            and self.zerg_enemy_intelligence_cliff_garrison(state)
+            and (
+                NovaPresenceOptions.NCO_ZERG not in self.nova_presence
+                or self.grant_story_tech == GrantStoryTech.option_grant
+                or (
+                    self.nova_any_weapon(state)
+                    and (self.nova_full_stealth(state) or (self.nova_heal(state) and self.nova_splash(state) and self.nova_ranged_weapon(state)))
+                )
+            )
+        )
+    
+    def protoss_enemy_intelligence_second_stage_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.protoss_enemy_intelligence_first_stage_requirement(state)
+            and self.protoss_enemy_intelligence_cliff_garrison(state)
+            and (
+                NovaPresenceOptions.NCO_PROTOSS not in self.nova_presence
+                or self.grant_story_tech == GrantStoryTech.option_grant
                 or (
                     self.nova_any_weapon(state)
                     and (self.nova_full_stealth(state) or (self.nova_heal(state) and self.nova_splash(state) and self.nova_ranged_weapon(state)))
@@ -3416,12 +3657,52 @@ class SC2Logic:
 
     def enemy_intelligence_third_stage_requirement(self, state: CollectionState) -> bool:
         return self.enemy_intelligence_second_stage_requirement(state) and (
-            self.grant_story_tech == GrantStoryTech.option_grant or (state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player) and self.nova_dash(state))
+            NovaPresenceOptions.NCO_TERRAN not in self.nova_presence
+            or self.grant_story_tech == GrantStoryTech.option_grant 
+            or (state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player) and self.nova_dash(state))
         )
 
+    def zerg_enemy_intelligence_third_stage_requirement(self, state: CollectionState) -> bool:
+        return self.zerg_enemy_intelligence_second_stage_requirement(state) and (
+            NovaPresenceOptions.NCO_ZERG not in self.nova_presence
+            or self.grant_story_tech == GrantStoryTech.option_grant 
+            or (state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player) and self.nova_dash(state))
+        )
+    
+    def protoss_enemy_intelligence_third_stage_requirement(self, state: CollectionState) -> bool:
+        return self.protoss_enemy_intelligence_second_stage_requirement(state) and (
+            NovaPresenceOptions.NCO_PROTOSS not in self.nova_presence
+            or self.grant_story_tech == GrantStoryTech.option_grant 
+            or (state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player) and self.nova_dash(state))
+        )
+    
     def enemy_intelligence_cliff_garrison_and_nova_mobility(self, state: CollectionState) -> bool:
         return self.enemy_intelligence_cliff_garrison(state) and (
-            self.nova_any_nobuild_damage(state)
+            NovaPresenceOptions.NCO_TERRAN not in self.nova_presence
+            or self.nova_any_nobuild_damage(state)
+            or self.grant_story_tech == GrantStoryTech.option_grant 
+            or (
+                state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player, 2)
+                and state.has_any((item_names.NOVA_FLASHBANG_GRENADES, item_names.NOVA_BLINK), self.player)
+            )
+        )    
+    
+    def zerg_enemy_intelligence_cliff_garrison_and_nova_mobility(self, state: CollectionState) -> bool:
+        return self.zerg_enemy_intelligence_cliff_garrison(state) and (
+            NovaPresenceOptions.NCO_ZERG not in self.nova_presence
+            or self.nova_any_nobuild_damage(state)
+            or self.grant_story_tech == GrantStoryTech.option_grant
+            or (
+                state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player, 2)
+                and state.has_any((item_names.NOVA_FLASHBANG_GRENADES, item_names.NOVA_BLINK), self.player)
+            )
+        )    
+    
+    def protoss_enemy_intelligence_cliff_garrison_and_nova_mobility(self, state: CollectionState) -> bool:
+        return self.protoss_enemy_intelligence_cliff_garrison(state) and (
+            NovaPresenceOptions.NCO_PROTOSS not in self.nova_presence
+            or self.nova_any_nobuild_damage(state)
+            or self.grant_story_tech == GrantStoryTech.option_grant
             or (
                 state.has(item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE, self.player, 2)
                 and state.has_any((item_names.NOVA_FLASHBANG_GRENADES, item_names.NOVA_BLINK), self.player)
@@ -3429,13 +3710,53 @@ class SC2Logic:
         )
 
     def trouble_in_paradise_requirement(self, state: CollectionState) -> bool:
-        return (
-            self.nova_any_weapon(state)
-            and self.nova_splash(state)
-            and self.terran_beats_protoss_deathball(state)
-            and self.terran_defense_rating(state, True, True) >= 7
-            and self.terran_power_rating(state) >= 5
-        )
+        if NovaPresenceOptions.NCO_TERRAN in self.nova_presence:
+            return (
+                self.nova_any_weapon(state)
+                and self.nova_splash(state)
+                and self.terran_competent_comp(state)
+                and self.terran_defense_rating(state, True, True) >= 5
+                and self.terran_power_rating(state) >= 3
+            )
+        else: 
+            return (
+                self.terran_beats_protoss_deathball(state)
+                # TODO: revisit defense ratings
+                and self.terran_defense_rating(state, True, True) >= 5
+                and self.terran_power_rating(state) >= 5
+            )
+    
+    def zerg_trouble_in_paradise_requirement(self, state: CollectionState) -> bool:
+        if NovaPresenceOptions.NCO_ZERG in self.nova_presence:
+            return (
+                self.nova_any_weapon(state)
+                and self.nova_splash(state)
+                and self.zerg_competent_comp(state)
+                and self.zerg_defense_rating(state, True, True) >= 5
+                and self.zerg_power_rating(state) >= 3
+            )
+        else: 
+            return (
+                self.zerg_base_buster(state)
+                and self.zerg_defense_rating(state, True, True) >= 5
+                and self.zerg_power_rating(state) >= 5
+            )
+    
+    def protoss_trouble_in_paradise_requirement(self, state: CollectionState) -> bool:
+        if NovaPresenceOptions.NCO_PROTOSS in self.nova_presence:
+            return (
+                self.nova_any_weapon(state)
+                and self.nova_splash(state)
+                and self.protoss_competent_comp(state)
+                and self.protoss_defense_rating(state, True) >= 5
+                and self.protoss_power_rating(state) >= 3
+            )
+        else: 
+            return (
+                self.protoss_deathball(state)
+                and self.protoss_defense_rating(state, True) >= 5
+                and self.protoss_power_rating(state) >= 5
+            )
 
     def night_terrors_requirement(self, state: CollectionState) -> bool:
         return (
@@ -3472,77 +3793,174 @@ class SC2Logic:
             )
             and self.terran_army_weapon_armor_upgrade_min_level(state) >= 2
         )
-
+    
+    def zerg_night_terrors_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.zerg_competent_comp(state)
+            and self.zerg_power_rating(state) >= 3
+        )
+    
+    def protoss_night_terrors_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.protoss_competent_comp(state)
+            and self.protoss_power_rating(state) >= 3
+        )
+    
     def flashpoint_far_requirement(self, state: CollectionState) -> bool:
         return (
             self.terran_competent_comp(state)
             and self.terran_mobile_detector(state)
+            # TODO: revisit defense ratings
             and self.terran_defense_rating(state, True, False) >= 6
             and self.terran_army_weapon_armor_upgrade_min_level(state) >= 2
-            and self.nova_splash(state)
+            and (self.nova_splash(state) or NovaPresenceOptions.NCO_TERRAN not in self.nova_presence)
             and (self.advanced_tactics or self.terran_competent_ground_to_air(state))
+        )
+    
+    def zerg_flashpoint_far_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.zerg_competent_comp(state)
+            and self.zerg_mobile_detector(state)
+            and self.zerg_defense_rating(state, True, False) >= 6
+            and self.zerg_army_weapon_armor_upgrade_min_level(state) >= 2
+            and (self.nova_splash(state) or NovaPresenceOptions.NCO_ZERG not in self.nova_presence)
+        )
+    
+    def protoss_flashpoint_far_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.protoss_competent_comp(state)
+            and self.protoss_mobile_detector(state)
+            and self.protoss_defense_rating(state, True) >= 6
+            and self.protoss_army_weapon_armor_upgrade_min_level(state) >= 2
+            and (
+                self.nova_splash(state) or NovaPresenceOptions.NCO_PROTOSS not in self.nova_presence
+            )
         )
 
     def enemy_shadow_tripwires_tool(self, state: CollectionState) -> bool:
-        return state.has_any({item_names.NOVA_FLASHBANG_GRENADES, item_names.NOVA_BLINK, item_names.NOVA_DOMINATION}, self.player)
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.nova_grant_story_tech
+            or state.has_any({item_names.NOVA_FLASHBANG_GRENADES, item_names.NOVA_BLINK, item_names.NOVA_DOMINATION}, self.player)
+        )
 
     def enemy_shadow_door_unlocks_tool(self, state: CollectionState) -> bool:
-        return state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_BLINK, item_names.NOVA_JUMP_SUIT_MODULE}, self.player)
-
-    def enemy_shadow_nova_damage_and_blazefire_unlock(self, state: CollectionState) -> bool:
-        return self.nova_any_nobuild_damage(state) and (
-            state.has(item_names.NOVA_BLINK, self.player) or state.has_all((item_names.NOVA_HOLO_DECOY, item_names.NOVA_DOMINATION), self.player)
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.nova_grant_story_tech
+            or state.has_any({item_names.NOVA_DOMINATION, item_names.NOVA_BLINK, item_names.NOVA_JUMP_SUIT_MODULE}, self.player)
         )
-
-    def enemy_shadow_domination(self, state: CollectionState) -> bool:
-        return self.grant_story_tech == GrantStoryTech.option_grant or (
-            self.nova_ranged_weapon(state)
+    
+    def enemy_shadow_blazefire_unlock(self, state: CollectionState) -> bool:
+        return (
+            self.enemy_shadow_second_stage(state)
             and (
-                self.nova_full_stealth(state)
-                or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
-                or (self.nova_heal(state) and self.nova_splash(state))
-            )
-        )
-
-    def enemy_shadow_first_stage(self, state: CollectionState) -> bool:
-        return self.enemy_shadow_domination(state) and (
-            self.grant_story_tech == GrantStoryTech.option_grant
-            or (self.nova_full_stealth(state)
-                and self.enemy_shadow_tripwires_tool(state)
-            )
-            or (self.nova_heal(state)
-                and self.nova_splash(state)
-            )
-        )
-
-    def enemy_shadow_second_stage(self, state: CollectionState) -> bool:
-        return self.enemy_shadow_first_stage(state) and (
-            self.grant_story_tech == GrantStoryTech.option_grant
-            or (
-                (self.advanced_tactics or state.has(item_names.NOVA_GHOST_VISOR, self.player))
-                and (
-                    self.nova_splash(state)
-                    or self.nova_heal(state)
-                    or self.nova_escape_assist(state)
+                self.grant_story_tech == GrantStoryTech.option_grant 
+                or self.nova_grant_story_tech
+                or state.has(item_names.NOVA_BLINK, self.player)
+                or (
+                    self.advanced_tactics
+                    and state.has_all(
+                        {
+                            item_names.NOVA_DOMINATION,
+                            item_names.NOVA_HOLO_DECOY,
+                            item_names.NOVA_JUMP_SUIT_MODULE,
+                        },
+                        self.player,
+                    )
                 )
             )
         )
 
+    def enemy_shadow_nova_damage_and_blazefire_unlock(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.nova_grant_story_tech
+            or (
+                self.nova_any_nobuild_damage(state) 
+                and (
+                    state.has(item_names.NOVA_BLINK, self.player) 
+                    or state.has_all((item_names.NOVA_HOLO_DECOY, item_names.NOVA_DOMINATION), self.player)
+                )
+            )
+        )
+
+    def enemy_shadow_domination(self, state: CollectionState) -> bool:
+        return (
+            self.grant_story_tech == GrantStoryTech.option_grant 
+            or self.nova_grant_story_tech
+            or (
+                self.nova_ranged_weapon(state)
+                and (
+                    self.nova_full_stealth(state)
+                    or state.has(item_names.NOVA_JUMP_SUIT_MODULE, self.player)
+                    or (self.nova_heal(state) and self.nova_splash(state))
+                )
+            )
+        )
+
+    def enemy_shadow_first_stage(self, state: CollectionState) -> bool:
+        return (
+            self.enemy_shadow_domination(state) 
+            and (
+                self.grant_story_tech == GrantStoryTech.option_grant
+                or self.nova_grant_story_tech
+                or (
+                    self.nova_full_stealth(state) and self.enemy_shadow_tripwires_tool(state)
+                    or (self.nova_heal(state) and self.nova_splash(state))
+                )
+            )
+        )
+
+    def enemy_shadow_second_stage(self, state: CollectionState) -> bool:
+        return (
+            self.enemy_shadow_first_stage(state) 
+            and (
+                self.grant_story_tech == GrantStoryTech.option_grant
+                or self.nova_grant_story_tech
+                or (self.nova_splash(state) or self.nova_heal(state) or self.nova_escape_assist(state))
+                and (self.advanced_tactics or state.has(item_names.NOVA_GHOST_VISOR, self.player))
+            )
+        )
+
     def enemy_shadow_door_controls(self, state: CollectionState) -> bool:
-        return self.enemy_shadow_second_stage(state) and (self.grant_story_tech == GrantStoryTech.option_grant or self.enemy_shadow_door_unlocks_tool(state))
+        return (
+            self.enemy_shadow_second_stage(state) 
+            and (
+                self.grant_story_tech == GrantStoryTech.option_grant 
+                or self.nova_grant_story_tech
+                or self.enemy_shadow_door_unlocks_tool(state)
+            )
+        )
 
     def enemy_shadow_victory(self, state: CollectionState) -> bool:
-        return self.enemy_shadow_door_controls(state) and (self.grant_story_tech == GrantStoryTech.option_grant or (self.nova_heal(state) and self.nova_beat_stone(state)))
+        return (
+            self.enemy_shadow_door_controls(state) 
+            and (
+                self.grant_story_tech == GrantStoryTech.option_grant 
+                or self.nova_grant_story_tech
+                or (self.nova_heal(state) and self.nova_beat_stone(state))
+            )
+        )
 
     def dark_skies_requirement(self, state: CollectionState) -> bool:
+        # TODO: revisit defense ratings
         return self.terran_common_unit(state) and self.terran_beats_protoss_deathball(state) and self.terran_defense_rating(state, False, True) >= 8
+    
+    def zerg_dark_skies_requirement(self, state: CollectionState) -> bool:
+        return self.zerg_competent_comp(state) and self.zerg_defense_rating(state, False, True) >= 8 and self.zerg_power_rating(state) >= 5
+    
+    def protoss_dark_skies_requirement(self, state: CollectionState) -> bool:
+        return self.protoss_competent_comp(state) and self.protoss_defense_rating(state, False) >= 8 and self.protoss_power_rating(state) >= 5
 
     def end_game_requirement(self, state: CollectionState) -> bool:
         return (
             self.terran_competent_comp(state)
             and self.terran_mobile_detector(state)
-            and self.nova_any_weapon(state)
-            and self.nova_splash(state)
+            and (
+                NovaPresenceOptions.NCO_TERRAN not in self.nova_presence 
+                or (self.nova_any_weapon(state) and self.nova_splash(state))
+            )
             and (
                 # Xanthos
                 state.has_any((item_names.BATTLECRUISER, item_names.VIKING, item_names.WARHOUND), self.player)
@@ -3570,16 +3988,45 @@ class SC2Logic:
                 )
             )
             and (  # The enemy has 3/3 BCs
-                state.has_any(
-                    (item_names.GOLIATH, item_names.VIKING, item_names.NOVA_C20A_CANISTER_RIFLE, item_names.NOVA_BLAZEFIRE_GUNBLADE), self.player
+                state.has_any((item_names.GOLIATH, item_names.VIKING), self.player)
+                or (
+                    NovaPresenceOptions.NCO_TERRAN in self.nova_presence 
+                    and state.has_any((item_names.NOVA_C20A_CANISTER_RIFLE, item_names.NOVA_BLAZEFIRE_GUNBLADE), self.player)
                 )
                 or state.has_all((item_names.THOR, item_names.THOR_PROGRESSIVE_HIGH_IMPACT_PAYLOAD), self.player)
-                or state.has_all((item_names.GHOST, item_names.GHOST_LOCKDOWN), self.player)
                 or state.has_all((item_names.BATTLECRUISER, item_names.BATTLECRUISER_ATX_LASER_BATTERY), self.player)
+                or self.advanced_tactics and state.has_all((item_names.GHOST, item_names.GHOST_LOCKDOWN), self.player)
             )
             and self.terran_army_weapon_armor_upgrade_min_level(state) >= 3
         )
+    
+    def zerg_end_game_requirement(self, state: CollectionState) -> bool:
+        return (
+            self.zerg_base_buster(state)
+            and self.zerg_competent_anti_air(state)
+            and self.zerg_very_hard_mission_weapon_armor_level(state)
+            and self.zerg_mobile_detector(state)
+            and self.zerg_power_rating(state) >= 5
+            and (
+                NovaPresenceOptions.NCO_ZERG not in self.nova_presence
+                or (self.nova_any_weapon(state) and self.nova_splash(state))
+            )
+        )
 
+    def protoss_end_game_requirement(self, state: CollectionState) -> bool:
+        return (
+            (self.protoss_deathball(state) or self.protoss_fleet(state))
+            and self.protoss_competent_anti_air(state)
+            and self.protoss_very_hard_mission_weapon_armor_level(state)
+            and self.protoss_mobile_detector(state)
+            and self.protoss_power_rating(state) >= 5
+            and (
+                NovaPresenceOptions.NCO_PROTOSS not in self.nova_presence
+                or (self.nova_any_weapon(state) and self.nova_splash(state))
+            )
+        )
+    
+    
     def has_terran_units(self, target: int) -> Callable[["CollectionState"], bool]:
         def _has_terran_units(state: CollectionState) -> bool:
             return (

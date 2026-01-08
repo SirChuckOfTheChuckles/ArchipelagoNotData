@@ -18,6 +18,7 @@ from .mission_tables import (
 )
 from .mission_groups import mission_groups, MissionGroupNames
 from .mission_order.options import CustomMissionOrder
+from .tables import NovaPresenceOptions
 
 if TYPE_CHECKING:
     from worlds.AutoWorld import World
@@ -878,6 +879,27 @@ class GrantStoryLevels(Choice):
     option_minimum = 2
     default = option_minimum
 
+class NovaPresence(OptionSet):
+    """
+    Determines which missions will use the NCO Nova hero
+    
+    Nova Covert Ops (Terran): Nova is present in vanilla NCO missions.
+    Nova Covert Ops (Zerg): Nova is present in Zerg NCO missions.
+    Nova Covert Ops (Protoss): Nova is present in Protoss NCO missions.
+    Ghost of a Chance: Vanilla WoL Nova is replaced with NCO Nova.
+    Ghost of a Chance (Auto): NCO Nova is used only if Nova is enabled in any build missions 
+
+    Not including any of the options will disable Nova for those missions.
+    """
+    display_name = "Nova Presence"
+    valid_keys = {
+        NovaPresenceOptions.NCO_TERRAN,
+        NovaPresenceOptions.NCO_ZERG,
+        NovaPresenceOptions.NCO_PROTOSS,
+        NovaPresenceOptions.GHOST_OF_A_CHANCE,
+        NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO,
+    }
+    default = {NovaPresenceOptions.NCO_TERRAN}
 
 class NovaMaxWeapons(Range):
     """
@@ -904,30 +926,7 @@ class NovaMaxGadgets(Range):
     range_start = 0
     range_end = len(item_groups.nova_gadgets)
     default = range_end
-
-
-class NovaGhostOfAChanceVariant(Choice):
-    """
-    Determines which variant of Nova should be used in Ghost of a Chance mission.
-
-    WoL: Uses Nova from Wings of Liberty campaign (vanilla)
-    NCO: Uses Nova from Nova Covert Ops campaign
-    Auto: Uses NCO if a mission from Nova Covert Ops is actually shuffled, if not uses WoL
-    """
-    display_name = "Nova Ghost of Chance Variant"
-    option_wol = 0
-    option_nco = 1
-    option_auto = 2
-    default = option_wol
-
-    # Fix case
-    @classmethod
-    def get_option_name(cls, value: int) -> str:
-        if value == NovaGhostOfAChanceVariant.option_wol:
-            return "WoL"
-        elif value == NovaGhostOfAChanceVariant.option_nco:
-            return "NCO"
-        return super().get_option_name(value)
+    
 
 
 class TakeOverAIAllies(Toggle):
@@ -1418,9 +1417,9 @@ class Starcraft2Options(PerGameCommonOptions):
     spear_of_adun_max_passive_abilities: SpearOfAdunMaxAutocastAbilities
     grant_story_tech: GrantStoryTech
     grant_story_levels: GrantStoryLevels
+    nova_presence: NovaPresence
     nova_max_weapons: NovaMaxWeapons
     nova_max_gadgets: NovaMaxGadgets
-    nova_ghost_of_a_chance_variant: NovaGhostOfAChanceVariant
     take_over_ai_allies: TakeOverAIAllies
     locked_items: LockedItems
     excluded_items: ExcludedItems
@@ -1509,9 +1508,9 @@ option_groups = [
         SpearOfAdunMaxAutocastAbilities,
     ]),
     OptionGroup("Nova", [
+        NovaPresence,
         NovaMaxWeapons,
         NovaMaxGadgets,
-        NovaGhostOfAChanceVariant,
     ]),
     OptionGroup("Race Specific Options", [
         EnableMorphling,
