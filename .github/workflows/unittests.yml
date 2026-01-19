@@ -63,8 +63,10 @@ jobs:
         python ModuleUpdate.py --yes --force --append "WebHostLib/requirements.txt"
         python Launcher.py --update_settings  # make sure host.yaml exists for tests
     - name: Unittests
+      # Todo: Revert this commit when it is time to merge to main
+      # pytest -n auto
       run: |
-        pytest -n auto
+        python3 -m unittest discover worlds.sc2.test
 
   hosting:
     runs-on: ${{ matrix.os }}

@@ -136,8 +136,8 @@ parent_present[parent_names.TERRAN_MERCENARIES] = AnyOf(item_groups.terran_merce
 # Zerg
 parent_present[parent_names.ANY_NYDUS_WORM] = AnyOf((item_names.NYDUS_WORM, item_names.ECHIDNA_WORM), item_names.NYDUS_WORM)
 parent_present[parent_names.BANELING_SOURCE] = AnyOf(
-    (item_names.ZERGLING_BANELING_ASPECT, item_names.KERRIGAN_SPAWN_BANELINGS),
-    item_names.ZERGLING_BANELING_ASPECT,
+    (item_names.BANELING, item_names.KERRIGAN_SPAWN_BANELINGS),
+    item_names.BANELING,
 )
 parent_present[parent_names.INFESTED_UNITS] = AnyOf(item_groups.infterr_units, display_string='Infested')
 parent_present[parent_names.INFESTED_FACTORY_OR_STARPORT] = AnyOf(
@@ -233,6 +233,10 @@ parent_present[parent_names.PROTOSS_STATIC_DEFENSE] = AnyOf(
 parent_present[parent_names.PROTOSS_ATTACKING_BUILDING] = AnyOf(
     (item_names.NEXUS_OVERCHARGE, item_names.PHOTON_CANNON, item_names.KHAYDARIN_MONOLITH),
     main_item=item_names.PHOTON_CANNON,
+)
+parent_present[parent_names.MOTHERSHIP] = AnyOf(
+    (item_names.MOTHERSHIP_AIUR, item_names.MOTHERSHIP_PURIFIER, item_names.MOTHERSHIP_TALDARIM),
+    main_item=item_names.MOTHERSHIP_TALDARIM,
 )
 
 

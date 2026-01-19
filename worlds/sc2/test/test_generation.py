@@ -9,9 +9,9 @@ from .. import mission_groups, mission_tables, options, locations, SC2Mission, S
     RequiredTactics
 from ..item import item_groups, item_tables, item_names
 from .. import get_all_missions, get_random_first_mission
-from ..options import EnabledCampaigns, NovaGhostOfAChanceVariant, MissionOrder, ExcludeOverpoweredItems, \
+from ..options import EnabledCampaigns, MissionOrder, ExcludeOverpoweredItems, \
     VanillaItemsOnly, MaximumCampaignSize
-
+from ..tables import NovaPresenceOptions
 
 class TestItemFiltering(Sc2SetupTestBase):
     def test_explicit_locks_excludes_interact_and_set_flags(self):
@@ -66,8 +66,8 @@ class TestItemFiltering(Sc2SetupTestBase):
                 item_names.THOR: -1,
                 item_names.GHOST: -1,
                 item_names.SPECTRE: -1,
-                item_groups.ItemGroupNames.MENGSK_UNITS: -1,
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: -1,
+                item_groups.ItemGroupNames.COOP_MENGSK_UNITS: -1,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: -1,
             },
             'unexcluded_items': {
                 item_names.NOVA_PLASMA_RIFLE: 1,       # Necessary to pass logic
@@ -192,7 +192,8 @@ class TestItemFiltering(Sc2SetupTestBase):
         self.assertTrue(self.multiworld.itempool)
         world_items = [(item.name, item_tables.item_table[item.name]) for item in self.multiworld.itempool]
         for item_name, item_data in world_items:
-            self.assertNotIn(item_data.type, item_tables.TerranItemType, f"Item '{item_name}' included when all terran missions are excluded")
+            if (item_name not in item_tables.nova_equipment): # Skip Nova items, they can generate for other races
+                self.assertNotIn(item_data.type, item_tables.TerranItemType, f"Item '{item_name}' included when all terran missions are excluded")
 
     def test_excluding_all_terran_build_missions_excludes_all_terran_units(self) -> None:
         world_options = {
@@ -201,9 +202,12 @@ class TestItemFiltering(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'maximum_campaign_size': options.MaximumCampaignSize.range_end,
             'excluded_missions': [
-                mission.mission_name for mission in mission_tables.SC2Mission
-                if mission_tables.MissionFlag.Terran in mission.flags
-                    and mission_tables.MissionFlag.NoBuild not in mission.flags
+                SC2Mission.ENEMY_WITHIN_T.mission_name,
+                *[
+                    mission.mission_name for mission in mission_tables.SC2Mission
+                    if mission_tables.MissionFlag.Terran in mission.flags
+                        and mission_tables.MissionFlag.NoBuild not in mission.flags
+                ]
             ],
         }
         self.generate_world(world_options)
@@ -284,6 +288,7 @@ class TestItemFiltering(Sc2SetupTestBase):
                     if mission.race == mission_tables.SC2Race.PROTOSS
                         and mission_tables.MissionFlag.NoBuild not in mission.flags],
                 mission_tables.SC2Mission.TEMPLAR_S_RETURN.mission_name,
+                mission_tables.SC2Mission.ENEMY_WITHIN_P.mission_name,
             ],
         }
         self.generate_world(world_options)
@@ -515,9 +520,9 @@ class TestItemFiltering(Sc2SetupTestBase):
         itempool = [item.name for item in self.multiworld.itempool]
         self.assertTrue(itempool)
         aspects_in_pool = list(set(itempool).intersection(set(item_groups.zerg_morphs)))
-        if item_names.OVERLORD_OVERSEER_ASPECT in aspects_in_pool:
+        if item_names.OVERSEER in aspects_in_pool:
             # Overseer morphs from Overlord, that's available always
-            aspects_in_pool.remove(item_names.OVERLORD_OVERSEER_ASPECT)
+            aspects_in_pool.remove(item_names.OVERSEER)
         self.assertFalse(aspects_in_pool)
         units_in_pool = list(set(itempool).intersection(set(item_groups.zerg_units))
                              .difference(set(item_groups.zerg_morphs)))
@@ -1001,7 +1006,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
             # Exclude many items to get filler to generate
             'excluded_items': {
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: 0,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: 0,
             },
             'max_number_of_upgrades': 2,
             'mission_order': options.MissionOrder.option_grid,
@@ -1037,7 +1042,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
             # Exclude many items to get filler to generate
             'excluded_items': {
-                item_groups.ItemGroupNames.TERRAN_VETERANCY_UNITS: 0,
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: 0,
                 item_groups.ItemGroupNames.ZERG_MORPHS: 0,
             },
             'max_number_of_upgrades': 2,
@@ -1102,7 +1107,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_auto,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',
@@ -1124,14 +1129,15 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_nco,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE, NovaPresenceOptions.NCO_TERRAN},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',
-                    'size': 2,
+                    'size': 3,
                     'mission_pool': [
                         SC2Mission.LIBERATION_DAY.mission_name, # Starter mission
                         SC2Mission.GHOST_OF_A_CHANCE.mission_name,
+                        SC2Mission.FLASHPOINT.mission_name, # A NCO mission. Grants Nova story tech otherwise
                     ]
                 }
             }
@@ -1146,7 +1152,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         world_options = {
             **self.TERRAN_CAMPAIGNS,
             'mission_order': MissionOrder.option_custom,
-            'nova_ghost_of_a_chance_variant': NovaGhostOfAChanceVariant.option_auto,
+            'nova_presence': {NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO, NovaPresenceOptions.NCO_TERRAN},
             'custom_mission_order': {
                 'test': {
                     'type': 'column',
@@ -1331,7 +1337,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
 
         # A unit nerf happens due to excluding OP items
-        self.assertNotIn(item_names.MOTHERSHIP_INTEGRATED_POWER, starting_inventory)
+        self.assertNotIn(item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER, starting_inventory)
 
     def test_terran_nobuild_sections_get_marine_medic_upgrades_with_units_excluded(self) -> None:
         world_options = {
