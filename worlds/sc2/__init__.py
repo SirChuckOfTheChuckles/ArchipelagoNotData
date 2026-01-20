@@ -12,8 +12,10 @@ from .item.item_tables import (
     get_full_item_list,
     not_balanced_starting_units, WEAPON_ARMOR_UPGRADE_MAX_LEVEL,
 )
-from .item import FilterItem, ItemFilterFlags, StarcraftItem, item_groups, item_names, item_tables, item_parents, \
+from .item import (
+    FilterItem, ItemFilterFlags, StarcraftItem, item_groups, item_names, item_tables, item_parents,
     ZergItemType, ProtossItemType, ItemData
+)
 from .locations import (
 	get_locations, DEFAULT_LOCATION_LIST, get_location_types, get_location_flags,
     get_plando_locations, LocationType, lookup_location_id_to_type
@@ -118,7 +120,38 @@ class SC2World(World):
         data = get_full_item_list()[name]
         return StarcraftItem(name, data.classification, data.code, self.player)
 
-    def create_regions(self):
+    def generate_early(self) -> None:
+        # Do some options validation/recovery here
+        if not self.options.selected_races.value:
+            self.options.selected_races.value = set(options.SelectedRaces.default)
+        if not self.options.enabled_campaigns.value:
+            self.options.enabled_campaigns.value = set(options.EnabledCampaigns.default)
+
+        # Disable campaigns on vanilla-like mission orders if their race is disabled
+        if self.options.mission_order.value in options.static_mission_orders:
+            enabled_campaigns = set(self.options.enabled_campaigns.value)
+            if self.options.enable_race_swap.value == options.EnableRaceSwapVariants.option_disabled:
+                if SC2Race.TERRAN.get_title() not in self.options.selected_races.value:
+                    enabled_campaigns.discard(SC2Campaign.WOL.campaign_name)
+                if SC2Race.ZERG.get_title() not in self.options.selected_races.value:
+                    enabled_campaigns.discard(SC2Campaign.HOTS.campaign_name)
+                if SC2Race.PROTOSS.get_title() not in self.options.selected_races.value:
+                    enabled_campaigns.discard(SC2Campaign.PROPHECY.campaign_name)
+                    enabled_campaigns.discard(SC2Campaign.PROLOGUE.campaign_name)
+                    enabled_campaigns.discard(SC2Campaign.LOTV.campaign_name)
+            # Epilogue and NCO don't have raceswaps currently
+            if SC2Race.TERRAN.get_title() not in self.options.selected_races.value:
+                enabled_campaigns.discard(SC2Campaign.NCO.campaign_name)
+            if len(self.options.selected_races.value) < 3:
+                enabled_campaigns.discard(SC2Campaign.EPILOGUE.campaign_name)
+            if not enabled_campaigns:
+                raise OptionError(
+                    "Campaign and race exclusions remove all possible missions from the pool. "
+                    "Either include more campaigns, include more races, or enable race swap."
+                )
+            self.options.enabled_campaigns.value = enabled_campaigns
+
+    def create_regions(self) -> None:
         self.logic = SC2Logic(self)
         self.custom_mission_order = create_mission_order(
             self, get_locations(self), self.location_cache
@@ -215,7 +248,9 @@ class SC2World(World):
         slot_data["custom_mission_order"] = self.custom_mission_order.get_slot_data()
         slot_data["version"] = 5
 
-        if SC2Campaign.HOTS not in enabled_campaigns:
+        if (SC2Campaign.HOTS not in enabled_campaigns
+            or SC2Race.ZERG.get_title() not in self.options.selected_races.value
+        ):
             slot_data["kerrigan_presence"] = KerriganPresence.option_not_present
 
         if self.options.mission_order_scouting != MissionOrderScouting.option_none:
@@ -250,8 +285,8 @@ class SC2World(World):
         assert self.logic is not None
         self.logic.total_mission_count = self.custom_mission_order.get_mission_count()
         if (
-                self.options.generic_upgrade_missions > 0
-                and self.options.required_tactics != RequiredTactics.option_no_logic
+            self.options.generic_upgrade_missions > 0
+            and self.options.required_tactics != RequiredTactics.option_no_logic
         ):
             # Attempt to resolve a situation when the option is too high for the mission order rolled
             weapon_armor_item_names = [
@@ -268,8 +303,8 @@ class SC2World(World):
 
             self._fill_needed_items(state_with_kerrigan_levels, weapon_armor_item_names, WEAPON_ARMOR_UPGRADE_MAX_LEVEL)
         if (
-                self.options.kerrigan_levels_per_mission_completed > 0
-                and self.options.required_tactics != RequiredTactics.option_no_logic
+            self.options.kerrigan_levels_per_mission_completed > 0
+            and self.options.required_tactics != RequiredTactics.option_no_logic
         ):
             # Attempt to solve being locked by Kerrigan level requirements
             self._fill_needed_items(lambda: self.multiworld.get_all_state(False), [item_names.KERRIGAN_LEVELS_1], 70)
@@ -561,7 +596,17 @@ def flag_excludes_by_faction_presence(world: SC2World, item_list: List[FilterIte
             )
             and item.name not in allowed_remaining_protoss_units
         ):
-            item.flags |= ItemFilterFlags.FilterExcluded
+            # Note(mm): This doesn't exclude things like automated assimilators or warp gate improvements
+            # because that item type is mixed in with e.g. Reconstruction Beam and Overwatch
+            if (SC2Mission.TEMPLAR_S_RETURN not in missions
+                or world.options.grant_story_tech.value == GrantStoryTech.option_grant
+                or item.name not in (
+                    item_names.IMMORTAL, item_names.ANNIHILATOR,
+                    item_names.COLOSSUS, item_names.VANGUARD, item_names.REAVER, item_names.DARK_TEMPLAR,
+                    item_names.SENTRY, item_names.HIGH_TEMPLAR,
+                )
+            ):
+                item.flags |= ItemFilterFlags.FilterExcluded
 
         # Faction +attack/armour upgrades
         if (item.data.type == item_tables.TerranItemType.Upgrade
@@ -615,6 +660,7 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: List[FilterItem
         len(kerrigan_missions) > 0
         and world.options.kerrigan_presence in kerrigan_unit_available
         and SC2Campaign.HOTS in get_enabled_campaigns(world) # TODO: Kerrigan available all Zerg/Everywhere
+        and SC2Race.ZERG.get_title() in world.options.selected_races.value
     )
 
     nova_is_present = (
