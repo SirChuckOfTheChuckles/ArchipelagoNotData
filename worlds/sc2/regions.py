@@ -94,6 +94,7 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
         world.options.kerrigan_presence.value not in kerrigan_unit_available
         or SC2Campaign.HOTS not in enabled_campaigns
     )
+    assert world.logic
     nova_grant_story_tech = world.logic.nova_grant_story_tech
     # General changes for standard tactics
     if world.options.required_tactics.value == RequiredTactics.option_standard:

@@ -2484,7 +2484,7 @@ class SC2Logic:
                     item_names.KERRIGAN_LEAPING_STRIKE,
                     item_names.OVERLORD_VENTRAL_SACS,
                     item_names.YGGDRASIL,
-                    item_names.MUTALISK_CORRUPTOR_VIPER_ASPECT,
+                    item_names.VIPER,
                     item_names.NYDUS_WORM,
                     item_names.BULLFROG,
                 ), self.player)
@@ -3537,7 +3537,7 @@ class SC2Logic:
     
     def protoss_enemy_intelligence_garrisonable_unit(self, state: CollectionState) -> bool:
         """
-        Has zerg unit usable as a Garrison in Enemy Intelligence
+        Has a garrisonable protoss unit in Enemy Intelligence
         """
         return (
             state.has_any((
@@ -3571,27 +3571,33 @@ class SC2Logic:
         )
     
     def zerg_enemy_intelligence_cliff_garrison(self, state: CollectionState) -> bool:
-        return ([
-            state.has_any({
-                item_names.YGGDRASIL, 
-                item_names.OVERLORD_VENTRAL_SACS, 
-                item_names.BULLFROG,
-            }, self.player)
-            or (self.morph_viper(state))]
-            and self.zerg_enemy_intelligence_garrisonable_unit(state) # consider Creep Teleport + Overlord creep?
+        return (
+            (
+                state.has_any((
+                    item_names.YGGDRASIL, 
+                    item_names.OVERLORD_VENTRAL_SACS, 
+                    item_names.BULLFROG,
+                ), self.player)
+                or self.morph_viper(state)
+            )
+            # consider Creep Teleport + Overlord creep?
+            and self.zerg_enemy_intelligence_garrisonable_unit(state)
         ) 
     
     def protoss_enemy_intelligence_cliff_garrison(self, state: CollectionState) -> bool:
         return (
-            state.has_any({
+            state.has_any((
                 item_names.STALKER, 
                 item_names.INSTIGATOR,
                 item_names.COLOSSUS,
                 item_names.WRATHWALKER,
-            }, self.player)
-            or state.has_all({item_names.SLAYER, item_names.SLAYER_PHASE_BLINK}, self.player)
-            or state.has_any({item_names.WARP_PRISM}, self.player)
-            and self.protoss_enemy_intelligence_garrisonable_unit(state) # consider SoA pylon + warpable unit/reinforcements?
+            ), self.player)
+            or state.has_all((item_names.SLAYER, item_names.SLAYER_PHASE_BLINK), self.player)
+            or (
+                state.has(item_names.WARP_PRISM, self.player)
+                # consider SoA pylon + warpable unit/reinforcements?
+                and self.protoss_enemy_intelligence_garrisonable_unit(state)
+            )
         )
 
 

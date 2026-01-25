@@ -899,7 +899,7 @@ class NovaPresence(OptionSet):
         NovaPresenceOptions.GHOST_OF_A_CHANCE,
         NovaPresenceOptions.GHOST_OF_A_CHANCE_AUTO,
     }
-    default = {NovaPresenceOptions.NCO_TERRAN}
+    default = frozenset((NovaPresenceOptions.NCO_TERRAN,))
 
 class NovaMaxWeapons(Range):
     """

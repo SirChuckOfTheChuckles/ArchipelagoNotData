@@ -41,27 +41,27 @@ class MissionButton(HoverableButton, MDTooltip):
     is_goal = BooleanProperty(False)
     showing_tooltip = BooleanProperty(False)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(HoverableButton, self).__init__(**kwargs)
         self._tooltip = ServerToolTip(text=self.text, markup=True)
         self._tooltip.padding = [5, 2, 5, 2]
 
-    def on_enter(self):
+    def on_enter(self) -> None:
         self._tooltip.text = self.tooltip_text
 
         if self.tooltip_text != "":
             self.display_tooltip()
 
-    def on_leave(self):
+    def on_leave(self) -> None:
         self.remove_tooltip()
     
-    def display_tooltip(self, *args):
+    def display_tooltip(self, *args) -> None:
         self.showing_tooltip = True
-        return super().display_tooltip(*args)
+        super().display_tooltip(*args)
     
-    def remove_tooltip(self, *args):
+    def remove_tooltip(self, *args) -> None:
         self.showing_tooltip = False
-        return super().remove_tooltip(*args)
+        super().remove_tooltip(*args)
 
     @property
     def ctx(self) -> SC2Context:
@@ -93,7 +93,7 @@ class MissionCategory(GridLayout):
 
 
 class SC2JSONtoKivyParser(KivyJSONtoTextParser):
-    def _handle_item_name(self, node: JSONMessagePart):
+    def _handle_item_name(self, node: JSONMessagePart) -> str:
         item_name = node["text"]
         if self.ctx.slot_info[node["player"]].game != STARCRAFT2 or item_name not in item_descriptions:
             return super()._handle_item_name(node)
@@ -118,7 +118,7 @@ class SC2JSONtoKivyParser(KivyJSONtoTextParser):
         node.setdefault("refs", []).append(ref)
         return super(KivyJSONtoTextParser, self)._handle_item_name(node)
 
-    def _handle_text(self, node: JSONMessagePart):
+    def _handle_text(self, node: JSONMessagePart) -> str:
         if node.get("keep_markup", False):
             for ref in node.get("refs", []):
                 node["text"] = f"[ref={self.ref_count}|{ref}]{node['text']}[/ref]"
@@ -344,9 +344,10 @@ class SC2Manager(GameManager):
 
     def mission_text(
         self, ctx: SC2Context, mission_id: int, mission_obj: SC2Mission,
-        layout_id: int, is_layout_exit: bool, layout_name: str, campaign_id: int, is_campaign_exit: bool, campaign_name: str,
-        available_missions: List[int], available_layouts: Dict[int, List[int]], available_campaigns: List[int],
-        unfinished_missions: List[int]
+        layout_id: int, is_layout_exit: bool, layout_name: str,
+        campaign_id: int, is_campaign_exit: bool, campaign_name: str,
+        available_missions: list[int], available_layouts: dict[int, List[int]], available_campaigns: list[int],
+        unfinished_missions: Iterable[int]
     ) -> Tuple[str, str]:
         COLOR_MISSION_IMPORTANT = "6495ED" # blue
         COLOR_MISSION_UNIMPORTANT = "A0BEF4" # lighter blue
@@ -529,7 +530,7 @@ class SC2Manager(GameManager):
         ]
         width_override = None
 
-        hinted_item_ids = Counter()
+        hinted_item_ids: Counter[int] = Counter()
         hints = self.ctx.stored_data.get(f"_read_hints_{self.ctx.team}_{self.ctx.slot}")
         if hints:
             for hint in hints:
@@ -569,7 +570,7 @@ class SC2Manager(GameManager):
     def resolve_items_needed(self, mission_id: int) -> Counter[int]:
         def resolve_rule_to_items(rule: RuleData) -> Counter[int]:
             if isinstance(rule, SubRuleRuleData):
-                all_items = Counter()
+                all_items: Counter[int] = Counter()
                 for sub_rule in rule.sub_rules:
                     # Take max of each item across all sub-rules
                     all_items |= resolve_rule_to_items(sub_rule)
