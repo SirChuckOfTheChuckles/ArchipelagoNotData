@@ -10,7 +10,6 @@ import inspect
 import logging
 import multiprocessing
 import os.path
-import re
 import sys
 import tempfile
 import typing
@@ -21,6 +20,7 @@ import random
 import concurrent.futures
 import time
 import uuid
+import re
 from pathlib import Path
 
 # CommonClient import first to trigger ModuleUpdater
@@ -75,6 +75,7 @@ from .mission_tables import (
 import colorama
 from NetUtils import ClientStatus, NetworkItem, JSONtoTextParser, JSONMessagePart, add_json_item, add_json_location, add_json_text, JSONTypes
 from MultiServer import mark_raw
+from . import banks
 
 if typing.TYPE_CHECKING:
     from Options import Option
@@ -89,15 +90,7 @@ DATA_REPO_OWNER = "archipelago-sc2"
 DATA_REPO_NAME = "Archipelago-SC2-data"
 DATA_API_VERSION = "API5"
 
-# Bot controller
-CONTROLLER_HEALTH: int = 38281
-CONTROLLER2_HEALTH: int = 38282
-
 # Void Trade
-TRADE_UNIT = "AP_TradeStructure" # ID of the unit
-TRADE_SEND_BUTTON = "AP_TradeStructureDummySend" # ID of the button
-TRADE_RECEIVE_1_BUTTON = "AP_TradeStructureDummyReceive" # ID of the button
-TRADE_RECEIVE_5_BUTTON = "AP_TradeStructureDummyReceive5" # ID of the button
 TRADE_DATASTORAGE_TEAM = "SC2_VoidTrade_" # + Team
 TRADE_DATASTORAGE_SLOT = "slot_" # + Slot
 TRADE_DATASTORAGE_LOCK = "_lock"
@@ -114,7 +107,6 @@ STARCRAFT2_WOL = "Starcraft 2 Wings of Liberty"
 # Associated with /download_data command
 def get_metadata_file() -> str:
     return os.environ["SC2PATH"] + os.sep + "ArchipelagoSC2Metadata.txt"
-
 
 def _remap_color_option(slot_data_version: int, color: int) -> int:
     """Remap colour options for backwards compatibility with older slot data"""
@@ -137,7 +129,7 @@ class ConfigurableOptionInfo(typing.NamedTuple):
 
 class ColouredMessage:
     def __init__(self, text: str = '', *, keep_markup: bool = False) -> None:
-        self.parts: typing.List[dict] = []
+        self.parts: list[dict] = []
         if text:
             self(text, keep_markup=keep_markup)
     def __call__(self, text: str, *, keep_markup: bool = False) -> 'ColouredMessage':
@@ -242,7 +234,7 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             self.output("To change the game speed, add the name of the speed after the command,"
                         " or Default to select based on difficulty.")
             return False
-    
+
     @mark_raw
     def _cmd_received(self, filter_search: str = "") -> bool:
         """List received items.
@@ -275,9 +267,9 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             return False
 
         items = get_full_item_list()
-        categorized_items: typing.Dict[SC2Race, typing.List[typing.Union[int, str]]] = {}
-        parent_to_child: typing.Dict[typing.Union[int, str], typing.List[int]] = {}
-        items_received: typing.Dict[int, typing.List[NetworkItem]] = {}
+        categorized_items: dict[SC2Race, list[typing.Union[int, str]]] = {}
+        parent_to_child: dict[typing.Union[int, str], list[int]] = {}
+        items_received: dict[int, list[NetworkItem]] = {}
         for item in self.ctx.items_received:
             items_received.setdefault(item.item, []).append(item)
         items_received_set = set(items_received)
@@ -584,7 +576,7 @@ class SC2JSONtoTextParser(JSONtoTextParser):
         codes = node["color"].split(";")
         buffer = "".join(self.color_code(code) for code in codes if code in self.color_codes)
         return buffer + self._handle_text(node) + '</c>'
-    
+
     def _handle_item_name(self, node: JSONMessagePart) -> str:
         if self.ctx.slot_info[node["player"]].game == STARCRAFT2:
             annotation = ITEM_NAME_ANNOTATIONS.get(node["text"])
@@ -621,10 +613,10 @@ class SC2Context(CommonContext):
         self.kerrigan_presence: int = KerriganPresence.default
         self.kerrigan_primal_status = 0
         self.enable_morphling = EnableMorphling.default
-        self.custom_mission_order: typing.List[CampaignSlotData] = []
-        self.mission_id_to_entry_rules: typing.Dict[int, MissionEntryRules]
-        self.final_mission_ids: typing.List[int] = [29]
-        self.final_locations: typing.List[int] = []
+        self.custom_mission_order: list[CampaignSlotData] = []
+        self.mission_id_to_entry_rules: dict[int, MissionEntryRules]
+        self.final_mission_ids: list[int] = [29]
+        self.final_locations: list[int] = []
         self.announcements: queue.Queue = queue.Queue()
         self.sc2_run_task: typing.Optional[asyncio.Task] = None
         self.missions_unlocked: bool = False  # allow launching missions ignoring requirements
@@ -633,12 +625,12 @@ class SC2Context(CommonContext):
         self.generic_upgrade_research = 0
         self.generic_upgrade_research_speedup: int = GenericUpgradeResearchSpeedup.default
         self.generic_upgrade_items = 0
-        self.location_inclusions: typing.Dict[LocationType, int] = {}
-        self.location_inclusions_by_flag: typing.Dict[LocationFlag, int] = {}
-        self.plando_locations: typing.List[str] = []
+        self.location_inclusions: dict[LocationType, int] = {}
+        self.location_inclusions_by_flag: dict[LocationFlag, int] = {}
+        self.plando_locations: list[str] = []
         self.difficulty_override = -1
         self.game_speed_override = -1
-        self.mission_id_to_location_ids: typing.Dict[int, typing.List[int]] = {}
+        self.mission_id_to_location_ids: dict[int, list[int]] = {}
         self.last_bot: typing.Optional[ArchipelagoBot] = None
         self.slot_data_version = 2
         self.required_tactics: int = RequiredTactics.default
@@ -656,7 +648,7 @@ class SC2Context(CommonContext):
         self.maximum_supply_reduction_per_item: int = options.MaximumSupplyReductionPerItem.default
         self.lowest_maximum_supply: int = options.LowestMaximumSupply.default
         self.research_cost_reduction_per_item: int = options.ResearchCostReductionPerItem.default
-        self.nova_presence: typing.List[str] = NovaPresence.default
+        self.nova_presence: list[str] = NovaPresence.default
         self.mercenary_highlanders: bool = False
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
@@ -670,7 +662,7 @@ class SC2Context(CommonContext):
         self.trade_response: typing.Optional[str] = None
         self.difficulty_damage_modifier: int = DifficultyDamageModifier.default
         self.mission_order_scouting = MissionOrderScouting.option_none
-        self.mission_item_classification: typing.Optional[typing.Dict[str, int]] = None
+        self.mission_item_classification: typing.Optional[dict[str, int]] = None
         self.war_council_nerfs: bool = False
 
     async def server_auth(self, password_requested: bool = False) -> None:
@@ -695,10 +687,10 @@ class SC2Context(CommonContext):
 
     def trade_storage_team(self) -> str:
         return f"{TRADE_DATASTORAGE_TEAM}{self.team}"
-    
+
     def trade_storage_slot(self) -> str:
         return f"{TRADE_DATASTORAGE_SLOT}{self.slot}"
-    
+
     def _apply_host_settings_to_options(self) -> None:
         if str(SC2World.settings.game_difficulty).casefold() == 'casual':
             self.difficulty = GameDifficulty.option_casual
@@ -776,9 +768,9 @@ class SC2Context(CommonContext):
                             for mission, mission_info in slot_req_table.items()
                         }
                     }
-                
+
                 self.custom_mission_order = self.parse_mission_req_table(mission_req_table)
-                
+
             if self.slot_data_version >= 4:
                 self.custom_mission_order = [
                     CampaignSlotData(
@@ -805,7 +797,7 @@ class SC2Context(CommonContext):
                 for campaign in self.custom_mission_order for layout in campaign.layouts
                 for column in layout.missions for mission in column
             }
-                
+
             self.mission_order = args["slot_data"].get("mission_order", MissionOrder.option_vanilla)
             if self.slot_data_version < 4:
                 self.final_mission_ids = [args["slot_data"].get("final_mission", SC2Mission.ALL_IN.id)]
@@ -869,14 +861,14 @@ class SC2Context(CommonContext):
             self.nova_grant_story_tech = args["slot_data"].get("nova_grant_story_tech", False)
             if self.slot_data_version < 4:
                 if args["slot_data"].get("nova_covert_ops_only", True):
-                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN},
+                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN}
                 else:
-                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE},
+                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE}
             if self.slot_data_version < 5:
                 if args["slot_data"].get("use_nova_wol_fallback", True):
-                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN},
+                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN}
                 else:
-                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE},
+                    self.nova_presence = {NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE}
             self.trade_enabled = args["slot_data"].get("enable_void_trade", EnableVoidTrade.option_false)
             self.trade_age_limit = args["slot_data"].get("void_trade_age_limit", VoidTradeAgeLimit.default)
             self.trade_workers_allowed = args["slot_data"].get("void_trade_workers", VoidTradeWorkers.default)
@@ -926,9 +918,9 @@ class SC2Context(CommonContext):
                     (" to install.")
                 ).send(self)
                 self.data_out_of_date = True
-            
+
             ColouredMessage("[b]Check the Launcher tab to start playing.[/b]", keep_markup=True).send(self)
-        
+
         elif cmd == "SetReply":
             # Currently can only be Void Trade reply
             self.trade_latest_reply = args
@@ -944,24 +936,24 @@ class SC2Context(CommonContext):
         return MissionInfo(
             **{field: value for field, value in mission_info.items() if field in MissionInfo._fields}
         )
-    
+
     @staticmethod
-    def parse_mission_req_table(mission_req_table: typing.Dict[SC2Campaign, typing.Dict[typing.Any, MissionInfo]]) -> typing.List[CampaignSlotData]:
-        campaigns: typing.List[typing.Tuple[int, CampaignSlotData]] = []
+    def parse_mission_req_table(mission_req_table: dict[SC2Campaign, dict[typing.Any, MissionInfo]]) -> list[CampaignSlotData]:
+        campaigns: list[typing.Tuple[int, CampaignSlotData]] = []
         rolling_rule_id = 0
         for (campaign, campaign_data) in mission_req_table.items():
             if campaign.campaign_name == "Global":
                 campaign_name = ""
             else:
                 campaign_name = campaign.campaign_name
-            
-            categories: typing.Dict[str, typing.List[MissionSlotData]] = {}
+
+            categories: dict[str, list[MissionSlotData]] = {}
             for mission in campaign_data.values():
                 if mission.category not in categories:
                     categories[mission.category] = []
                 mission_id = mission.mission.id
-                sub_rules: typing.List[CountMissionsRuleData] = []
-                missions: typing.List[int]
+                sub_rules: list[CountMissionsRuleData] = []
+                missions: list[int]
                 if mission.number:
                     amount = mission.number
                     missions = [
@@ -969,7 +961,7 @@ class SC2Context(CommonContext):
                         for mission in mission_req_table[campaign].values()
                     ]
                     sub_rules.append(CountMissionsRuleData(missions, amount, [campaign_name]))
-                prev_missions: typing.List[int] = []
+                prev_missions: list[int] = []
                 if len(mission.required_world) > 0:
                     missions = []
                     for connection in mission.required_world:
@@ -996,7 +988,7 @@ class SC2Context(CommonContext):
                 rolling_rule_id += 1
                 categories[mission.category].append(MissionSlotData.legacy(mission_id, prev_missions, entry_rule))
 
-            layouts: typing.List[LayoutSlotData] = []
+            layouts: list[LayoutSlotData] = []
             for (layout, mission_slots) in categories.items():
                 if layout.startswith("_"):
                     layout_name = ""
@@ -1047,6 +1039,8 @@ class SC2Context(CommonContext):
                 if not self.sc2_run_task.done():
                     sc2_logger.warning("Starcraft 2 Client is still running!")
                 self.sc2_run_task.cancel()  # doesn't actually close the game, just stops the python task
+            # clean up locations bank from previous map
+            banks.file_cleanup()
             if self.slot is None:
                 sc2_logger.warning("Launching Mission without Archipelago authentication, "
                                    "checks will not be registered to server.")
@@ -1058,7 +1052,7 @@ class SC2Context(CommonContext):
             return False
 
     def build_location_to_mission_mapping(self) -> None:
-        mission_id_to_location_ids: typing.Dict[int, typing.Set[int]] = {
+        mission_id_to_location_ids: dict[int, typing.Set[int]] = {
             mission.mission_id: set()
             for campaign in self.custom_mission_order for layout in campaign.layouts
             for column in layout.missions for mission in column
@@ -1082,7 +1076,7 @@ class SC2Context(CommonContext):
         objectives = self.mission_id_to_location_ids[mission_id]
         for objective in objectives:
             yield get_location_id(mission_id, objective)
-    
+
     def locations_for_mission_id(self, mission_id: int) -> typing.Iterable[int]:
         objectives = self.mission_id_to_location_ids[mission_id]
         for objective in objectives:
@@ -1095,8 +1089,8 @@ class SC2Context(CommonContext):
 
     def is_mission_completed(self, mission_id: int) -> bool:
         return get_location_id(mission_id, 0) in self.checked_locations
-    
-        
+
+
     async def trade_acquire_storage(self, keep_trying: bool = False) -> typing.Optional[dict]:
         # This function was largely taken from the Pokemon Emerald client
         """
@@ -1162,7 +1156,7 @@ class SC2Context(CommonContext):
             if lock - reply["original_value"][TRADE_DATASTORAGE_LOCK] < TRADE_LOCK_TIME:
                 if not keep_trying:
                     return None
-                
+
                 # Multiple clients trying to lock the key may get stuck in a loop of checking the lock
                 # by trying to set it, which will extend its expiration. So if we see that the lock was
                 # too new when we replaced it, we should wait for increasingly longer periods so that
@@ -1178,7 +1172,7 @@ class SC2Context(CommonContext):
             self.trade_lock_start = None
             return reply
         return None
-        
+
 
     async def trade_receive(self, amount: int = 1):
         """
@@ -1187,12 +1181,12 @@ class SC2Context(CommonContext):
         reply = await self.trade_acquire_storage(True)
 
         if reply is None:
-            self.trade_response = "?TradeFail Void Trade failed: Could not communicate with server. Trade cost refunded."
+            banks.send_trade_received("FailConnection")
             return None
 
         # Find available units
         # Ignore units we sent ourselves
-        allowed_slots: typing.List[str] = [
+        allowed_slots: list[str] = [
             slot for slot in reply["value"]
             if slot != TRADE_DATASTORAGE_LOCK \
                 and slot != self.trade_storage_slot()
@@ -1209,9 +1203,9 @@ class SC2Context(CommonContext):
             is_unit_allowed = lambda unit: unit not in worker_units
         else:
             is_unit_allowed = lambda _: True
-        
-        available_units: typing.List[typing.Tuple[str, str, int]] = []
-        available_counts: typing.List[int] = []
+
+        available_units: list[typing.Tuple[str, str, int]] = []
+        available_counts: list[int] = []
         for slot in allowed_slots:
             for (send_time, units) in reply["value"][slot].items():
                 if is_young_enough(int(send_time)):
@@ -1233,10 +1227,9 @@ class SC2Context(CommonContext):
             units = []
         else:
             units = random.sample(available_units, amount, counts = available_counts)
-
         # Build response data
-        unit_counts: typing.Dict[str, int] = {}
-        slots_to_update: typing.Dict[str, typing.Dict[int, typing.Dict[str, int]]] = {}
+        unit_counts: dict[str, int] = {}
+        slots_to_update: dict[str, dict[int, dict[str, int]]] = {}
         for (unit, slot, send_time) in units:
             unit_counts[unit] = unit_counts.get(unit, 0) + 1
             if slot not in slots_to_update:
@@ -1248,7 +1241,6 @@ class SC2Context(CommonContext):
             # Clean up trades that were completely exhausted
             if len(slots_to_update[slot][send_time]) == 0:
                 slots_to_update[slot].pop(send_time)
-
         await self.send_msgs([
             {   # Update server storage
                 "cmd": "Set",
@@ -1261,31 +1253,33 @@ class SC2Context(CommonContext):
                 "operations": [{ "operation": "update", "value": { TRADE_DATASTORAGE_LOCK: 0 } }]
             }
         ])
+        # Write units to bank
+        value = f"ReceiveUnits {refunds} " + " ".join(f"{unit} {count}" for (unit, count) in unit_counts.items())
+        banks.send_trade_received(value)
+        self.trade_response = None
+        self.trade_underway = False
 
-        # Give units to bot
-        self.trade_response = f"?Trade {refunds} " + " ".join(f"{unit} {count}" for (unit, count) in unit_counts.items())
 
-
-    async def trade_send(self, units: typing.List[str]):
+    async def trade_send(self, units: list[str]):
         """
         Tries to upload `units` to the trade DataStorage.
         """
         reply = await self.trade_acquire_storage(True)
 
         if reply is None:
-            self.trade_response = "?TradeFail Void Trade failed: Could not communicate with server. Your units remain."
+            banks.send_trade_received("FailConnection")
             return None
-        
+
         # Create a storage entry for the time the trade was confirmed
         trade_time = reply["value"][TRADE_DATASTORAGE_LOCK]
         storage_entry = {}
         for unit in units:
             storage_entry[unit] = storage_entry.get(unit, 0) + 1
-        
+
         # Update the storage with the new units
-        data: typing.Dict[int, typing.Dict[str, int]] = copy.deepcopy(reply["value"].get(self.trade_storage_slot(), {}))
+        data: dict[int, dict[str, int]] = copy.deepcopy(reply["value"].get(self.trade_storage_slot(), {}))
         data[trade_time] = storage_entry
-        
+
         await self.send_msgs([
             {   # Send the updated data
                 "cmd": "Set",
@@ -1298,9 +1292,13 @@ class SC2Context(CommonContext):
                 "operations": [{ "operation": "update", "value": { TRADE_DATASTORAGE_LOCK: 0 } }]
             }
         ])
-        
+
         # Notify the game
-        self.trade_response = "?TradeSuccess Void Trade successful: Units sent!"
+        banks.send_trade_received("Success")
+        self.trade_response = None
+        self.trade_underway = False
+
+
 
 
 class CompatItemHolder(typing.NamedTuple):
@@ -1380,13 +1378,13 @@ API3_TO_API4_COMPAT_ITEMS: typing.Set[CompatItemHolder] = {
     CompatItemHolder(item_names.SPORE_CRAWLER_BIO_BONUS),
 }
 
-def compat_item_to_network_items(compat_item: CompatItemHolder) -> typing.List[NetworkItem]:
+def compat_item_to_network_items(compat_item: CompatItemHolder) -> list[NetworkItem]:
     item_id = get_full_item_list()[compat_item.name].code
     network_item = NetworkItem(item_id, 0, 0, 0)
     return compat_item.quantity * [network_item]
 
 
-def calculate_items(ctx: SC2Context) -> typing.Dict[SC2Race, typing.List[int]]:
+def calculate_items(ctx: SC2Context) -> dict[SC2Race, list[int]]:
     items = ctx.items_received.copy()
     item_list = get_full_item_list()
     def create_network_item(item_name: str) -> NetworkItem:
@@ -1415,7 +1413,7 @@ def calculate_items(ctx: SC2Context) -> typing.Dict[SC2Race, typing.List[int]]:
     orbital_command_count: int = 0
 
     network_item: NetworkItem
-    accumulators: typing.Dict[SC2Race, typing.List[int]] = {
+    accumulators: dict[SC2Race, list[int]] = {
         race: [0 for element in item_type_enum_class if element.flag_word >= 0]
         for race, item_type_enum_class in race_to_item_type.items()
     }
@@ -1485,7 +1483,7 @@ def calculate_items(ctx: SC2Context) -> typing.Dict[SC2Race, typing.List[int]]:
 
     # Deprecated Orbital Command handling (Backwards compatibility):
     if orbital_command_count > 0:
-        orbital_command_replacement_items: typing.List[str] = [
+        orbital_command_replacement_items: list[str] = [
             item_names.COMMAND_CENTER_SCANNER_SWEEP,
             item_names.COMMAND_CENTER_MULE,
             item_names.COMMAND_CENTER_EXTRA_SUPPLIES,
@@ -1528,8 +1526,8 @@ def calculate_items(ctx: SC2Context) -> typing.Dict[SC2Race, typing.List[int]]:
     return accumulators
 
 
-def get_bundle_upgrade_member_numbers(bundled_item: str) -> typing.List[int]:
-    upgrade_elements: typing.List[str] = upgrade_bundles[bundled_item]
+def get_bundle_upgrade_member_numbers(bundled_item: str) -> list[int]:
+    upgrade_elements: list[str] = upgrade_bundles[bundled_item]
     if bundled_item in (item_names.PROGRESSIVE_PROTOSS_GROUND_UPGRADE, item_names.PROGRESSIVE_PROTOSS_AIR_UPGRADE):
         # Shields are handled as a maximum of those two
         upgrade_elements = [item_name for item_name in upgrade_elements if item_name != item_names.PROGRESSIVE_PROTOSS_SHIELDS]
@@ -1549,7 +1547,7 @@ def calc_difficulty(difficulty: int):
     return 'X'
 
 
-def get_kerrigan_level(ctx: SC2Context, items: typing.Dict[SC2Race, typing.List[int]], missions_beaten: int) -> int:
+def get_kerrigan_level(ctx: SC2Context, items: dict[SC2Race, list[int]], missions_beaten: int) -> int:
     item_value = items[SC2Race.ZERG][ZergItemType.Level.flag_word]
     mission_value = missions_beaten * ctx.kerrigan_levels_per_mission_completed
     if ctx.kerrigan_levels_per_mission_completed_cap != -1:
@@ -1673,7 +1671,7 @@ def calculate_trade_options(ctx: SC2Context) -> int:
     # Workers allowed
     if ctx.trade_workers_allowed == VoidTradeWorkers.option_true:
         result |= 1 << 1
-    
+
     return result
 
 def kerrigan_primal(ctx: SC2Context, kerrigan_level: int) -> bool:
@@ -1776,7 +1774,7 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
             generic_upgrade_options = calculate_generic_upgrade_options(self.ctx)
             trade_options = calculate_trade_options(self.ctx)
             mission_variant = get_mission_variant(self.mission_id)  # 0/1/2/3 for unchanged/Terran/Zerg/Protoss
-            uncollected_objectives: typing.List[int] = self.get_uncollected_objectives()
+            uncollected_objectives: list[int] = self.get_uncollected_objectives()
             if self.ctx.difficulty_override >= 0:
                 difficulty = calc_difficulty(self.ctx.difficulty_override)
             else:
@@ -1785,8 +1783,8 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
                 game_speed = self.ctx.game_speed_override
             else:
                 game_speed = self.ctx.game_speed
-            await self.chat_send(
-                "?SetOptions"
+
+            banks.send_options(
                 f" {difficulty}"
                 f" {generic_upgrade_options}"
                 f" {self.ctx.all_in_choice}"
@@ -1804,111 +1802,82 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
                 f" {mission_variant}"
                 f" {trade_options}"
                 f" {self.ctx.difficulty_damage_modifier}"
-                f" {self.ctx.mercenary_highlanders}" # TODO: Possibly rework it into unit options in the next cycle
+                f" {self.ctx.mercenary_highlanders}" # TODO: Possibly rework into unit options
                 f" {self.ctx.war_council_nerfs}"
             )
-            await self.update_resources(start_items)
-            await self.update_terran_tech(start_items)
-            await self.update_zerg_tech(start_items, kerrigan_level)
-            await self.update_protoss_tech(start_items)
-            await self.update_misc_tech(start_items)
-            await self.update_colors()
+            self.update_tech(start_items, kerrigan_level)
+            objectives = ""
             if uncollected_objectives:
-                await self.chat_send("?UncollectedLocations {}".format(
-                    functools.reduce(lambda a, b: a + " " + b, [str(x) for x in uncollected_objectives])
-                ))
-            await self.chat_send("?LoadFinished")
+                objectives = " ".join(f"{str(objective)}" for objective in uncollected_objectives)
+            banks.send_core_options(
+                self.get_resources(start_items),
+                self.get_colors(),
+                objectives,
+                "1"
+            )
             self.last_received_update = len(self.ctx.items_received)
-
         else:
-            if self.ctx.pending_color_update:
-                await self.update_colors()
-
-            if not self.ctx.announcements.empty():
-                message = self.ctx.announcements.get(timeout=1)
-                await self.chat_send("?SendMessage " + message)
-                self.ctx.announcements.task_done()
-
-            # Archipelago reads the health
-            controller1_state = 0
-            controller2_state = 0
-            for unit in self.all_own_units():
-                if unit.health_max == CONTROLLER_HEALTH:
-                    controller1_state = int(CONTROLLER_HEALTH - unit.health)
-                    self.can_read_game = True
-                elif unit.health_max == CONTROLLER2_HEALTH:
-                    controller2_state = int(CONTROLLER2_HEALTH - unit.health)
-                    self.can_read_game = True
-                elif unit.name == TRADE_UNIT:
-                    # Handle Void Trade requests
-                    # Check for orders (for buildings this is usually research or training)
-                    if not unit.is_idle and not self.ctx.trade_underway:
-                        button = unit.orders[0].ability.button_name
-                        if button == TRADE_SEND_BUTTON and len(self.last_trade_cargo) > 0:
-                            units_to_send: typing.List[str] = []
-                            non_ap_units: typing.Set[str] = set()
-                            for passenger in self.last_trade_cargo:
-                                # Alternatively passenger._type_data.name but passenger.name seems to always match
-                                unit_name = passenger.name
-                                if unit_name.startswith("AP_"):
-                                    units_to_send.append(normalized_unit_types.get(unit_name, unit_name))
-                                else:
-                                    non_ap_units.add(unit_name)
-                            if len(non_ap_units) > 0:
-                                sc2_logger.info(f"Void Trade tried to send non-AP units: {', '.join(non_ap_units)}")
-                                self.ctx.trade_response = "?TradeFail Void Trade rejected: Trade contains invalid units."
-                                self.ctx.trade_underway = True
-                            else:
-                                self.ctx.trade_response = None
-                                self.ctx.trade_underway = True
-                                async_start(self.ctx.trade_send(units_to_send))
-                        elif button == TRADE_RECEIVE_1_BUTTON:
-                            self.ctx.trade_underway = True
-                            if self.supply_used != self.last_supply_used:
-                                self.ctx.trade_response = None
-                                async_start(self.ctx.trade_receive(1))
-                            else:
-                                self.ctx.trade_response = "?TradeFail Void Trade rejected: Not enough supply."
-                        elif button == TRADE_RECEIVE_5_BUTTON:
-                            self.ctx.trade_underway = True
-                            if self.supply_used != self.last_supply_used:
-                                self.ctx.trade_response = None
-                                async_start(self.ctx.trade_receive(5))
-                            else:
-                                self.ctx.trade_response = "?TradeFail Void Trade rejected: Not enough supply."
-                    elif not unit.is_idle and self.trade_reply_cooldown > 0:
-                        self.trade_reply_cooldown -= 1
-                    elif unit.is_idle and self.trade_reply_cooldown > 0:
-                        self.trade_reply_cooldown = 0
-                        self.ctx.trade_response = None
-                        self.ctx.trade_underway = False
+            banks.send_ap_messages_from_queue(self.ctx.announcements)
+            trade_send_string = self.get_trade_units_sent()
+            # Message format:
+            # <unit1> <unit2> <unit3>...
+            if len(trade_send_string) > 0:
+                units_to_send: list[str] = []
+                non_ap_units: typing.Set[str] = set()
+                for unit_id in trade_send_string.split():
+                    if unit_id.startswith("AP_"):
+                        units_to_send.append(normalized_unit_types.get(unit_id, unit_id))
                     else:
-                        # The API returns no passengers for researching/training buildings,
-                        # so we need to buffer the passengers each frame
-                        self.last_trade_cargo = unit.passengers
-                        # SC2 has no good means of detecting when a unit is queued while supply capped,
-                        # so a supply buffer here is the best we can do
-                        self.last_supply_used = self.supply_used
-            game_state = controller1_state + (controller2_state << 15)
+                        non_ap_units.add(unit_id)
+                if len(non_ap_units) > 0:
+                    sc2_logger.info(f"Void Trade tried to send non-AP units: {', '.join(non_ap_units)}")
+                    banks.send_trade_received("FailNonAPUnits")
+                    self.ctx.trade_underway = True
+                else:
+                    self.ctx.trade_response = None
+                    self.ctx.trade_underway = True
+                    async_start(self.ctx.trade_send(units_to_send))
+
+            trade_receive_string = self.get_trade_receive_request()
+            # Message format:
+            # <count>
+            if len(trade_receive_string) > 0:
+                if int(trade_receive_string) == 1:
+                    self.ctx.trade_underway = True
+                    self.ctx.trade_response = None
+                    async_start(self.ctx.trade_receive(1))
+                    # TODO: handle supply, self.ctx.trade_response = "?TradeFail Void Trade rejected: Not enough supply."
+                elif int(trade_receive_string) == 5:
+                    self.ctx.trade_underway = True
+                    self.ctx.trade_response = None
+                    async_start(self.ctx.trade_receive(5))
+
+            game_state = self.get_locations()
+
+            if game_state & 1:
+                self.can_read_game = True
 
             if iteration == 160 and not game_state & 1:
-                await self.chat_send("?SendMessage Warning: Archipelago unable to connect or has lost connection to " +
-                                     "Starcraft 2 (This is likely a map issue)")
+                banks.send_ap_message([
+                    "Warning: Archipelago unable to connect or has lost connection to "
+                    "Starcraft 2 (This is likely a map issue)"
+                ])
+
+            if banks.update_prompt():
+                self.last_received_update = 0
 
             if self.last_received_update < len(self.ctx.items_received):
                 current_items = calculate_items(self.ctx)
                 missions_beaten = self.missions_beaten_count()
                 kerrigan_level = get_kerrigan_level(self.ctx, current_items, missions_beaten)
-                await self.update_resources(current_items)
-                await self.update_terran_tech(current_items)
-                await self.update_zerg_tech(current_items, kerrigan_level)
-                await self.update_protoss_tech(current_items)
-                await self.update_misc_tech(current_items)
+                self.update_core_options(current_items)
+                self.update_tech(current_items, kerrigan_level)
                 self.last_received_update = len(self.ctx.items_received)
 
             if game_state & 1:
                 if not self.game_running:
-                    print("Archipelago Connected")
+                    banks.send_ap_message(["Archipelago Connected"])
+                    # print("Archipelago Connected")
                     self.game_running = True
 
                 if self.can_read_game:
@@ -1918,7 +1887,7 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
                             self.mission_id in self.ctx.final_mission_ids and
                             len(self.ctx.final_locations) == len(self.ctx.checked_locations.union(victory_locations).intersection(self.ctx.final_locations))
                         )
-                        
+
                         # Old slots don't have locations on goal
                         if not send_victory or self.ctx.slot_data_version >= 4:
                             sc2_logger.info("Mission Completed")
@@ -1945,16 +1914,30 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
                                 [{"cmd": 'LocationChecks',
                                   "locations": [get_location_id(self.mission_id, x + 1)]}])
                             self.boni[x] = True
-                    
+
                     # Send Void Trade results
                     if self.ctx.trade_response is not None and self.trade_reply_cooldown == 0:
-                        await self.chat_send(self.ctx.trade_response)
+                        banks.send_ap_message([self.ctx.trade_response])
                         # Wait an arbitrary amount of frames before trying again
                         self.trade_reply_cooldown = 60
                 else:
-                    await self.chat_send("?SendMessage LostConnection - Lost connection to game.")
+                    banks.send_ap_message(["LostConnection - Lost connection to game."])
 
-    def get_uncollected_objectives(self) -> typing.List[int]:
+    def get_locations(self) -> int:
+        result = banks.read_locations()
+        if (result.strip()): # may be "" or " "
+            return int(result)
+        return 0
+
+    def get_trade_units_sent(self) -> str:
+        result = banks.read_trade_units()
+        return result
+
+    def get_trade_receive_request(self) -> str:
+        result = banks.read_trade_receive_request()
+        return result
+
+    def get_uncollected_objectives(self) -> list[int]:
         result = [
             location % VICTORY_MODULO
             for location in self.ctx.uncollected_locations_in_mission(lookup_id_to_mission[self.mission_id])
@@ -1965,15 +1948,18 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
     def missions_beaten_count(self) -> int:
         return len([location for location in self.ctx.checked_locations if location % VICTORY_MODULO == 0])
 
-    async def update_colors(self):
-        await self.chat_send("?SetColor rr " + str(self.ctx.player_color_raynor))
-        await self.chat_send("?SetColor ks " + str(self.ctx.player_color_zerg))
-        await self.chat_send("?SetColor pz " + str(self.ctx.player_color_zerg_primal))
-        await self.chat_send("?SetColor da " + str(self.ctx.player_color_protoss))
-        await self.chat_send("?SetColor nova " + str(self.ctx.player_color_nova))
+    def get_colors(self) -> str:
         self.ctx.pending_color_update = False
+        result = [
+            str(self.ctx.player_color_raynor),
+            str(self.ctx.player_color_zerg),
+            str(self.ctx.player_color_zerg_primal),
+            str(self.ctx.player_color_protoss),
+            str(self.ctx.player_color_nova),
+        ]
+        return ' '.join(result)
 
-    async def update_resources(self, current_items: typing.Dict[SC2Race, typing.List[int]]):
+    def get_resources(self, current_items: dict[SC2Race, list[int]]) -> str:
         DEFAULT_MAX_SUPPLY = 200
         max_supply_amount = max(
             DEFAULT_MAX_SUPPLY
@@ -1987,38 +1973,52 @@ class ArchipelagoBot(bot.bot_ai.BotAI):
             ),
             self.ctx.lowest_maximum_supply,
         )
-        await self.chat_send("?GiveResources {} {} {} {}".format(
+        return ("{} {} {} {}".format(
             current_items[SC2Race.ANY][get_item_flag_word(item_names.STARTING_MINERALS)],
             current_items[SC2Race.ANY][get_item_flag_word(item_names.STARTING_VESPENE)],
             current_items[SC2Race.ANY][get_item_flag_word(item_names.STARTING_SUPPLY)],
             max_supply_amount - DEFAULT_MAX_SUPPLY,
         ))
 
-    async def update_terran_tech(self, current_items: typing.Dict[SC2Race, typing.List[int]]):
+    def get_terran_tech(self, current_items: dict[SC2Race, list[int]]) -> str:
         terran_items = current_items[SC2Race.TERRAN]
-        await self.chat_send("?GiveTerranTech " + " ".join(map(str, terran_items)))
+        return (" ".join(map(str, terran_items)))
 
-    async def update_zerg_tech(self, current_items: typing.Dict[SC2Race, typing.List[int]], kerrigan_level: int):
+    def get_zerg_tech(self, current_items: dict[SC2Race, list[int]], kerrigan_level: int) -> str:
         zerg_items = current_items[SC2Race.ZERG]
         zerg_items = [value for index, value in enumerate(zerg_items) if index not in [ZergItemType.Level.flag_word, ZergItemType.Primal_Form.flag_word]]
         kerrigan_primal_by_items = kerrigan_primal(self.ctx, kerrigan_level)
         kerrigan_primal_bot_value = 1 if kerrigan_primal_by_items else 0
-        await self.chat_send(f"?GiveZergTech {kerrigan_level} {kerrigan_primal_bot_value} " + ' '.join(map(str, zerg_items)))
+        return(f"{kerrigan_level} {kerrigan_primal_bot_value} " + ' '.join(map(str, zerg_items)))
 
-    async def update_protoss_tech(self, current_items: typing.Dict[SC2Race, typing.List[int]]):
+    def get_protoss_tech(self, current_items: dict[SC2Race, list[int]]) -> str:
         protoss_items = current_items[SC2Race.PROTOSS]
-        await self.chat_send("?GiveProtossTech " + " ".join(map(str, protoss_items)))
+        return (" ".join(map(str, protoss_items)))
 
-    async def update_misc_tech(self, current_items: typing.Dict[SC2Race, typing.List[int]]):
-        await self.chat_send("?GiveMiscTech {} {} {}".format(
+    def get_misc_tech(self, current_items: dict[SC2Race, list[int]]) -> str:
+        return ("{} {} {}".format(
             current_items[SC2Race.ANY][get_item_flag_word(item_names.BUILDING_CONSTRUCTION_SPEED)],
             current_items[SC2Race.ANY][get_item_flag_word(item_names.UPGRADE_RESEARCH_SPEED)],
             current_items[SC2Race.ANY][get_item_flag_word(item_names.UPGRADE_RESEARCH_COST)],
         ))
 
+    def update_tech(self, current_items: dict[SC2Race, list[int]], kerrigan_level: int):
+        banks.send_items(
+            self.get_terran_tech(current_items),
+            self.get_zerg_tech(current_items, kerrigan_level),
+            self.get_protoss_tech(current_items),
+            self.get_misc_tech(current_items)
+        )
+
+    def update_core_options(self, current_items: dict[SC2Race, list[int]]):
+        banks.send_core_options(
+            self.get_resources(current_items),
+            self.get_colors()
+        )
+
 def calc_unfinished_nodes(
         ctx: SC2Context
-) -> typing.Tuple[typing.List[int], typing.Dict[int, typing.List[int]], typing.List[int], typing.Set[int]]:
+) -> typing.Tuple[list[int], dict[int, list[int]], list[int], typing.Set[int]]:
     unfinished_missions: typing.Set[int] = set()
 
     available_missions, available_layouts, available_campaigns = calc_available_nodes(ctx)
@@ -2029,7 +2029,7 @@ def calc_unfinished_nodes(
             objectives_completed = ctx.checked_locations & objectives
             if len(objectives_completed) < len(objectives):
                 unfinished_missions.add(mission_id)
-    
+
     return available_missions, available_layouts, available_campaigns, unfinished_missions
 
 def is_mission_available(ctx: SC2Context, mission_id_to_check: int) -> bool:
@@ -2037,12 +2037,12 @@ def is_mission_available(ctx: SC2Context, mission_id_to_check: int) -> bool:
 
     return mission_id_to_check in available_missions
 
-def calc_available_nodes(ctx: SC2Context) -> typing.Tuple[typing.List[int], typing.Dict[int, typing.List[int]], typing.List[int]]:
+def calc_available_nodes(ctx: SC2Context) -> typing.Tuple[list[int], dict[int, list[int]], list[int]]:
     beaten_missions: typing.Set[int] = {mission_id for mission_id in ctx.mission_id_to_entry_rules if ctx.is_mission_completed(mission_id)}
     received_items = compute_received_items(ctx)
 
-    mission_order_objects: typing.List[MissionOrderObjectSlotData] = []
-    parent_objects: typing.List[typing.List[MissionOrderObjectSlotData]] = []
+    mission_order_objects: list[MissionOrderObjectSlotData] = []
+    parent_objects: list[list[MissionOrderObjectSlotData]] = []
     for campaign in ctx.custom_mission_order:
         mission_order_objects.append(campaign)
         parent_objects.append([])
@@ -2056,17 +2056,17 @@ def calc_available_nodes(ctx: SC2Context) -> typing.Tuple[typing.List[int], typi
                     mission_order_objects.append(mission)
                     parent_objects.append([campaign, layout])
 
-    candidate_accessible_objects: typing.List[MissionOrderObjectSlotData] = [
+    candidate_accessible_objects: list[MissionOrderObjectSlotData] = [
         mission_order_object for mission_order_object in mission_order_objects
         if mission_order_object.entry_rule.is_accessible(beaten_missions, received_items)
     ]
 
-    accessible_objects: typing.List[MissionOrderObjectSlotData] = []
+    accessible_objects: list[MissionOrderObjectSlotData] = []
 
     while len(candidate_accessible_objects) > 0:
-        accessible_missions: typing.List[MissionSlotData] = [mission_order_object for mission_order_object in accessible_objects if isinstance(mission_order_object, MissionSlotData)]
+        accessible_missions: list[MissionSlotData] = [mission_order_object for mission_order_object in accessible_objects if isinstance(mission_order_object, MissionSlotData)]
         beaten_accessible_missions: typing.Set[int] = {mission.mission_id for mission in accessible_missions if mission.mission_id in beaten_missions}
-        accessible_objects_to_add: typing.List[MissionOrderObjectSlotData] = []
+        accessible_objects_to_add: list[MissionOrderObjectSlotData] = []
         for mission_order_object in candidate_accessible_objects:
             if (
                     mission_order_object.entry_rule.is_accessible(beaten_accessible_missions, received_items)
@@ -2085,7 +2085,7 @@ def calc_available_nodes(ctx: SC2Context) -> typing.Tuple[typing.List[int], typi
         else:
             break
 
-    accessible_missions: typing.List[MissionSlotData] = [mission_order_object for mission_order_object in accessible_objects if isinstance(mission_order_object, MissionSlotData)]
+    accessible_missions: list[MissionSlotData] = [mission_order_object for mission_order_object in accessible_objects if isinstance(mission_order_object, MissionSlotData)]
     beaten_accessible_missions: typing.Set[int] = {mission.mission_id for mission in accessible_missions if mission.mission_id in beaten_missions}
     for mission_order_object in mission_order_objects:
         # re-generate tooltip accessibility
@@ -2093,23 +2093,23 @@ def calc_available_nodes(ctx: SC2Context) -> typing.Tuple[typing.List[int], typi
             sub_rule.was_accessible = False
         mission_order_object.entry_rule.is_accessible(beaten_accessible_missions, received_items)
 
-    available_missions: typing.List[int] = [
+    available_missions: list[int] = [
         mission_order_object.mission_id for mission_order_object in accessible_objects
         if isinstance(mission_order_object, MissionSlotData)
     ]
-    available_campaign_objects: typing.List[CampaignSlotData] = [
+    available_campaign_objects: list[CampaignSlotData] = [
         mission_order_object for mission_order_object in accessible_objects
         if isinstance(mission_order_object, CampaignSlotData)
     ]
-    available_campaigns: typing.List[int] = [
+    available_campaigns: list[int] = [
         campaign_idx for campaign_idx, campaign in enumerate(ctx.custom_mission_order)
         if campaign in available_campaign_objects
     ]
-    available_layout_objects: typing.List[LayoutSlotData] = [
+    available_layout_objects: list[LayoutSlotData] = [
         mission_order_object for mission_order_object in accessible_objects
         if isinstance(mission_order_object, LayoutSlotData)
     ]
-    available_layouts: typing.Dict[int, typing.List[int]] = {
+    available_layouts: dict[int, list[int]] = {
         campaign_idx: [
             layout_idx for layout_idx, layout in enumerate(campaign.layouts) if layout in available_layout_objects
         ]
@@ -2186,17 +2186,17 @@ def is_mod_installed_correctly() -> bool:
             "ArchipelagoTriggers", "ArchipelagoPlayerWoL", "ArchipelagoPlayerHotS",
             "ArchipelagoPlayerLotV", "ArchipelagoPlayerLotVPrologue", "ArchipelagoPlayerNCO"]
     modfiles = [sc2_path / Path("Mods/" + mod + ".SC2Mod") for mod in mods]
-    wol_required_maps: typing.List[str] = ["WoL" + os.sep + mission.map_file + ".SC2Map" for mission in SC2Mission
+    wol_required_maps: list[str] = ["WoL" + os.sep + mission.map_file + ".SC2Map" for mission in SC2Mission
                          if mission.campaign in (SC2Campaign.WOL, SC2Campaign.PROPHECY)]
-    hots_required_maps: typing.List[str] = ["HotS" + os.sep + mission.map_file + ".SC2Map" for mission in campaign_mission_table[SC2Campaign.HOTS]]
-    lotv_required_maps: typing.List[str] = ["LotV" + os.sep + mission.map_file + ".SC2Map" for mission in SC2Mission
+    hots_required_maps: list[str] = ["HotS" + os.sep + mission.map_file + ".SC2Map" for mission in campaign_mission_table[SC2Campaign.HOTS]]
+    lotv_required_maps: list[str] = ["LotV" + os.sep + mission.map_file + ".SC2Map" for mission in SC2Mission
                                             if mission.campaign in (SC2Campaign.LOTV, SC2Campaign.PROLOGUE, SC2Campaign.EPILOGUE)]
-    nco_required_maps: typing.List[str] = ["NCO" + os.sep + mission.map_file + ".SC2Map" for mission in campaign_mission_table[SC2Campaign.NCO]]
+    nco_required_maps: list[str] = ["NCO" + os.sep + mission.map_file + ".SC2Map" for mission in campaign_mission_table[SC2Campaign.NCO]]
     required_maps = wol_required_maps + hots_required_maps + lotv_required_maps + nco_required_maps
     needs_files = False
 
     # Check for maps.
-    missing_maps: typing.List[str] = []
+    missing_maps: list[str] = []
     for mapfile in required_maps:
         if not os.path.isfile(mapdir / mapfile):
             missing_maps.append(mapfile)
