@@ -1210,21 +1210,8 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
 
 # Items not aimed to be officially released
 # These need further balancing, and they shouldn't generate normally unless explicitly locked
-# Added here to not confuse the client
 item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
-    item_names.PRIDE_OF_AUGUSTRGRAD,
-    item_names.SKY_FURY,
-    item_names.SHOCK_DIVISION,
-    item_names.BLACKHAMMER,
-    item_names.AEGIS_GUARD,
-    item_names.EMPERORS_SHADOW,
-    item_names.SON_OF_KORHAL,
-    item_names.BULWARK_COMPANY,
-    item_names.FIELD_RESPONSE_THETA,
-    item_names.EMPERORS_GUARDIAN,
-    item_names.NIGHT_HAWK,
-    item_names.NIGHT_WOLF,
-    item_names.EMPERORS_SHADOW_SOVEREIGN_TACTICAL_MISSILES,
+    # Empty for now! Leaving the group in case we add more unreleased items in future
 ]
 
 # A place for traits that were released before but are to be taken down by default.

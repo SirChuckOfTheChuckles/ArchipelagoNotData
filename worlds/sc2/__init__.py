@@ -968,7 +968,8 @@ def flag_unreleased_items(item_list: list[FilterItem]) -> None:
     """Remove all unreleased items unless they're explicitly locked"""
     for item in item_list:
         if (item.name in unreleased_items
-                and not (ItemFilterFlags.Locked|ItemFilterFlags.StartInventory) & item.flags):
+            and not (ItemFilterFlags.Locked|ItemFilterFlags.StartInventory) & item.flags
+        ):
             item.flags |= ItemFilterFlags.Removed
 
 
