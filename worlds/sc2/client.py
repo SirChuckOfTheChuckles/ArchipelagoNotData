@@ -101,7 +101,6 @@ TRADE_LOCK_WAIT_LIMIT = 540000 / 1.4 # Time in ms that the client may spend tryi
 STARCRAFT2 = "Starcraft 2"
 STARCRAFT2_WOL = "Starcraft 2 Wings of Liberty"
 
-
 # Data version file path.
 # This file is used to tell if the downloaded data are outdated
 # Associated with /download_data command
@@ -545,7 +544,11 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             metadata = None
 
         tempzip, metadata = download_latest_release_zip(
-            DATA_REPO_OWNER, DATA_REPO_NAME, DATA_API_VERSION, metadata=metadata, force_download=True)
+            DATA_REPO_OWNER, DATA_REPO_NAME, DATA_API_VERSION,
+            ctx,
+            metadata=metadata,
+            force_download=True,
+        )
 
         if tempzip:
             try:
@@ -2275,51 +2278,99 @@ def download_latest_release_zip(
     owner: str,
     repo: str,
     api_version: str,
+    ctx: SC2Context,
     metadata: str | None = None,
-    force_download=False
+    force_download: bool = False,
 ) -> tuple[str, str | None]:
     """Downloads the latest release of a GitHub repo to the current directory as a .zip file."""
     import requests
 
-    headers = {"Accept": 'application/vnd.github.v3+json'}
+    headers = {"Accept": "application/vnd.github.v3+json"}
     url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{api_version}"
+    user_facing_url = f"https://github.com/{owner}/{repo}/releases/tag/{api_version}"
 
+    MB_SCALE = 20
+    CHUNK_SCALE = 22  # 4 MiB
+    CHUNK_SIZE = 1 << CHUNK_SCALE
+    PROGRESS_FRACTION = 10
+
+    r2: requests.Response | None = None
     try:
-        r1 = requests.get(url, headers=headers)
+        r1 = requests.get(url, headers=headers, timeout=15.0)
         if r1.status_code == 200:
             latest_metadata = r1.json()
             cleanup_downloaded_metadata(latest_metadata)
             latest_metadata = str(latest_metadata)
-            # sc2_logger.info(f"Latest version: {latest_metadata}.")
         else:
             sc2_logger.warning(f"Status code: {r1.status_code}")
             sc2_logger.warning("Failed to reach GitHub. Could not find download link.")
             sc2_logger.warning(f"text: {r1.text}")
             return "", metadata
 
-        if (force_download is False) and (metadata == latest_metadata):
+        if not force_download and (metadata == latest_metadata):
             sc2_logger.info("Latest version already installed.")
             return "", metadata
 
-        sc2_logger.info(f"Attempting to download latest version of API version {api_version} of {repo}.")
+        sc2_logger.info(f"Attempting to download latest {api_version} release of {repo}.")
         download_url = r1.json()["assets"][0]["browser_download_url"]
 
-        r2 = requests.get(download_url, headers=headers)
-        if r2.status_code == 200 and zipfile.is_zipfile(io.BytesIO(r2.content)):
-            tempdir = tempfile.gettempdir()
-            file = tempdir + os.sep + f"{repo}.zip"
-            with open(file, "wb") as fh:
-                fh.write(r2.content)
-            sc2_logger.info(f"Successfully downloaded {repo}.zip. Installing...")
-            return file, latest_metadata
-        else:
-            sc2_logger.warning(f"Status code: {r2.status_code}")
-            sc2_logger.warning("Download failed.")
-            sc2_logger.warning(f"text: {r2.text}")
+        tempdir = tempfile.gettempdir()
+        file = tempdir + os.sep + f"{repo}.zip"
+        r2 = requests.get(download_url, headers=headers, timeout=(12.5, 60.0), stream=True)
+        if r2.status_code != 200:
+            r2.close()
+            sc2_logger.warning(f"Download failed with status code {r2.status_code}.")
             return "", metadata
+
+        def print_progress_bar(progress: int, mb_written: int, mb_total: int) -> None:
+            # In Roboto, `|` and ` ` are very similar widths, so this displays nicely everywhere
+            (
+                ColouredMessage('Progress: [ ')
+                .coloured("|||" * progress, colour="orange")
+                (("   " * (PROGRESS_FRACTION - progress)) + f" ] {mb_written} / {mb_total} MiB")
+            ).send(ctx)
+
+        with open(file, "wb") as fp:
+            total_length = r2.headers.get("content-length")
+            if total_length is None:
+                fp.write(r2.content)
+            else:
+                bytes_written = 0
+                bytes_total = int(total_length)
+                total_length_megabytes = bytes_total >> MB_SCALE
+                last_progress = -1
+                for chunk in r2.iter_content(chunk_size=CHUNK_SIZE):
+                    bytes_written += len(chunk)
+                    fp.write(chunk)
+                    progress = bytes_written * PROGRESS_FRACTION // bytes_total
+                    if progress > last_progress:
+                        print_progress_bar(progress, bytes_written >> MB_SCALE, total_length_megabytes)
+                        last_progress = progress
+                if bytes_written < bytes_total:
+                    sc2_logger.warning(
+                        f"Could not download the file. Written {bytes_written}/{bytes_total} bytes. "
+                        f"(status {r2.status_code})"
+                    )
+                    return "", metadata
+            if r2.status_code != 200:
+                r2.close()
+                sc2_logger.warning(f"Download failed with status code {r2.status_code}.")
+                return "", metadata
+        sc2_logger.info(f"Successfully downloaded {repo}.zip. Installing...")
+        return file, latest_metadata
     except requests.ConnectionError:
         sc2_logger.warning("Failed to reach GitHub. Could not find download link.")
         return "", metadata
+    except requests.Timeout:
+        sc2_logger.warning(f"Download request timed out. Try again or check connection to {user_facing_url}")
+        return "", metadata
+    except Exception as ex:
+        sc2_logger.warning(f"An unknown exception occurred: {type(ex)}: {ex}")
+        return "", metadata
+    finally:
+        r1.close()
+        if r2 is not None:
+            r2.close()
 
 
 def cleanup_downloaded_metadata(medatada_json: dict) -> None:
@@ -2352,6 +2403,8 @@ def is_mod_update_available(owner: str, repo: str, api_version: str, metadata: s
     except requests.ConnectionError:
         sc2_logger.warning("Failed to reach GitHub while checking for updates.")
         return False
+    finally:
+        r1.close()
 
 
 def get_location_offset(mission_id: int) -> int:

@@ -1,9 +1,10 @@
-from pathlib import Path
 from glob import glob
-import queue
-import os.path
-import re
+from pathlib import Path
 import logging
+import os
+import queue
+import re
+import sys
 
 # Banks are XML files used to communicate with Starcraft 2
 # file names, section names and key names have to match the SC2 trigger implementation
@@ -64,16 +65,59 @@ BANK_BACKUP_FILE_LIMIT = 100
 
 logger = logging.getLogger("Starcraft2")
 
-# file path to bank folder.
-def get_bank_folder() -> str:
-    # handle documents folder backed up by cloud service (OneDrive)
-    banks_folders = glob(os.path.expanduser("~/*/Documents/StarCraft II/Banks"))
-    if len(banks_folders) > 0:
-        result = banks_folders[0]
+def _get_bank_folder() -> str:
+    DOCUMENTS_SC2_DIRNAME = "Documents/StarCraft II"
+    BANKS_DIRNAME = "Banks"
+
+    # Environment variable override
+    user_set = os.environ.get("SC2_DOCUMENTS_DIR")
+    if user_set is not None:
+        if not os.path.isdir(user_set):
+            raise ValueError(f"User-defined folder {user_set} doesn't exist or is not a folder")
+        result = os.path.join(user_set, BANKS_DIRNAME)
+        if os.path.isfile(result):
+            raise ValueError(f"{result} is a file; expected a folder")
+        if not os.path.isdir(result):
+            os.makedirs(result)
+        return user_set
+
+    # Windows handling
+    if sys.platform == 'win32':
+        # Handle documents folder backed up by cloud service (OneDrive)
+        banks_folders = glob(os.path.expanduser(f"~/*/{DOCUMENTS_SC2_DIRNAME}/{BANKS_DIRNAME}"))
+        if len(banks_folders) > 0:
+            result = banks_folders[0]
+        else:
+            result = os.path.expanduser(f"~/{DOCUMENTS_SC2_DIRNAME}/{BANKS_DIRNAME}")
+        assert os.path.isdir(result), "Banks folder not found"
+        return result
+    
+    # Linux handling
+    wine_prefix = os.environ.get("WINEPREFIX")
+    if wine_prefix is not None:
+        user_folder_name = os.path.basename(os.path.expanduser("~"))
+        sc2_documents_dir = os.path.join(wine_prefix, f"drive_c/users/{user_folder_name}/{DOCUMENTS_SC2_DIRNAME}")
     else:
-        result = os.path.expanduser("~/Documents/StarCraft II/Banks")
-    assert os.path.isdir(result), "Banks folder not found"
+        sc2_documents_dir = os.path.expanduser(f"~/{DOCUMENTS_SC2_DIRNAME}")
+    result = os.path.join(sc2_documents_dir, BANKS_DIRNAME)
+    if not os.path.isdir(sc2_documents_dir):
+        raise ValueError(
+            f"sc2 documents folder {sc2_documents_dir} does not exist. "
+            f"Ensure WINEPREFIX or SC2_DOCUMENTS_DIR are set correctly"
+        )
+    if os.path.isfile(result):
+        raise ValueError(f"{result} is a file; expected a folder")
+    if not os.path.exists(result):
+        os.makedirs(result)
     return result
+
+
+_sc2_bank_folder: str | None = None
+def get_bank_folder() -> str:
+    global _sc2_bank_folder
+    if _sc2_bank_folder is None:
+        _sc2_bank_folder = _get_bank_folder()
+    return _sc2_bank_folder
 
 
 class SC2Bank:
@@ -107,7 +151,7 @@ class SC2Bank:
                 result = self.sections[section][key]
         return result
 
-    def read_file(self, path: str = None) -> None:
+    def read_file(self, path: str = "") -> None:
         """
         Reads a bank file provided by SC2 and converts it into an SC2Bank object.
         Assumes bank files follow the structure provided by the game.
