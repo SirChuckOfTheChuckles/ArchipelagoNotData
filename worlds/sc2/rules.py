@@ -1353,6 +1353,7 @@ class SC2Logic:
                     item_names.DESTROYER,
                     item_names.PULSAR,
                     item_names.CARRIER,
+                    item_names.TRIREME,
                     item_names.SKYLORD,
                     item_names.TEMPEST,
                     item_names.MOTHERSHIP_TALDARIM,
@@ -1372,7 +1373,6 @@ class SC2Logic:
             or state.has_all((item_names.DISRUPTOR, item_names.DISRUPTOR_PERFECTED_POWER), self.player)
             or state.has_all((item_names.IMMORTAL, item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING), self.player)
             or state.has_all((item_names.SKIRMISHER, item_names.SKIRMISHER_PEER_CONTEMPT), self.player)
-            or state.has_all((item_names.TRIREME, item_names.TRIREME_SOLAR_BEAM), self.player)
             or (
                 state.has(item_names.DARK_TEMPLAR, self.player)
                 and state.has_any((item_names.DARK_TEMPLAR_DARK_ARCHON_MELD, item_names.DARK_TEMPLAR_ARCHON_MERGE), self.player)
@@ -1388,6 +1388,7 @@ class SC2Logic:
                     item_names.MIRAGE,
                     item_names.CORSAIR,
                     item_names.CARRIER,
+                    item_names.TRIREME,
                     item_names.SKYLORD,
                     item_names.SCOUT,
                     item_names.DARK_ARCHON,
@@ -1400,7 +1401,6 @@ class SC2Logic:
                 },
                 self.player,
             )
-            or state.has_all({item_names.TRIREME, item_names.TRIREME_SOLAR_BEAM}, self.player)
             or state.has_all({item_names.WRATHWALKER, item_names.WRATHWALKER_AERIAL_TRACKING}, self.player)
             or state.has_all({item_names.WARP_PRISM, item_names.WARP_PRISM_PHASE_BLASTER}, self.player)
             or (self.advanced_tactics
@@ -1528,7 +1528,7 @@ class SC2Logic:
                 )
             )
             or (
-                state.has_all((item_names.TRIREME, item_names.TRIREME_SOLAR_BEAM), self.player)
+                state.has(item_names.TRIREME, self.player)
                 and (
                     state.has_any((item_names.PHOENIX, item_names.MIRAGE, item_names.CORSAIR), self.player)
                     or state.has_all((item_names.SKIRMISHER, item_names.SKIRMISHER_PEER_CONTEMPT), self.player)

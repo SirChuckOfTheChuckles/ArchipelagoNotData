@@ -1931,7 +1931,7 @@ item_table = {
     item_names.DAWNBRINGER_SOLARITE_LENS: ItemData(537 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 7, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.DAWNBRINGER),
     item_names.CARRIER_REPAIR_DRONES: ItemData(538 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 8, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.CARRIER),
     item_names.SKYLORD_JUMP: ItemData(539 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 9, SC2Race.PROTOSS, parent=item_names.SKYLORD),
-    item_names.TRIREME_SOLAR_BEAM: ItemData(540 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 10, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.TRIREME),
+    item_names.TRIREME_BOMBER_MINIATURIZATION: ItemData(540 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 10, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.TRIREME),
     item_names.TEMPEST_DISINTEGRATION: ItemData(541 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 11, SC2Race.PROTOSS, parent=item_names.TEMPEST),
     item_names.SCOUT_EXPEDITIONARY_HULL: ItemData(542 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 12, SC2Race.PROTOSS, parent=item_names.SCOUT),
     item_names.ARBITER_VESSEL_OF_THE_CONCLAVE: ItemData(543 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council_2, 13, SC2Race.PROTOSS, parent=item_names.ARBITER),
