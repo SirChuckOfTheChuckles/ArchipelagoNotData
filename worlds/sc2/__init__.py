@@ -17,7 +17,8 @@ from .item import (
 )
 from .locations import (
 	get_locations, DEFAULT_LOCATION_LIST, get_location_types, get_location_flags,
-    get_plando_locations, LocationType, lookup_location_id_to_type
+    get_plando_locations, LocationType, lookup_location_id_to_type,
+    VICTORY_MODULO,
 )
 from .mission_order.layout_types import Gauntlet
 from .options import (
@@ -41,7 +42,6 @@ from worlds.LauncherComponents import components, Component, launch as launch_co
 from .mission_order.presets import sc2_options_presets
 
 logger = logging.getLogger("Starcraft 2")
-VICTORY_MODULO = 100
 
 def launch_client(*args: str):
     from .client import launch
@@ -264,7 +264,8 @@ class SC2World(World):
                     if lookup_location_id_to_type[location.address] == LocationType.VICTORY_CACHE:
                         # Ensure that if there are multiple items given for finishing a mission and that at least
                         # one is progressive, the flag kept is progressive.
-                        location_name = self.location_id_to_name[(location.address // VICTORY_MODULO) * VICTORY_MODULO]
+                        location_id = (location.address // VICTORY_MODULO) * VICTORY_MODULO
+                        location_name = self.location_id_to_name[location_id]
                         old_classification = mission_item_classification.get(location_name, 0)
                         mission_item_classification[location_name] = old_classification | location.item.classification.as_flag()
                     else:

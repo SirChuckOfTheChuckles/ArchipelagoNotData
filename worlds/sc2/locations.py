@@ -7,7 +7,6 @@ from .options import (
     RequiredTactics,
     LocationInclusion,
     KerriganPresence,
-    GrantStoryTech,
     get_enabled_campaigns,
 )
 from .mission_tables import SC2Mission, SC2Campaign
@@ -20,11 +19,13 @@ if TYPE_CHECKING:
     from BaseClasses import CollectionState
     from . import SC2World
 
+
 SC2WOL_LOC_ID_OFFSET = 1000
 SC2HOTS_LOC_ID_OFFSET = 20000000  # Avoid clashes with The Legend of Zelda
 SC2LOTV_LOC_ID_OFFSET = SC2HOTS_LOC_ID_OFFSET + 2000
 SC2NCO_LOC_ID_OFFSET = SC2LOTV_LOC_ID_OFFSET + 2500
 SC2_RACESWAP_LOC_ID_OFFSET = SC2NCO_LOC_ID_OFFSET + 900
+VICTORY_MODULO = 100
 VICTORY_CACHE_OFFSET = 90
 
 
@@ -15864,3 +15865,15 @@ lookup_location_id_to_type = {
 lookup_location_id_to_flags = {
     loc.code: loc.flags for loc in DEFAULT_LOCATION_LIST if loc.code is not None
 }
+
+
+def get_location_offset(mission_id: int) -> int:
+    return (
+        SC2WOL_LOC_ID_OFFSET
+        if mission_id <= SC2Mission.ALL_IN.id
+        else (SC2HOTS_LOC_ID_OFFSET - SC2Mission.ALL_IN.id * VICTORY_MODULO)
+    )
+
+
+def get_location_id(mission_id: int, objective_id: int) -> int:
+    return get_location_offset(mission_id) + mission_id * VICTORY_MODULO + objective_id

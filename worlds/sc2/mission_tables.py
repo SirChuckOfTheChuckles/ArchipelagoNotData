@@ -74,24 +74,25 @@ class SC2Campaign(Enum):
         return obj
 
     def __init__(
-        self, campaign_id: int, name: str, goal_priority: SC2CampaignGoalPriority, race: SC2Race
+        self, campaign_id: int, name: str, goal_priority: SC2CampaignGoalPriority, race: SC2Race, folder: str
     ) -> None:
         self.id = campaign_id
         self.campaign_name = name
         self.goal_priority = goal_priority
         self.race = race
+        self.folder = folder
 
     def __lt__(self, other: "SC2Campaign") -> bool:
         return self.id < other.id
 
-    GLOBAL = 0, "Global", SC2CampaignGoalPriority.NONE, SC2Race.ANY
-    WOL = 1, "Wings of Liberty", SC2CampaignGoalPriority.VERY_HARD, SC2Race.TERRAN
-    PROPHECY = 2, "Prophecy", SC2CampaignGoalPriority.MINI_CAMPAIGN, SC2Race.PROTOSS
-    HOTS = 3, "Heart of the Swarm", SC2CampaignGoalPriority.VERY_HARD, SC2Race.ZERG
-    PROLOGUE = 4, "Whispers of Oblivion (Legacy of the Void: Prologue)", SC2CampaignGoalPriority.MINI_CAMPAIGN, SC2Race.PROTOSS
-    LOTV = 5, "Legacy of the Void", SC2CampaignGoalPriority.VERY_HARD, SC2Race.PROTOSS
-    EPILOGUE = 6, "Into the Void (Legacy of the Void: Epilogue)", SC2CampaignGoalPriority.EPILOGUE, SC2Race.ANY
-    NCO = 7, "Nova Covert Ops", SC2CampaignGoalPriority.HARD, SC2Race.TERRAN
+    GLOBAL = 0, "Global", SC2CampaignGoalPriority.NONE, SC2Race.ANY, ""
+    WOL = 1, "Wings of Liberty", SC2CampaignGoalPriority.VERY_HARD, SC2Race.TERRAN, "WoL"
+    PROPHECY = 2, "Prophecy", SC2CampaignGoalPriority.MINI_CAMPAIGN, SC2Race.PROTOSS, "WoL"
+    HOTS = 3, "Heart of the Swarm", SC2CampaignGoalPriority.VERY_HARD, SC2Race.ZERG, "HotS"
+    PROLOGUE = 4, "Whispers of Oblivion (Legacy of the Void: Prologue)", SC2CampaignGoalPriority.MINI_CAMPAIGN, SC2Race.PROTOSS, "LotV"
+    LOTV = 5, "Legacy of the Void", SC2CampaignGoalPriority.VERY_HARD, SC2Race.PROTOSS, "LotV"
+    EPILOGUE = 6, "Into the Void (Legacy of the Void: Epilogue)", SC2CampaignGoalPriority.EPILOGUE, SC2Race.ANY, "LotV"
+    NCO = 7, "Nova Covert Ops", SC2CampaignGoalPriority.HARD, SC2Race.TERRAN, "NCO"
 
 
 class SC2Mission(Enum):

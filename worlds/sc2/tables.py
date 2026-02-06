@@ -1,4 +1,5 @@
-class NovaPresenceOptions():
+
+class NovaPresenceOptions:
     # Currently, if Nova is disabled in all available campaigns, Nova can still appear in no-builds
     # In this case, all Nova items are removed from the pool and her no-builds effectively grant story tech
     # TODO: Add an option here for Nova presence in no-builds, allowing players to exclude Nova for build missions

@@ -511,7 +511,7 @@ class SC2Manager(GameManager):
             mission_id: int = button.mission_id
             if self.ctx.play_mission(mission_id):
                 self.launching = mission_id
-                Clock.schedule_once(self.finish_launching, 10)
+                Clock.schedule_once(self.finish_launching, 6)
 
     def open_mission_menu(self, button: MissionButton) -> None:
         # Will be assigned later, used to close menu in callbacks
