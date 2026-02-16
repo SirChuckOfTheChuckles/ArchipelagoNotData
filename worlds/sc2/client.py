@@ -3,17 +3,16 @@ from __future__ import annotations
 import asyncio
 import collections
 import copy
-import ctypes
+import glob
+import shutil
 import enum
 import inspect
 import logging
 import multiprocessing
 import os.path
-import sys
 import tempfile
 import queue
 import zipfile
-import subprocess
 import random
 import concurrent.futures
 import time
@@ -543,19 +542,38 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             force_download=True,
         )
 
-        if tempzip:
-            try:
-                zipfile.ZipFile(tempzip).extractall(path=sc2_install_dir)
-                sc2_logger.info("Download complete. Package installed.")
-                if metadata is not None:
-                    with open(get_metadata_file(), "w") as f:
-                        f.write(metadata)
-            finally:
-                os.remove(tempzip)
-        else:
+        if not tempzip:
             sc2_logger.warning("Download aborted/failed. Read the log for more information.")
             return False
-        ctx.data_out_of_date = False
+
+        ap_map_folders = glob.glob(os.path.join(sc2_install_dir, "Maps", "ArchipelagoCampaign", "*"))
+        for folder in ap_map_folders:
+            if folder.endswith(".bak"):
+                continue
+            backup_folder = folder + ".backup"
+            if os.path.exists(backup_folder):
+                shutil.rmtree(backup_folder)
+            shutil.move(folder, backup_folder)
+
+        try:
+            zipfile.ZipFile(tempzip).extractall(path=sc2_install_dir)
+            sc2_logger.info("Download complete. Package installed.")
+            if metadata is not None:
+                with open(get_metadata_file(), "w") as f:
+                    f.write(metadata)
+            for folder in ap_map_folders:
+                shutil.rmtree(folder + ".backup")
+            ctx.data_out_of_date = False
+        except Exception as ex:
+            sc2_logger.error(f"An error occurred while trying to unzip the archive: {ex}")
+            for folder in ap_map_folders:
+                if os.path.exists(folder):
+                    shutil.rmtree(folder)
+                backup_folder = folder + ".backup"
+                shutil.move(backup_folder, folder)
+        finally:
+            os.remove(tempzip)
+    
         return True
 
 
