@@ -116,14 +116,16 @@ class MissionClient:
             game_speed = self.ctx.game_speed_override
         else:
             game_speed = self.ctx.game_speed
+        skip_cutscenes = 1 if SC2World.settings.game_skip_cutscenes else 0
+        disable_forced_camera = 1 if SC2World.settings.game_disable_forced_camera else 0
 
         error = banks.send_options(
             f" {difficulty}"
             f" {generic_upgrade_options}"
             f" {self.ctx.all_in_choice}"
             f" {game_speed}"
-            f" {self.ctx.disable_forced_camera}"
-            f" {self.ctx.skip_cutscenes}"
+            f" {disable_forced_camera}"
+            f" {skip_cutscenes}"
             f" {kerrigan_options}"
             f" {grant_story_tech}"
             f" {self.ctx.take_over_ai_allies}"
@@ -136,7 +138,7 @@ class MissionClient:
             f" {trade_options}"
             f" {self.ctx.difficulty_damage_modifier}"
             f" {self.ctx.mercenary_highlanders}" # TODO: Possibly rework into unit options
-            f" {self.ctx.war_council_nerfs}"
+            f" {self.ctx.show_war_council_nerfs}"
         )
         if isinstance(error, Error):
             logger.error(error.message)

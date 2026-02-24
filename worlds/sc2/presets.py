@@ -1,15 +1,13 @@
 from typing import Any, Dict
 
-import Options as ap_options
-from .. import options
 from Options import Accessibility, ProgressionBalancing
-from .. import item_names
-from ..mission_tables import SC2Race, SC2Campaign
-from ..tables import NovaPresenceOptions
+from . import item_names
+from .mission_tables import SC2Race, SC2Campaign
+from .tables import NovaPresenceOptions
 
-from ..options import ( 
+from .options import ( 
     # avoid import *
-    GameDifficulty, DifficultyDamageModifier, GameSpeed, DisableForcedCamera, SkipCutscenes, AllInMap, MissionOrder, 
+    GameDifficulty, DifficultyDamageModifier, GameSpeed, AllInMap, MissionOrder, 
     MaximumCampaignSize, TwoStartPositions, KeyMode, PlayerColorTerranRaynor, PlayerColorProtoss, PlayerColorZerg, 
     PlayerColorZergPrimal, PlayerColorNova, SelectedRaces, EnabledCampaigns, EnableRaceSwapVariants, EnableMissionRaceBalancing, 
     ShuffleCampaigns, ShuffleNoBuild, StarterUnit, RequiredTactics, EnableVoidTrade, VoidTradeAgeLimit, VoidTradeWorkers, 

@@ -104,20 +104,6 @@ class GameSpeed(Choice):
     default = option_default
 
 
-class DisableForcedCamera(DefaultOnToggle):
-    """
-    Prevents the game from moving or locking the camera without the player's consent.
-    """
-    display_name = "Disable Forced Camera Movement"
-
-
-class SkipCutscenes(Toggle):
-    """
-    Skips all cutscenes and prevents dialog from blocking progress.
-    """
-    display_name = "Skip Cutscenes"
-
-
 class AllInMap(Choice):
     """Determines what version of All-In (WoL final map) that will be generated for the campaign."""
     display_name = "All In Map"
@@ -715,7 +701,7 @@ class KerriganMaxPassiveAbilities(Range):
     default = range_end
 
 
-class EnableMorphling(Toggle):
+class EnableMorphling(DefaultOnToggle):
     """
     Determines whether the player can build Morphlings, which allow for inefficient morphing of advanced units
     like Ravagers and Lurkers without requiring the base unit to be unlocked first.
@@ -857,7 +843,7 @@ class GrantStoryTech(Choice):
 
 class GrantStoryLevels(Choice):
     """
-    If enabled, grants Kerrigan the required minimum levels for the following missions:
+    If enabled, grants Kerrigan the required minimum levels for the following missions for Supreme and Infinite Cycle.
     Supreme: 35
     The Infinite Cycle: 70
     The bonus levels only apply during the listed missions, and can exceed the Total Level Cap.
@@ -1365,8 +1351,6 @@ class Starcraft2Options(PerGameCommonOptions):
     game_difficulty: GameDifficulty
     difficulty_damage_modifier: DifficultyDamageModifier
     game_speed: GameSpeed
-    disable_forced_camera: DisableForcedCamera
-    skip_cutscenes: SkipCutscenes
     all_in_map: AllInMap
     mission_order: MissionOrder
     maximum_campaign_size: MaximumCampaignSize

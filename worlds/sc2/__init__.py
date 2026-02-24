@@ -39,7 +39,7 @@ from .tables import NovaPresenceOptions
 from .regions import create_mission_order
 from .mission_order import SC2MissionOrder
 from worlds.LauncherComponents import components, Component, launch as launch_component
-from .mission_order.presets import sc2_options_presets
+from .presets import sc2_options_presets
 
 logger = logging.getLogger("Starcraft 2")
 
@@ -842,8 +842,11 @@ def flag_start_unit(world: SC2World, item_list: list[FilterItem], starter_unit: 
             first_race = world.random.choice(list(races))
 
     if first_race != SC2Race.ANY:
+        disqualifying_flags = (
+            ItemFilterFlags.Plando|ItemFilterFlags.UserExcluded|ItemFilterFlags.FilterExcluded
+        )
         possible_starter_items = {
-            item.name: item for item in item_list if (ItemFilterFlags.Plando|ItemFilterFlags.UserExcluded|ItemFilterFlags.FilterExcluded) & item.flags == 0
+            item.name: item for item in item_list if not (disqualifying_flags & item.flags)
         }
 
         # The race of the early unit has been chosen
