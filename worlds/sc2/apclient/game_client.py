@@ -561,12 +561,26 @@ def linux_get_sc2_pid() -> int | None:
     return None
 
 
+def try_decode(line: bytes, encoding: str) -> str | None:
+    try:
+        return line.decode(encoding)
+    except UnicodeDecodeError:
+        return None
+
+
 def windows_get_sc2_pid() -> int | None:
     result_bytes = subprocess.check_output(["tasklist"])
-    lines = result_bytes.decode("utf-8").split("\n")
-    for line in lines:
-        if "SC2_x64.exe" not in line:
+    lines = result_bytes.split(b"\r\n")
+    for line_bytes in lines:
+        if b"SC2_x64.exe" not in line_bytes:
             continue
+        line = try_decode(line_bytes, "utf-8")
+        if line is None:
+            line = try_decode(line_bytes, "cp437")  # Windows why?
+        if line is None:
+            logger.warning(f"Unable to decode PID line {line_bytes!r}")
+            continue
+
         parts = [p for p in line.split() if p]
         # Format: Image Name, PID, Session Name, Session#, Mem Usage
         if len(parts) < 2:
