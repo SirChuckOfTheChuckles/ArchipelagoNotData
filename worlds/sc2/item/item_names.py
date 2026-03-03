@@ -938,8 +938,8 @@ ARTANIS_CLEANSING_SMITE                                 = "Cleansing Smite (Arta
 ARTANIS_CLOLARIONS_CONFIDENCE                           = "Clolarion's Confidence (Artanis Weapon Aspect Passive)"
 ARTANIS_SHADOW_SLICE                                    = "Shadow Slice (Artanis Weapon Aspect Active)"
 ARTANIS_RASZAGALS_RHYTHM                                = "Raszagal's Rhythm (Artanis Weapon Aspect Passive)"
-ARTANIS_BLADE_WALTZ                                     = "Blade Waltz (Artanis Weapon Aspect Passive)"
-ARTANIS_TASSADARS_TENACITY                              = "Tassadar's Tenacity (Artanis Weapon Aspect Active)"
+ARTANIS_BLADE_WALTZ                                     = "Blade Waltz (Artanis Weapon Aspect Active)"
+ARTANIS_TASSADARS_TENACITY                              = "Tassadar's Tenacity (Artanis Weapon Aspect Passive)"
 
 # Spear Of Adun
 SOA_CHRONO_SURGE            = "Chrono Surge (Spear of Adun)"
