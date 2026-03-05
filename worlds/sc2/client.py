@@ -30,10 +30,10 @@ from .item.item_annotations import ITEM_NAME_ANNOTATIONS
 from .item.item_groups import item_name_groups, unlisted_item_name_groups
 from . import options
 from .options import (
-    MissionOrder, KerriganPrimalStatus, KerriganPresence, EnableMorphling, GameDifficulty,
+    MissionOrder, KerriganPrimalStatus, EnableMorphling, GameDifficulty,
     GameSpeed, GenericUpgradeItems, GenericUpgradeResearch, ColorChoice, GenericUpgradeMissions, MaxUpgradeLevel,
     LocationInclusion, ExtraLocations, MasteryLocations, SpeedrunLocations, PreventativeLocations, ChallengeLocations,
-    VanillaLocations, NovaPresence,
+    VanillaLocations, EnabledHeroes, HeroPresence,
     GrantStoryTech, GrantStoryLevels, TakeOverAIAllies, RequiredTactics,
     SpearOfAdunPresence, SpearOfAdunPresentInNoBuild, SpearOfAdunPassiveAbilityPresence,
     SpearOfAdunPassivesPresentInNoBuild, EnableVoidTrade, VoidTradeAgeLimit, void_trade_age_limits_ms, VoidTradeWorkers,
@@ -41,7 +41,7 @@ from .options import (
 )
 from .mission_order.slot_data import CampaignSlotData, LayoutSlotData, MissionSlotData, MissionOrderObjectSlotData
 from .mission_order.entry_rules import SubRuleRuleData, CountMissionsRuleData, MissionEntryRules
-from .tables import NovaPresenceOptions
+from .tables import HeroOptions, HeroFlag
 from .apclient.transfer_data import worker_units
 from . import SC2World
 from .apclient import banks, user_paths, game_client
@@ -56,7 +56,8 @@ from .locations import (
 )
 from .mission_tables import (
     lookup_id_to_mission, SC2Campaign, MissionInfo,
-    lookup_id_to_campaign, SC2Mission, campaign_mission_table, SC2Race
+    lookup_id_to_campaign, SC2Mission, campaign_mission_table, 
+    lookup_id_to_race, SC2Race,
 )
 import colorama
 from NetUtils import (
@@ -385,7 +386,6 @@ class StarcraftClientProcessor(ClientCommandProcessor):
 
         configurable_options: dict[str, ConfigurableOptionInfo | ConfigurableSettingInfo] = {
             # Kerrigan
-            'kerrigan_presence': ConfigurableOptionInfo('kerrigan_presence', options.KerriganPresence, can_break_logic=True),
             'kerrigan_level_cap': ConfigurableOptionInfo('kerrigan_total_level_cap', options.KerriganTotalLevelCap, ConfigurableOptionType.INTEGER, can_break_logic=True),
             'kerrigan_mission_level_cap': ConfigurableOptionInfo('kerrigan_levels_per_mission_completed_cap', options.KerriganLevelsPerMissionCompletedCap, ConfigurableOptionType.INTEGER),
             'kerrigan_levels_per_mission': ConfigurableOptionInfo('kerrigan_levels_per_mission_completed', options.KerriganLevelsPerMissionCompleted, ConfigurableOptionType.INTEGER),
@@ -729,7 +729,6 @@ class SC2Context(CommonContext):
         self.player_color_protoss = ColorChoice.option_blue
         self.player_color_nova = ColorChoice.option_dark_grey
         self.pending_color_update = False
-        self.kerrigan_presence: int = KerriganPresence.default
         self.kerrigan_primal_status = 0
         self.enable_morphling = EnableMorphling.default
         self.custom_mission_order: list[CampaignSlotData] = []
@@ -766,7 +765,8 @@ class SC2Context(CommonContext):
         self.maximum_supply_reduction_per_item: int = options.MaximumSupplyReductionPerItem.default
         self.lowest_maximum_supply: int = options.LowestMaximumSupply.default
         self.research_cost_reduction_per_item: int = options.ResearchCostReductionPerItem.default
-        self.nova_presence: frozenset[str] = NovaPresence.default
+        self.enabled_heroes: frozenset[str] = EnabledHeroes.default
+        self.hero_presence: dict[SC2Campaign, dict[SC2Race], int] = HeroPresence.default
         self.mercenary_highlanders: bool = False
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
@@ -829,6 +829,27 @@ class SC2Context(CommonContext):
             self.game_speed = GameSpeed.option_fast
         elif str(SC2World.settings.game_speed).casefold() == 'faster':
             self.game_speed = GameSpeed.option_faster
+
+    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Campaign, dict[SC2Race, int]]:
+        campaigns = [campaign for campaign in SC2Campaign if campaign != SC2Campaign.GLOBAL] 
+        result: dict[SC2Campaign, dict[SC2Race, int]] = {campaign: {} for campaign in campaigns}
+        for key, value in slot_data.items():
+            campaign, race, = key.split(".")
+            result[lookup_id_to_campaign[int(campaign)]][lookup_id_to_race[int(race)]] = int(value)
+        return result
+
+    def default_hero_presence(self, kerrigan_present: bool = True) -> dict[SC2Campaign, dict[SC2Race, int]]:
+        if kerrigan_present: 
+            return {
+                SC2Campaign.HOTS: {SC2Race.ZERG: HeroFlag.KERRIGAN.value},
+                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
+            }
+        else:
+            return {
+                # only used by compat code
+                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
+            }
+
 
     def on_package(self, cmd: str, args: dict) -> None:
         if cmd == "Connected":
@@ -938,7 +959,6 @@ class SC2Context(CommonContext):
             self.generic_upgrade_items = args["slot_data"].get("generic_upgrade_items", GenericUpgradeItems.option_individual_items)
             self.generic_upgrade_research = args["slot_data"].get("generic_upgrade_research", GenericUpgradeResearch.option_vanilla)
             self.generic_upgrade_research_speedup = args["slot_data"].get("generic_upgrade_research_speedup", GenericUpgradeResearchSpeedup.default)
-            self.kerrigan_presence = args["slot_data"].get("kerrigan_presence", KerriganPresence.option_vanilla)
             self.kerrigan_primal_status = args["slot_data"].get("kerrigan_primal_status", KerriganPrimalStatus.option_vanilla)
             self.kerrigan_levels_per_mission_completed = args["slot_data"].get("kerrigan_levels_per_mission_completed", 0)
             self.kerrigan_levels_per_mission_completed_cap = args["slot_data"].get("kerrigan_levels_per_mission_completed_cap", -1)
@@ -963,18 +983,25 @@ class SC2Context(CommonContext):
             self.maximum_supply_reduction_per_item = args["slot_data"].get("maximum_supply_reduction_per_item", options.MaximumSupplyReductionPerItem.default)
             self.lowest_maximum_supply = args["slot_data"].get("lowest_maximum_supply", options.LowestMaximumSupply.default)
             self.research_cost_reduction_per_item = args["slot_data"].get("research_cost_reduction_per_item", options.ResearchCostReductionPerItem.default)
-            self.nova_presence = args["slot_data"].get("nova_presence", options.NovaPresence.default)
-            self.nova_grant_story_tech = args["slot_data"].get("nova_grant_story_tech", False)
-            if self.slot_data_version < 4:
-                if args["slot_data"].get("nova_covert_ops_only", True):
-                    self.nova_presence = frozenset((NovaPresenceOptions.NCO_TERRAN,))
-                else:
-                    self.nova_presence = frozenset((NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE,))
+            self.nova_items_granted = args["slot_data"].get("nova_items_granted", False)
+            hero_presence_args = args["slot_data"].get("hero_presence","0")
+            if hero_presence_args != "0":
+                self.hero_presence = self.unpack_hero_presence(hero_presence_args)
+            else:
+                self.hero_presence = self.default_hero_presence(True)
+            # # TODO (Snarky): NCO Nova is currently disabled. Revisit if enabled.
+            # # Generic Nova presence never made it to live, so it doesn't need compat code
+            # if self.slot_data_version < 4:
+            #     if args["slot_data"].get("nova_covert_ops_only", True):
+            #     else:
+            # if self.slot_data_version < 5:
+            #     if args["slot_data"].get("use_nova_wol_fallback", True):
+            #     else:
             if self.slot_data_version < 5:
-                if args["slot_data"].get("use_nova_wol_fallback", True):
-                    self.nova_presence = frozenset((NovaPresenceOptions.NCO_TERRAN,))
+                if args["slot_data"].get("kerrigan_presence", True):
+                    self.hero_presence = self.default_hero_presence(True)
                 else:
-                    self.nova_presence = frozenset((NovaPresenceOptions.NCO_TERRAN, NovaPresenceOptions.GHOST_OF_A_CHANCE,))
+                    self.hero_presence = self.default_hero_presence(False)
             self.trade_enabled = args["slot_data"].get("enable_void_trade", EnableVoidTrade.option_false)
             self.trade_age_limit = args["slot_data"].get("void_trade_age_limit", VoidTradeAgeLimit.default)
             self.trade_workers_allowed = args["slot_data"].get("void_trade_workers", VoidTradeWorkers.default)
