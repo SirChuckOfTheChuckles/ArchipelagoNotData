@@ -206,8 +206,8 @@ class ItemGroupNames:
     ARTANIS_ABILITIES = "Artanis Abilities"
     ARTANIS_WEAPON_ASPECT_ACTIVE = "Artanis Weapon Aspect Active"
     ARTANIS_WEAPON_ASPECT_PASSIVE = "Artanis Weapon Aspect Passive"
-    ARTANIS_ACTIVE_ABILITIES = "Artanis Active Abilities"
-    ARTANIS_PASSIVE_ABILITIES = "Artanis Passive Abilities"
+    ARTANIS_ACTIVE_ABILITIES = "Artanis Global Actives"
+    ARTANIS_PASSIVE_ABILITIES = "Artanis Global Passives"
 
     VANILLA_ITEMS = "Vanilla Items"
     OVERPOWERED_ITEMS = "Overpowered Items"
@@ -1167,29 +1167,35 @@ item_name_groups[ItemGroupNames.ARTANIS_WEAPON_ASPECT_ACTIVE] = artanis_weapon_a
     item_names.ARTANIS_EXTERMINATE,
     item_names.ARTANIS_CLEANSING_SMITE,
     item_names.ARTANIS_SHADOW_SLICE,
-    item_names.ARTANIS_TASSADARS_TENACITY,
+    item_names.ARTANIS_BLADE_WALTZ,
 ]
 item_name_groups[ItemGroupNames.ARTANIS_WEAPON_ASPECT_PASSIVE] = artanis_weapon_aspect_passive = [
     item_names.ARTANIS_MALASHS_MALEVOLENCE,
     item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
     item_names.ARTANIS_RASZAGALS_RHYTHM,
-    item_names.ARTANIS_BLADE_WALTZ,
+    item_names.ARTANIS_TASSADARS_TEACHINGS,
+]
+artanis_weapon_aspect_pairs = [
+    (item_names.ARTANIS_BLADE_WALTZ, item_names.ARTANIS_TASSADARS_TEACHINGS),
+    (item_names.ARTANIS_SHADOW_SLICE, item_names.ARTANIS_RASZAGALS_RHYTHM),
+    (item_names.ARTANIS_CLEANSING_SMITE, item_names.ARTANIS_CLOLARIONS_CONFIDENCE),
+    (item_names.ARTANIS_EXTERMINATE, item_names.ARTANIS_MALASHS_MALEVOLENCE),
 ]
 item_name_groups[ItemGroupNames.ARTANIS_ACTIVE_ABILITIES] = artanis_active_abilities = [
     item_names.ARTANIS_LIGHTNING_DASH,
     item_names.ARTANIS_PHASE_PRISM,
     item_names.ARTANIS_VOLTAIC_SHOCK,
     item_names.ARTANIS_ASTRAL_WIND,
-    item_names.ARTANIS_CHARGE,
     item_names.ARTANIS_STRENGTH_IN_UNITY,
     item_names.ARTANIS_SUPPRESSION_PULSE,
 ]
 item_name_groups[ItemGroupNames.ARTANIS_PASSIVE_ABILITIES] = artanis_passive_abilities = [
-    item_names.ARTANIS_INSPIRING_PRESENCE,
+    item_names.ARTANIS_WILL_OF_THE_FIRSTBORN,
     item_names.ARTANIS_RESURGENCE,
     item_names.ARTANIS_PSIONIC_ASSAULT,
     item_names.ARTANIS_FORCE_OF_WILL,
     item_names.ARTANIS_TEMPERED_IN_TWILIGHT,
+    item_names.ARTANIS_SHIELD_OVERLOAD,
 ]
 item_name_groups[ItemGroupNames.ARTANIS_ABILITIES] = artanis_abilities = [
     *artanis_active_abilities,
@@ -1255,27 +1261,7 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
 # Items not aimed to be officially released
 # These need further balancing, and they shouldn't generate normally unless explicitly locked
 item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
-    # Artanis hero abilities (temporary unreleased state)
-    item_names.ARTANIS_LIGHTNING_DASH,
-    item_names.ARTANIS_PHASE_PRISM,
-    item_names.ARTANIS_INSPIRING_PRESENCE,
-    item_names.ARTANIS_VOLTAIC_SHOCK,
-    item_names.ARTANIS_ASTRAL_WIND,
-    item_names.ARTANIS_CHARGE,
-    item_names.ARTANIS_RESURGENCE,
-    item_names.ARTANIS_PSIONIC_ASSAULT,
-    item_names.ARTANIS_FORCE_OF_WILL,
-    item_names.ARTANIS_TEMPERED_IN_TWILIGHT,
-    item_names.ARTANIS_STRENGTH_IN_UNITY,
-    item_names.ARTANIS_SUPPRESSION_PULSE,
-    item_names.ARTANIS_EXTERMINATE,
-    item_names.ARTANIS_MALASHS_MALEVOLENCE,
-    item_names.ARTANIS_CLEANSING_SMITE,
-    item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
-    item_names.ARTANIS_SHADOW_SLICE,
-    item_names.ARTANIS_RASZAGALS_RHYTHM,
-    item_names.ARTANIS_BLADE_WALTZ,
-    item_names.ARTANIS_TASSADARS_TENACITY,
+    # Nothing here for now
 ]
 
 # A place for traits that were released before but are to be taken down by default.

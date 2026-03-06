@@ -3,7 +3,7 @@ Unit tests for item_groups.py
 """
 
 import unittest
-from ..item import item_groups, item_tables
+from ..item import item_groups, item_names, item_tables
 
 
 class ItemGroupsUnitTests(unittest.TestCase):
@@ -30,3 +30,17 @@ class ItemGroupsUnitTests(unittest.TestCase):
     def test_all_item_group_names_have_a_group_defined(self) -> None:
         for display_name in item_groups.ItemGroupNames.get_all_group_names():
             self.assertIn(display_name, item_groups.item_name_groups)
+
+    def test_artanis_weapon_aspect_groups_are_classified_correctly(self) -> None:
+        self.assertCountEqual(item_groups.artanis_weapon_aspect_active, [
+            item_names.ARTANIS_BLADE_WALTZ,
+            item_names.ARTANIS_CLEANSING_SMITE,
+            item_names.ARTANIS_EXTERMINATE,
+            item_names.ARTANIS_SHADOW_SLICE,
+        ])
+        self.assertCountEqual(item_groups.artanis_weapon_aspect_passive, [
+            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+            item_names.ARTANIS_MALASHS_MALEVOLENCE,
+            item_names.ARTANIS_RASZAGALS_RHYTHM,
+            item_names.ARTANIS_TASSADARS_TEACHINGS,
+        ])

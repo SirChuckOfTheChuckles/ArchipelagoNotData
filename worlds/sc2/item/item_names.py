@@ -922,10 +922,10 @@ MISTWING_PHANTOM_DASH                                   = "Phantom Dash (Mist Wi
 # Artanis
 ARTANIS_LIGHTNING_DASH                                  = "Lightning Dash (Artanis Ability)"
 ARTANIS_PHASE_PRISM                                     = "Phase Prism (Artanis Ability)"
-ARTANIS_INSPIRING_PRESENCE                              = "Inspiring Presence (Artanis Passive)"
+ARTANIS_WILL_OF_THE_FIRSTBORN                           = "Will of the Firstborn (Artanis Passive)"
 ARTANIS_VOLTAIC_SHOCK                                   = "Voltaic Shock (Artanis Ability)"
 ARTANIS_ASTRAL_WIND                                     = "Astral Wind (Artanis Ability)"
-ARTANIS_CHARGE                                          = "Charge (Artanis Ability)"
+ARTANIS_SHIELD_OVERLOAD                                 = "Shield Overload (Artanis Passive)"
 ARTANIS_RESURGENCE                                      = "Resurgence (Artanis Passive)"
 ARTANIS_PSIONIC_ASSAULT                                 = "Psionic Assault (Artanis Passive)"
 ARTANIS_FORCE_OF_WILL                                   = "Force of Will (Artanis Passive)"
@@ -939,7 +939,7 @@ ARTANIS_CLOLARIONS_CONFIDENCE                           = "Clolarion's Confidenc
 ARTANIS_SHADOW_SLICE                                    = "Shadow Slice (Artanis Weapon Aspect Active)"
 ARTANIS_RASZAGALS_RHYTHM                                = "Raszagal's Rhythm (Artanis Weapon Aspect Passive)"
 ARTANIS_BLADE_WALTZ                                     = "Blade Waltz (Artanis Weapon Aspect Active)"
-ARTANIS_TASSADARS_TENACITY                              = "Tassadar's Tenacity (Artanis Weapon Aspect Passive)"
+ARTANIS_TASSADARS_TEACHINGS                             = "Tassadar's Teachings (Artanis Weapon Aspect Passive)"
 
 # Spear Of Adun
 SOA_CHRONO_SURGE            = "Chrono Surge (Spear of Adun)"
