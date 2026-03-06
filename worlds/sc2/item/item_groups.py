@@ -140,6 +140,7 @@ class ItemGroupNames:
     KERRIGAN_HOTS_ABILITIES = "Kerrigan HotS Abilities"
     KERRIGAN_ACTIVE_ABILITIES = "Kerrigan Active Abilities"
     KERRIGAN_LOGIC_ACTIVE_ABILITIES = "Kerrigan Logic Active Abilities"
+    KERRIGAN_SOLO_ACTIVE_ABILITIES = "Kerrigan Solo Active Abilities"
     KERRIGAN_PASSIVES = "Kerrigan Passives"
     KERRIGAN_TIER_1 = "Kerrigan Tier 1"
     KERRIGAN_TIER_2 = "Kerrigan Tier 2"
@@ -683,6 +684,9 @@ item_name_groups[ItemGroupNames.KERRIGAN_ACTIVE_ABILITIES] = kerrigan_active_abi
 item_name_groups[ItemGroupNames.KERRIGAN_LOGIC_ACTIVE_ABILITIES] = kerrigan_logic_active_abilities = [
     item_name for item_name in kerrigan_active_abilities if item_name != item_names.KERRIGAN_ASSIMILATION_AURA
 ]
+item_name_groups[ItemGroupNames.KERRIGAN_SOLO_ACTIVE_ABILITIES] = kerrigan_solo_active_abilities = [
+    item_name for item_name in kerrigan_logic_active_abilities if item_name != item_names.KERRIGAN_WILD_MUTATION
+]
 item_name_groups[ItemGroupNames.KERRIGAN_TIER_1] = kerrigan_tier_1 = [
     item_names.KERRIGAN_KINETIC_BLAST, item_names.KERRIGAN_HEROIC_FORTITUDE, item_names.KERRIGAN_LEAPING_STRIKE
 ]
@@ -707,14 +711,14 @@ item_name_groups[ItemGroupNames.KERRIGAN_TIER_7] = kerrigan_tier_7 = [
 item_name_groups[ItemGroupNames.KERRIGAN_ULTIMATES] = kerrigan_ultimates = [
     *kerrigan_tier_7, item_names.KERRIGAN_ASSIMILATION_AURA, item_names.KERRIGAN_IMMOBILIZATION_WAVE
 ]
-item_name_groups[ItemGroupNames.KERRIGAN_NON_ULTIMATES] = kerrigan_non_ulimates = [
+item_name_groups[ItemGroupNames.KERRIGAN_NON_ULTIMATES] = kerrigan_non_ultimates = [
     item for item in kerrigan_abilities if item not in kerrigan_ultimates
 ]
 item_name_groups[ItemGroupNames.KERRIGAN_LOGIC_ULTIMATES] = kerrigan_logic_ultimates = [
     item for item in kerrigan_ultimates if item != item_names.KERRIGAN_ASSIMILATION_AURA
 ]
 item_name_groups[ItemGroupNames.KERRIGAN_NON_ULTIMATE_ACTIVE_ABILITIES] = kerrigan_non_ulimate_active_abilities = [
-    item for item in kerrigan_non_ulimates if item in kerrigan_active_abilities
+    item for item in kerrigan_non_ultimates if item in kerrigan_active_abilities
 ]
 item_name_groups[ItemGroupNames.KERRIGAN_HOTS_ABILITIES] = kerrigan_hots_abilities = [
     ability for tiers in [
