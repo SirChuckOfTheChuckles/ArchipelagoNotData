@@ -36,7 +36,7 @@ unlisted_item_name_groups = {
     item_tables.ZergItemType.Ability.display_name,
     item_tables.ZergItemType.Morph.display_name,
     item_tables.ZergItemType.Strain.display_name,
-    item_tables.ProtossItemType.Artanis_Ability.display_name,
+    item_tables.ProtossItemType.Artanis_Items.display_name,
 }
 
 # Some item names only differ in bracketed parts

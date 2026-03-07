@@ -123,7 +123,7 @@ class ProtossItemType(ItemTypeEnum):
     War_Council = "War Council", 12
     War_Council_2 = "War Council", 13
     ShieldRegeneration = "Shield Regeneration Group", 14
-    Artanis_Ability = "Artanis Ability", 15
+    Artanis_Items = "Artanis Ability", 15
 
 
 class FactionlessItemType(ItemTypeEnum):
