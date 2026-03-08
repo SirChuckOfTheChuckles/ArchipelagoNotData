@@ -2,7 +2,7 @@ from math import floor
 from typing import TYPE_CHECKING, Set, Optional, Callable, Dict, Tuple, Iterable
 
 from BaseClasses import CollectionState, Location
-from .item.item_groups import kerrigan_non_ultimates
+from .item.item_groups import kerrigan_non_ultimates, artanis_weapon_aspect_active
 from .item.item_names import PROGRESSIVE_PROTOSS_AIR_WEAPON, PROGRESSIVE_PROTOSS_AIR_ARMOR, PROGRESSIVE_PROTOSS_SHIELDS
 from .options import (
     RequiredTactics,
@@ -1207,7 +1207,24 @@ class SC2Logic:
         return False
 
     def basic_artanis(self, state: CollectionState, story_tech_available: bool = True) -> bool:
-        return True # TODO (Snarky): Revisit once Artanis is implemented
+        # One active ability that deals minimum 35 damage
+        if not self.artanis_any_damage_ability:
+            return False
+        # One defensive upgrade OR active defensive ability
+        if not state.has_any(
+            (
+                item_names.ARTANIS_WILL_OF_THE_FIRSTBORN,
+                item_names.ARTANIS_SHIELD_OVERLOAD,
+                item_names.ARTANIS_FORCE_OF_WILL,
+                item_names.ARTANIS_SUPPRESSION_PULSE,
+                item_names.ARTANIS_ASTRAL_WIND,
+            ),
+            self.player,
+        ):
+            return False
+        if self.artanis_hardend_shield_and_active:
+            return True
+        return False
 
     def two_kerrigan_solo_actives(self, state: CollectionState, story_tech_available: bool = True) -> bool:
         if story_tech_available or self.kerrigan_items_granted:
@@ -1749,6 +1766,73 @@ class SC2Logic:
                 item_names.STALKER_INSTIGATOR_SLAYER_DISINTEGRATING_PARTICLES,
                 item_names.STALKER_INSTIGATOR_SLAYER_PARTICLE_REFLECTION,
         ), self.player)
+
+    def artanis_aspect_damage_boost(self, state: CollectionState) -> bool:
+        return state.has_any(
+            {
+                item_names.ARTANIS_EXTERMINATE,
+                item_names.ARTANIS_BLADE_WALTZ,
+                item_names.ARTANIS_SHADOW_SLICE,
+                item_names.ARTANIS_CLEANSING_SMITE,
+            },
+            self.player,
+        ) or self.advanced_tactics and state.has_any( 
+            {
+                item_names.ARTANIS_TASSADARS_TEACHINGS, #make sure to pair with active ability in logic
+                item_names.ARTANIS_RASZAGALS_RHYTHM, #make sure to pair with active ability in logic
+                item_names.ARTANIS_MALASHS_MALEVOLENCE,
+            },
+            self.player
+        )
+
+    def artanis_any_damage_item(self, state: CollectionState) -> bool:
+        return state.has_any(
+            {
+                item_names.ARTANIS_VOLTAIC_SHOCK,
+                item_names.ARTANIS_LIGHTNING_DASH,
+            },
+            self.player,
+        ) or self.artanis_aspect_damage_boost
+    
+    def artanis_any_defensive_upgrade(self, state: CollectionState) -> bool:
+        return state.has_any(
+            {
+                item_names.ARTANIS_WILL_OF_THE_FIRSTBORN,
+                item_names.ARTANIS_FORCE_OF_WILL,
+                item_names.ARTANIS_SHIELD_OVERLOAD,
+            },
+            self.player,
+        ) or self.advanced_tactics and state.has_any( 
+            {
+                item_names.ARTANIS_RESURGENCE, #need to actively use revive to get value out of this
+            },
+            self.player
+        )
+
+    
+
+    def artanis_anti_air(self, state: CollectionState) -> bool:
+        # Require a weapon on standard tactics, or an anti-air ability on advanced tactics
+        return state.has(item_names.ARTANIS_PSIONIC_ASSAULT, self.player) \
+            or (self.advanced_tactics and state.has_any({item_names.ARTANIS_VOLTAIC_SHOCK, item_names.ARTANIS_SHADOW_SLICE}, self.player))
+
+
+    def artanis_hardened_shield_check(self, state: CollectionState) -> bool:
+        # Hardened Shield counts as a defensive upgrade, but Artanis has to be in Purifier Aspect to use it.
+        return state.has_all(
+            {
+                item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+                state.has_any(
+                            {
+                                item_names.ARTANIS_VOLTAIC_SHOCK,
+                                item_names.ARTANIS_LIGHTNING_DASH,
+                                item_names.ARTANIS_CLEANSING_SMITE,
+                            },
+                            self.player,
+                        )
+            },
+            self.player,
+        )
 
     # Mission-specific rules
     def terran_outlaws_early_requirement(self, state: CollectionState) -> bool:

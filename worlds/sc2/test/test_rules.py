@@ -7,7 +7,7 @@ from typing import List, Set, Iterable
 from BaseClasses import ItemClassification, MultiWorld
 import Options as CoreOptions
 from .. import options, locations
-from ..item import item_tables
+from ..item import item_names, item_tables
 from ..rules import SC2Logic
 from ..mission_tables import SC2Race, MissionFlag, lookup_name_to_mission
 
@@ -83,6 +83,29 @@ class TestWorld:
 
         self.player = 1
         self.multiworld = MultiWorld(1)
+
+
+class StaticInventory:
+    def __init__(self, *items: str) -> None:
+        self.items = set(items)
+
+    def has(self, item: str, player: int, count: int = 1) -> bool:
+        return item in self.items
+
+    def has_any(self, items: Iterable[str], player: int) -> bool:
+        return any(item in self.items for item in items)
+
+    def has_all(self, items: Iterable[str], player: int) -> bool:
+        return all(item in self.items for item in items)
+
+    def count(self, item: str, player: int) -> int:
+        return int(item in self.items)
+
+    def count_from_list(self, items: Iterable[str], player: int) -> int:
+        return sum(item in self.items for item in items)
+
+    def count_from_list_unique(self, items: Iterable[str], player: int) -> int:
+        return self.count_from_list(items, player)
 
 
 class TestRules(unittest.TestCase):
@@ -179,5 +202,40 @@ class TestRules(unittest.TestCase):
                 rule = logic.has_race_units(target, race)
                 for _ in range(10):
                     rule(test_inventory)
+
+    def test_basic_artanis_requires_usable_aspect_active(self):
+        logic = self._get_world().logic
+        inventory = StaticInventory(
+            item_names.ARTANIS_VOLTAIC_SHOCK,
+            item_names.ARTANIS_SHIELD_OVERLOAD,
+        )
+        self.assertFalse(logic.basic_artanis(inventory, False))
+
+    def test_basic_artanis_clolarions_confidence_requires_cleansing_smite(self):
+        logic = self._get_world().logic
+        invalid_inventory = StaticInventory(
+            item_names.ARTANIS_VOLTAIC_SHOCK,
+            item_names.ARTANIS_BLADE_WALTZ,
+            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+        )
+        valid_inventory = StaticInventory(
+            item_names.ARTANIS_VOLTAIC_SHOCK,
+            item_names.ARTANIS_CLEANSING_SMITE,
+            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+        )
+        self.assertFalse(logic.basic_artanis(invalid_inventory, False))
+        self.assertTrue(logic.basic_artanis(valid_inventory, False))
+
+    def test_basic_artanis_phase_prism_combo_is_advanced_only(self):
+        advanced_logic = self._get_world(required_tactics=options.RequiredTactics.option_advanced).logic
+        standard_logic = self._get_world(required_tactics=options.RequiredTactics.option_standard).logic
+        inventory = StaticInventory(
+            item_names.ARTANIS_PHASE_PRISM,
+            item_names.ARTANIS_TASSADARS_TEACHINGS,
+            item_names.ARTANIS_BLADE_WALTZ,
+            item_names.ARTANIS_SHIELD_OVERLOAD,
+        )
+        self.assertTrue(advanced_logic.basic_artanis(inventory, False))
+        self.assertFalse(standard_logic.basic_artanis(inventory, False))
 
 
