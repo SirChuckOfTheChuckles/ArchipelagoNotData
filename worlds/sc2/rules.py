@@ -1047,8 +1047,9 @@ class SC2Logic:
 
     def zerg_mineral_dump(self, state: CollectionState) -> bool:
         return (
-            state.has_any({item_names.ZERGLING, item_names.PYGALISK, item_names.INFESTED_BUNKER}, self.player)
-            or state.has_all({item_names.SWARM_QUEEN, item_names.SWARM_QUEEN_RESOURCE_EFFICIENCY}, self.player)
+            state.has_any((
+                item_names.ZERGLING, item_names.PYGALISK, item_names.INFESTED_BUNKER, item_names.HIVE_QUEEN,
+            ), self.player)
             or (self.advanced_tactics and self.spread_creep(state) and state.has(item_names.SPINE_CRAWLER, self.player))
         )
 
