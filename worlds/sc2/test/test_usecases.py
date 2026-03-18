@@ -441,7 +441,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
-            'locked_items': {item_name: 1 for item_name in item_groups.artanis_weapon_aspect_active},
             'artanis_max_weapon_aspect_active_abilities': target_number,
         }
 
@@ -460,7 +459,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
-            'locked_items': {item_name: 1 for item_name in item_groups.artanis_weapon_aspect_passive},
             'artanis_max_weapon_aspect_passive_abilities': target_number,
         }
 
@@ -479,7 +477,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
-            'locked_items': {item_name: 1 for item_name in item_groups.artanis_active_abilities},
             'artanis_max_active_abilities': target_number,
         }
 
@@ -496,7 +493,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
-            'locked_items': {item_name: 1 for item_name in item_groups.artanis_passive_abilities},
             'artanis_max_passive_upgrades': target_number,
         }
 
@@ -514,11 +510,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
-            'locked_items': {
-                item_name: 1
-                for pair in item_groups.artanis_weapon_aspect_pairs
-                for item_name in pair
-            },
             'artanis_one_item_per_aspect': options.ArtanisOneItemPerAspect.option_true,
         }
 
