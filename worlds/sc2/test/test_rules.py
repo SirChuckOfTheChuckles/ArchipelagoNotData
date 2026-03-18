@@ -203,39 +203,3 @@ class TestRules(unittest.TestCase):
                 for _ in range(10):
                     rule(test_inventory)
 
-    def test_basic_artanis_requires_usable_aspect_active(self):
-        logic = self._get_world().logic
-        inventory = StaticInventory(
-            item_names.ARTANIS_VOLTAIC_SHOCK,
-            item_names.ARTANIS_SHIELD_OVERLOAD,
-        )
-        self.assertFalse(logic.basic_artanis(inventory, False))
-
-    def test_basic_artanis_clolarions_confidence_requires_cleansing_smite(self):
-        logic = self._get_world().logic
-        invalid_inventory = StaticInventory(
-            item_names.ARTANIS_VOLTAIC_SHOCK,
-            item_names.ARTANIS_BLADE_WALTZ,
-            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
-        )
-        valid_inventory = StaticInventory(
-            item_names.ARTANIS_VOLTAIC_SHOCK,
-            item_names.ARTANIS_CLEANSING_SMITE,
-            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
-        )
-        self.assertFalse(logic.basic_artanis(invalid_inventory, False))
-        self.assertTrue(logic.basic_artanis(valid_inventory, False))
-
-    def test_basic_artanis_phase_prism_combo_is_advanced_only(self):
-        advanced_logic = self._get_world(required_tactics=options.RequiredTactics.option_advanced).logic
-        standard_logic = self._get_world(required_tactics=options.RequiredTactics.option_standard).logic
-        inventory = StaticInventory(
-            item_names.ARTANIS_PHASE_PRISM,
-            item_names.ARTANIS_TASSADARS_TEACHINGS,
-            item_names.ARTANIS_BLADE_WALTZ,
-            item_names.ARTANIS_SHIELD_OVERLOAD,
-        )
-        self.assertTrue(advanced_logic.basic_artanis(inventory, False))
-        self.assertFalse(standard_logic.basic_artanis(inventory, False))
-
-

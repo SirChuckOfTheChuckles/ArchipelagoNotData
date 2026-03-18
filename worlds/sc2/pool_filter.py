@@ -278,7 +278,7 @@ class ValidInventory:
         cull_items_over_maximum(spear_of_adun_autocasts, self.world.options.spear_of_adun_max_passive_abilities.value)
 
         # Artanis max abilities
-        if self.world.options.artanis_one_ability_per_aspect.value:
+        if self.world.options.artanis_one_item_per_aspect.value:
             for active_item_name, passive_item_name in item_groups.artanis_weapon_aspect_pairs:
                 artanis_aspect_pair = [
                     item for item in inventory
@@ -313,7 +313,7 @@ class ValidInventory:
 
         artanis_passives = [item for item in inventory if item.name in item_groups.artanis_passive_abilities]
         self.world.random.shuffle(artanis_passives)
-        cull_items_over_maximum(artanis_passives, self.world.options.artanis_max_passive_abilities.value)
+        cull_items_over_maximum(artanis_passives, self.world.options.artanis_max_passive_upgrades.value)
 
         # Nova items
         nova_weapon_items = [item for item in inventory if item.name in item_groups.nova_weapons]

@@ -922,7 +922,7 @@ MISTWING_PHANTOM_DASH                                   = "Phantom Dash (Mist Wi
 # Artanis
 ARTANIS_LIGHTNING_DASH                                  = "Lightning Dash (Artanis Ability)"
 ARTANIS_PHASE_PRISM                                     = "Phase Prism (Artanis Ability)"
-ARTANIS_WILL_OF_THE_FIRSTBORN                           = "Will of the Firstborn (Artanis Passive)"
+ARTANIS_VALOR_OF_THE_FIRSTBORN                          = "Valor of the Firstborn (Artanis Passive)"
 ARTANIS_VOLTAIC_SHOCK                                   = "Voltaic Shock (Artanis Ability)"
 ARTANIS_ASTRAL_WIND                                     = "Astral Wind (Artanis Ability)"
 ARTANIS_SHIELD_OVERLOAD                                 = "Shield Overload (Artanis Passive)"

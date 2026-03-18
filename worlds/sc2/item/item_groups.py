@@ -1190,7 +1190,7 @@ item_name_groups[ItemGroupNames.ARTANIS_ACTIVE_ABILITIES] = artanis_active_abili
     item_names.ARTANIS_SUPPRESSION_PULSE,
 ]
 item_name_groups[ItemGroupNames.ARTANIS_PASSIVE_ABILITIES] = artanis_passive_abilities = [
-    item_names.ARTANIS_WILL_OF_THE_FIRSTBORN,
+    item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN,
     item_names.ARTANIS_RESURGENCE,
     item_names.ARTANIS_PSIONIC_ASSAULT,
     item_names.ARTANIS_FORCE_OF_WILL,

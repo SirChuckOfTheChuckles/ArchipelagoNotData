@@ -497,7 +497,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'enabled_heroes': {options.HeroOptions.ARTANIS},
             'hero_presence': options.HeroPresence.option_same_race,
             'locked_items': {item_name: 1 for item_name in item_groups.artanis_passive_abilities},
-            'artanis_max_passive_abilities': target_number,
+            'artanis_max_passive_upgrades': target_number,
         }
 
         self.generate_world(world_options)
@@ -508,7 +508,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
 
         self.assertLessEqual(len(artanis_passives), target_number)
 
-    def test_artanis_one_ability_per_aspect(self):
+    def test_artanis_one_item_per_aspect(self):
         world_options = {
             **self.PROTOSS_CAMPAIGNS,
             'mission_order': options.MissionOrder.option_grid,
@@ -519,7 +519,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
                 for pair in item_groups.artanis_weapon_aspect_pairs
                 for item_name in pair
             },
-            'artanis_one_ability_per_aspect': options.ArtanisOneAbilityPerAspect.option_true,
+            'artanis_one_item_per_aspect': options.ArtanisOneItemPerAspect.option_true,
         }
 
         self.generate_world(world_options)

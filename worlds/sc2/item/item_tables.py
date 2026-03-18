@@ -2021,7 +2021,7 @@ item_table = {
     # Artanis hero items
     item_names.ARTANIS_LIGHTNING_DASH: ItemData(900 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 0, SC2Race.PROTOSS, classification=ItemClassification.progression),
     item_names.ARTANIS_PHASE_PRISM: ItemData(901 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 1, SC2Race.PROTOSS, classification=ItemClassification.progression),
-    item_names.ARTANIS_WILL_OF_THE_FIRSTBORN: ItemData(902 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 2, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN: ItemData(902 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 2, SC2Race.PROTOSS, classification=ItemClassification.progression),
     item_names.ARTANIS_VOLTAIC_SHOCK: ItemData(903 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 3, SC2Race.PROTOSS, classification=ItemClassification.progression),
     item_names.ARTANIS_ASTRAL_WIND: ItemData(904 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 4, SC2Race.PROTOSS, classification=ItemClassification.progression),
     item_names.ARTANIS_SHIELD_OVERLOAD: ItemData(905 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 5, SC2Race.PROTOSS, classification=ItemClassification.progression),
