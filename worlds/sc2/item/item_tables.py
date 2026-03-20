@@ -557,7 +557,7 @@ item_table = {
                  parent=item_names.WRAITH),
     item_names.WRAITH_RESOURCE_EFFICIENCY:
         ItemData(333 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_4, 14, SC2Race.TERRAN,
-                 parent=item_names.WRAITH),
+                 classification=ItemClassification.progression, parent=item_names.WRAITH),
     item_names.VIKING_SHREDDER_ROUNDS:
         ItemData(334 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_4, 15, SC2Race.TERRAN,
                  classification=ItemClassification.progression, parent=item_names.VIKING),
