@@ -1769,11 +1769,11 @@ class SC2Logic:
         Created mainly for engine of destruction start, but works for other missions with no-build starts.
         """
         return state.has_any((
-                item_names.ZEALOT_WHIRLWIND,
-                item_names.SENTRY_DOUBLE_SHIELD_RECHARGE,
-                item_names.SLAYER_PHASE_BLINK,
-                item_names.STALKER_DISINTEGRATING_PARTICLES,
-                item_names.STALKER_PARTICLE_REFLECTION,
+            item_names.ZEALOT_WHIRLWIND,
+            item_names.SENTRY_DOUBLE_SHIELD_RECHARGE,
+            item_names.SLAYER_PHASE_BLINK,
+            item_names.STALKER_DISINTEGRATING_PARTICLES,
+            item_names.STALKER_PARTICLE_REFLECTION,
         ), self.player)
 
     # endregion Global Protoss
@@ -1827,13 +1827,12 @@ class SC2Logic:
     def terran_zero_hour_stage_2_requirement(self, state: CollectionState) -> bool:
         return (
             self.terran_common_unit(state)
-            and self.terran_defense_rating(state, True) >= 2
             and self.basic_or_no_hero(state, SC2Mission.ZERO_HOUR, False)
         )
+
     def terran_zero_hour_requirement(self, state: CollectionState) -> bool:
         return (
             self.terran_common_unit(state)
-            and self.terran_defense_rating(state, True) >= 2
             and (self.advanced_tactics or self.terran_basic_anti_air(state))
             and self.basic_or_no_hero(state, SC2Mission.ZERO_HOUR, False)
         )
