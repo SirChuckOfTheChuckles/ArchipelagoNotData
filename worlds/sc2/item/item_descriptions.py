@@ -724,6 +724,17 @@ item_descriptions = {
     item_names.RAVAGER_POTENT_BILE: "Ravager Corrosive Bile deals an additional +40 damage.",
     item_names.RAVAGER_BLOATED_BILE_DUCTS: "Ravager Corrosive Bile hits a much larger area.",
     item_names.RAVAGER_DEEP_TUNNEL: _ability_desc("Ravagers", "Deep Tunnel", "allows them to burrow to any visible location on the map"),
+    item_names.RAVAGER_DISINTEGRATING_ACID: inspect.cleandoc("""
+        Ravagers reduce the armor of enemies they attack by 1, stacking up to 3 times.
+        Corrosive Bile applies max stacks instantly.
+    """),
+    item_names.RAVAGER_AERIAL_CORROSIVE_BILE: "Ravagers can launch a Corrosive Bile directly at the target location, but it can only damage air units.",
+    item_names.RAVAGER_BURROWED_BOMBARDMENT: inspect.cleandoc("""
+        Ravagers can attack air units with their weapon while burrowed.
+        Ravagers can use Corrosive Bile while burrowed.
+    """),
+    item_names.RAVAGER_BONE_PLATING: "Ravagers gain +35 maximum health and +1 armor.",
+    item_names.RAVAGER_WRITHING_ABOMINATION: "Ravagers spawn 2 Roachlings with Corrosive Bile and spawn 4 Roachlings on death.",
     item_names.VIPER_PARASITIC_BOMB: _ability_desc("Vipers", "Parasitic Bomb", "inflicts an area-damaging effect on an enemy air unit"),
     item_names.VIPER_PARALYTIC_BARBS: "Viper Abduct stuns units for an additional 5 seconds.",
     item_names.VIPER_VIRULENT_MICROBES: "All Viper abilities gain +4 range.",
@@ -1055,8 +1066,8 @@ item_descriptions = {
     item_names.STALWART_LATTICED_SHIELDING: "Increases Stalwart max shields by +50.",
     item_names.STALWART_SOLARITE_SCREEN: "Hardened Shields reduce damage to 5.",
     item_names.DISRUPTOR_CLOAKING_MODULE: "Disruptors are permanently cloaked.",
-    item_names.DISRUPTOR_PERFECTED_POWER: "Allows Purification Nova to hit air units. Bonus damage to shields is now baseline for enemies (friendly damage unaffected).",
-    item_names.DISRUPTOR_RESTRAINED_DESTRUCTION: "Purification Nova does 50% reduced damage to friendly units and structures.",
+    item_names.DISRUPTOR_PERFECTED_POWER: "Allows Purification Nova to hit air units. Bonus damage to shields is now baseline for enemies.",
+    item_names.DISRUPTOR_RESTRAINED_DESTRUCTION: "Purification Nova does 75% reduced damage to friendly units, and only deals friendly fire at the center of the nova.",
     item_names.COLOSSUS_PACIFICATION_PROTOCOL: "Increases Colossus attack speed.",
     item_names.WRATHWALKER_RAPID_POWER_CYCLING: "Reduces the charging time and increases attack speed of the Wrathwalker's Charged Blast.",
     item_names.WRATHWALKER_EYE_OF_WRATH: "Increases Wrathwalker weapon range by +1.",
