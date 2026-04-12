@@ -721,9 +721,9 @@ item_descriptions = {
     item_names.LURKER_CARAPACE: "Lurkers gain +100 temporary life for 10 seconds on burrowing and unburrowing.",
     item_names.LURKER_RAPID_MORPH: "Lurkers morph instantly from Hydralisks, and 15 seconds faster from Morphlings.",
     item_names.LURKER_SONAR_GLANDS: "Lurkers gain detection and +4 sight range while burrowed.",
-    item_names.RAVAGER_POTENT_BILE: "Ravager Corrosive Bile deals an additional +40 damage.",
-    item_names.RAVAGER_BLOATED_BILE_DUCTS: "Ravager Corrosive Bile hits a much larger area.",
-    item_names.RAVAGER_DEEP_TUNNEL: _ability_desc("Ravagers", "Deep Tunnel", "allows them to burrow to any visible location on the map"),
+    item_names.RAVAGER_POTENT_BILE: "Ravager Corrosive Bile deals an additional +40 damage to enemies.",
+    item_names.RAVAGER_BLOATED_BILE_DUCTS: "Ravager Corrosive Bile hits a much larger area and no longer deals friendly fire.",
+    item_names.RAVAGER_DEEP_TUNNEL: _ability_desc("Ravagers", "Deep Tunnel", "allows them to burrow to any visible location on the map on creep."),
     item_names.RAVAGER_DISINTEGRATING_ACID: inspect.cleandoc("""
         Ravagers reduce the armor of enemies they attack by 1, stacking up to 3 times.
         Corrosive Bile applies max stacks instantly.
