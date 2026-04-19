@@ -68,7 +68,7 @@ resource_efficiency_cost_reduction = {
     DISPLAY_NAME_CLOAKED_ASSASSIN: (0, 50, 0),
     item_names.SCOUT:         (75, 25, 0),
     item_names.DESTROYER:     (50, 25, 1),
-    DISPLAY_NAME_WORMS:       (50, 75, 0),
+    DISPLAY_NAME_WORMS:       (25, 25, 0),
 
     # Frightful Fleshwelder
     item_names.INFESTED_SIEGE_TANK:   (0, 25, 0),
@@ -799,7 +799,7 @@ item_descriptions = {
     item_names.NYDUS_WORM_ECHIDNA_WORM_JORMUNGANDR_STRAIN: f"Removes emerge time for {DISPLAY_NAME_WORMS}, and allows them to be salvaged to return the resources spent on them.",
     item_names.NYDUS_WORM_RAVENOUS_APPETITE: "Allows Nydus Worms to unload and load units nearly instantly.",
     item_names.NYDUS_WORM_ECHIDNA_WORM_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(DISPLAY_NAME_WORMS),
-    item_names.ECHIDNA_WORM_OUROBOROS_STRAIN: "Allows Echidna Worms to train a limited assortment of combat units (Zerglings, Roaches, Hydralisks, and Aberrations) at a reduced time and cost.",
+    item_names.ECHIDNA_WORM_OUROBOROS_STRAIN: "Allows Echidna Worms to train a limited assortment of combat units \n(Zerglings, Pygalisks, Roaches, Hydralisks, and Aberrations) at a reduced time and cost.",
     item_names.INFESTED_SIEGE_TANK_PROGRESSIVE_AUTOMATED_MITOSIS:  inspect.cleandoc("""
         Level 1: Infested Siege Tanks generate 1 Volatile Biomass every 30 seconds.
         Level 2: Infested Siege Tanks generate 1 Volatile Biomass every 10 seconds.

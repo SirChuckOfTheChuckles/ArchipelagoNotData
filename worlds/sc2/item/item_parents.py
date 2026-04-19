@@ -163,7 +163,7 @@ parent_present[parent_names.ZERG_CARAPACE_UNIT] = AnyOf(item_groups.zerg_ground_
 parent_present[parent_names.ZERG_FLYING_UNIT] = AnyOf(item_groups.zerg_air_units, display_string='Zerg Flyers')
 parent_present[parent_names.ZERG_MERCENARIES] = AnyOf(item_groups.zerg_mercenaries, display_string='Zerg Mercenaries')
 parent_present[parent_names.ZERG_OUROBOUROS_CONDITION] = AnyOfGroupAndOneOtherItem(
-    (item_names.ZERGLING, item_names.ROACH, item_names.HYDRALISK, item_names.ABERRATION),
+    (item_names.ZERGLING, item_names.PYGALISK, item_names.ROACH, item_names.HYDRALISK, item_names.ABERRATION),
     item_names.ECHIDNA_WORM
 )
 parent_present[parent_names.MORPH_FROM_HYDRALISK] = AnyOf((item_names.LURKER, item_names.IMPALER))
