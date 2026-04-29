@@ -797,6 +797,10 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
         if item.data.type == item_tables.nova_equipment and remove_nova_items:
             item.flags |= ItemFilterFlags.FilterExcluded
 
+        # Remove Artanis items if there's no Artanis
+        if item.data.type == ProtossItemType.Artanis_Items and remove_artanis_items:
+            item.flags |= ItemFilterFlags.FilterExcluded
+
         # Remove Spear of Adun if it's off
         if item.name in item_tables.spear_of_adun_calldowns and not soa_presence:
             item.flags |= ItemFilterFlags.FilterExcluded

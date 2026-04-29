@@ -36,6 +36,7 @@ unlisted_item_name_groups = {
     item_tables.ZergItemType.Ability.display_name,
     item_tables.ZergItemType.Morph.display_name,
     item_tables.ZergItemType.Strain.display_name,
+    item_tables.ProtossItemType.Artanis_Items.display_name,
 }
 
 # Some item names only differ in bracketed parts
@@ -202,6 +203,11 @@ class ItemGroupNames:
     COOP_ALARAK_UNITS = "Co-op Alarak Units"
     COOP_FENIX_UNITS = "Co-op Fenix Units"
     COOP_ZERATUL_UNITS = "Co-op Zeratul Units"
+    ARTANIS_ABILITIES = "Artanis Abilities"
+    ARTANIS_WEAPON_ASPECT_ACTIVE = "Artanis Weapon Aspect Active"
+    ARTANIS_WEAPON_ASPECT_PASSIVE = "Artanis Weapon Aspect Passive"
+    ARTANIS_ACTIVE_ABILITIES = "Artanis Global Actives"
+    ARTANIS_PASSIVE_ABILITIES = "Artanis Global Passives"
 
     VANILLA_ITEMS = "Vanilla Items"
     OVERPOWERED_ITEMS = "Overpowered Items"
@@ -1162,6 +1168,46 @@ item_name_groups[ItemGroupNames.COOP_ZERATUL_UNITS] = [
     item_names.DISRUPTOR,  # Abrogator
     item_names.WARP_PRISM,  # Void Array
 ]
+item_name_groups[ItemGroupNames.ARTANIS_WEAPON_ASPECT_ACTIVE] = artanis_weapon_aspect_active = [
+    item_names.ARTANIS_EXTERMINATE,
+    item_names.ARTANIS_CLEANSING_SMITE,
+    item_names.ARTANIS_SHADOW_SLICE,
+    item_names.ARTANIS_BLADE_WALTZ,
+]
+item_name_groups[ItemGroupNames.ARTANIS_WEAPON_ASPECT_PASSIVE] = artanis_weapon_aspect_passive = [
+    item_names.ARTANIS_MALASHS_MALEVOLENCE,
+    item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+    item_names.ARTANIS_RASZAGALS_RHYTHM,
+    item_names.ARTANIS_TASSADARS_TEACHINGS,
+]
+artanis_weapon_aspect_pairs = [
+    (item_names.ARTANIS_BLADE_WALTZ, item_names.ARTANIS_TASSADARS_TEACHINGS),
+    (item_names.ARTANIS_SHADOW_SLICE, item_names.ARTANIS_RASZAGALS_RHYTHM),
+    (item_names.ARTANIS_CLEANSING_SMITE, item_names.ARTANIS_CLOLARIONS_CONFIDENCE),
+    (item_names.ARTANIS_EXTERMINATE, item_names.ARTANIS_MALASHS_MALEVOLENCE),
+]
+item_name_groups[ItemGroupNames.ARTANIS_ACTIVE_ABILITIES] = artanis_active_abilities = [
+    item_names.ARTANIS_LIGHTNING_DASH,
+    item_names.ARTANIS_PHASE_PRISM,
+    item_names.ARTANIS_VOLTAIC_SHOCK,
+    item_names.ARTANIS_ASTRAL_WIND,
+    item_names.ARTANIS_STRENGTH_IN_UNITY,
+    item_names.ARTANIS_SUPPRESSION_PULSE,
+]
+item_name_groups[ItemGroupNames.ARTANIS_PASSIVE_ABILITIES] = artanis_passive_abilities = [
+    item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN,
+    item_names.ARTANIS_RESURGENCE,
+    item_names.ARTANIS_PSIONIC_ASSAULT,
+    item_names.ARTANIS_FORCE_OF_WILL,
+    item_names.ARTANIS_TEMPERED_IN_TWILIGHT,
+    item_names.ARTANIS_SHIELD_OVERLOAD,
+]
+item_name_groups[ItemGroupNames.ARTANIS_ABILITIES] = artanis_abilities = [
+    *artanis_active_abilities,
+    *artanis_passive_abilities,
+    *artanis_weapon_aspect_active,
+    *artanis_weapon_aspect_passive,
+]
 
 # Faction-agnostic groups
 item_name_groups[ItemGroupNames.VANILLA_ITEMS] = vanilla_items = (
@@ -1220,7 +1266,7 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
 # Items not aimed to be officially released
 # These need further balancing, and they shouldn't generate normally unless explicitly locked
 item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
-    # Empty for now! Leaving the group in case we add more unreleased items in future
+    # Nothing here for now
 ]
 
 # A place for traits that were released before but are to be taken down by default.

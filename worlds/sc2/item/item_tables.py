@@ -2076,6 +2076,29 @@ item_table = {
         ItemData(824 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Solarite_Core, 23, SC2Race.PROTOSS),
     item_names.PROTOSS_BUILDING_SHIELDS:
         ItemData(825 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Solarite_Core, 24, SC2Race.PROTOSS),
+
+
+    # Artanis hero items
+    item_names.ARTANIS_LIGHTNING_DASH: ItemData(900 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 0, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_PHASE_PRISM: ItemData(901 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 1, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN: ItemData(902 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 2, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_VOLTAIC_SHOCK: ItemData(903 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 3, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_ASTRAL_WIND: ItemData(904 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 4, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_SHIELD_OVERLOAD: ItemData(905 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 5, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_RESURGENCE: ItemData(906 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 6, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_PSIONIC_ASSAULT: ItemData(907 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 7, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_FORCE_OF_WILL: ItemData(908 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 8, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_TEMPERED_IN_TWILIGHT: ItemData(909 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 9, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_STRENGTH_IN_UNITY: ItemData(910 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 10, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_SUPPRESSION_PULSE: ItemData(911 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 11, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_EXTERMINATE: ItemData(912 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 12, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_MALASHS_MALEVOLENCE: ItemData(913 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 13, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_CLEANSING_SMITE: ItemData(914 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 14, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_CLOLARIONS_CONFIDENCE: ItemData(915 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 15, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_SHADOW_SLICE: ItemData(916 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 16, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_RASZAGALS_RHYTHM: ItemData(917 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 17, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_BLADE_WALTZ: ItemData(918 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 18, SC2Race.PROTOSS, classification=ItemClassification.progression),
+    item_names.ARTANIS_TASSADARS_TEACHINGS: ItemData(919 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Artanis_Items, 19, SC2Race.PROTOSS, classification=ItemClassification.progression),
 }
 
 # Add keys to item table

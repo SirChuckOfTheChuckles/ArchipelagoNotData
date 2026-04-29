@@ -202,6 +202,8 @@ class ValidInventory:
             for item in group:
                 if len([x for x in group if ItemFilterFlags.Culled not in x.filter_flags]) <= allowed_max:
                     break
+                if ItemFilterFlags.Culled & item.filter_flags: #prevents items being culled twice (from Artanis rules)
+                    continue
                 if ItemFilterFlags.Uncullable & item.filter_flags:
                     continue
                 attempt_removal(item, remove_flag=ItemFilterFlags.Culled)
@@ -274,6 +276,44 @@ class ValidInventory:
         spear_of_adun_autocasts = [item for item in inventory if item.name in item_groups.spear_of_adun_passives]
         self.world.random.shuffle(spear_of_adun_autocasts)
         cull_items_over_maximum(spear_of_adun_autocasts, self.world.options.spear_of_adun_max_passive_abilities.value)
+
+        # Artanis max abilities
+        if self.world.options.artanis_one_item_per_aspect.value:
+            for active_item_name, passive_item_name in item_groups.artanis_weapon_aspect_pairs:
+                artanis_aspect_pair = [
+                    item for item in inventory
+                    if item.name in (active_item_name, passive_item_name)
+                ]
+                self.world.random.shuffle(artanis_aspect_pair)
+                cull_items_over_maximum(artanis_aspect_pair, 1)
+
+        artanis_weapon_aspect_actives = [
+            item for item in inventory
+            if item.name in item_groups.artanis_weapon_aspect_active
+        ]
+        self.world.random.shuffle(artanis_weapon_aspect_actives)
+        cull_items_over_maximum(
+            artanis_weapon_aspect_actives,
+            self.world.options.artanis_max_weapon_aspect_active_abilities.value
+        )
+
+        artanis_weapon_aspect_passives = [
+            item for item in inventory
+            if item.name in item_groups.artanis_weapon_aspect_passive
+        ]
+        self.world.random.shuffle(artanis_weapon_aspect_passives)
+        cull_items_over_maximum(
+            artanis_weapon_aspect_passives,
+            self.world.options.artanis_max_weapon_aspect_passive_abilities.value
+        )
+
+        artanis_actives = [item for item in inventory if item.name in item_groups.artanis_active_abilities]
+        self.world.random.shuffle(artanis_actives)
+        cull_items_over_maximum(artanis_actives, self.world.options.artanis_max_active_abilities.value)
+
+        artanis_passives = [item for item in inventory if item.name in item_groups.artanis_passive_abilities]
+        self.world.random.shuffle(artanis_passives)
+        cull_items_over_maximum(artanis_passives, self.world.options.artanis_max_passive_upgrades.value)
 
         # Nova items
         nova_weapon_items = [item for item in inventory if item.name in item_groups.nova_weapons]

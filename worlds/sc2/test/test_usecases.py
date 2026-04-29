@@ -434,6 +434,94 @@ class TestSupportedUseCases(Sc2SetupTestBase):
 
         self.assertLessEqual(len(spear_of_adun_autocasts), target_number)
 
+    def test_artanis_max_weapon_aspect_actives(self):
+        target_number: int = 2
+        world_options = {
+            **self.PROTOSS_CAMPAIGNS,
+            'mission_order': options.MissionOrder.option_grid,
+            'enabled_heroes': {options.HeroOptions.ARTANIS},
+            'hero_presence': options.HeroPresence.option_same_race,
+            'artanis_max_weapon_aspect_active_abilities': target_number,
+        }
+
+        self.generate_world(world_options)
+        world_item_names = [item.name for item in self.multiworld.itempool]
+        artanis_weapon_aspect_actives = [
+            item_name for item_name in world_item_names if item_name in item_groups.artanis_weapon_aspect_active
+        ]
+
+        self.assertLessEqual(len(artanis_weapon_aspect_actives), target_number)
+
+    def test_artanis_max_weapon_aspect_passives(self):
+        target_number: int = 2
+        world_options = {
+            **self.PROTOSS_CAMPAIGNS,
+            'mission_order': options.MissionOrder.option_grid,
+            'enabled_heroes': {options.HeroOptions.ARTANIS},
+            'hero_presence': options.HeroPresence.option_same_race,
+            'artanis_max_weapon_aspect_passive_abilities': target_number,
+        }
+
+        self.generate_world(world_options)
+        world_item_names = [item.name for item in self.multiworld.itempool]
+        artanis_weapon_aspect_passives = [
+            item_name for item_name in world_item_names if item_name in item_groups.artanis_weapon_aspect_passive
+        ]
+
+        self.assertLessEqual(len(artanis_weapon_aspect_passives), target_number)
+
+    def test_artanis_max_global_actives(self):
+        target_number: int = 3
+        world_options = {
+            **self.PROTOSS_CAMPAIGNS,
+            'mission_order': options.MissionOrder.option_grid,
+            'enabled_heroes': {options.HeroOptions.ARTANIS},
+            'hero_presence': options.HeroPresence.option_same_race,
+            'artanis_max_active_abilities': target_number,
+        }
+
+        self.generate_world(world_options)
+        world_item_names = [item.name for item in self.multiworld.itempool]
+        artanis_actives = [item_name for item_name in world_item_names if item_name in item_groups.artanis_active_abilities]
+
+        self.assertLessEqual(len(artanis_actives), target_number)
+
+    def test_artanis_max_global_passives(self):
+        target_number: int = 2
+        world_options = {
+            **self.PROTOSS_CAMPAIGNS,
+            'mission_order': options.MissionOrder.option_grid,
+            'enabled_heroes': {options.HeroOptions.ARTANIS},
+            'hero_presence': options.HeroPresence.option_same_race,
+            'artanis_max_passive_upgrades': target_number,
+        }
+
+        self.generate_world(world_options)
+        world_item_names = [item.name for item in self.multiworld.itempool]
+        artanis_passives = [
+            item_name for item_name in world_item_names if item_name in item_groups.artanis_passive_abilities
+        ]
+
+        self.assertLessEqual(len(artanis_passives), target_number)
+
+    def test_artanis_one_item_per_aspect(self):
+        world_options = {
+            **self.PROTOSS_CAMPAIGNS,
+            'mission_order': options.MissionOrder.option_grid,
+            'enabled_heroes': {options.HeroOptions.ARTANIS},
+            'hero_presence': options.HeroPresence.option_same_race,
+            'artanis_one_item_per_aspect': options.ArtanisOneItemPerAspect.option_true,
+        }
+
+        self.generate_world(world_options)
+        world_item_names = [item.name for item in self.multiworld.itempool]
+
+        for active_item_name, passive_item_name in item_groups.artanis_weapon_aspect_pairs:
+            self.assertLessEqual(
+                sum(item_name in (active_item_name, passive_item_name) for item_name in world_item_names),
+                1
+            )
+
 
     def test_nova_max_weapons(self):
         target_number: int = 3

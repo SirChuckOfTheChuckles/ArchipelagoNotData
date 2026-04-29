@@ -1219,7 +1219,12 @@ class SC2Logic:
         return False
 
     def basic_artanis(self, state: CollectionState, story_tech_available: bool = True) -> bool:
-        return True # TODO (Snarky): Revisit once Artanis is implemented
+        if story_tech_available or self.artanis_items_granted:
+            return True
+        return self.artanis_any_weapon_aspect(state) and (
+            self.advanced_tactics
+            or self.artanis_active_ability_count(state) >= 1
+        )
 
     def two_kerrigan_solo_actives(self, state: CollectionState, story_tech_available: bool = True) -> bool:
         if story_tech_available or self.kerrigan_items_granted:
@@ -1263,7 +1268,9 @@ class SC2Logic:
 
     def competent_artanis(self, state: CollectionState) -> bool:
         return (
-            True # TODO (Snarky): Revisit once Artanis is implemented
+            self.artanis_any_weapon_aspect(state)
+            and self.artanis_any_defensive_upgrade(state)
+            and self.artanis_active_ability_count(state) >= 2
         )
 
     # endregion Heroes
@@ -1776,6 +1783,69 @@ class SC2Logic:
             item_names.STALKER_PARTICLE_REFLECTION,
         ), self.player)
 
+    def artanis_aspect_damage_boost(self, state: CollectionState) -> bool:
+        return state.has_any(
+            {
+                item_names.ARTANIS_EXTERMINATE,
+                item_names.ARTANIS_BLADE_WALTZ,
+                item_names.ARTANIS_SHADOW_SLICE,
+                item_names.ARTANIS_CLEANSING_SMITE,
+                item_names.ARTANIS_TASSADARS_TEACHINGS, #make sure to pair with active ability in logic
+                item_names.ARTANIS_RASZAGALS_RHYTHM, #make sure to pair with active ability in logic
+                item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+                item_names.ARTANIS_MALASHS_MALEVOLENCE,
+            },
+            self.player,
+        )
+
+    def artanis_any_weapon_aspect(self, state: CollectionState) -> bool:
+        return state.has_any(
+            item_groups.artanis_weapon_aspect_active + item_groups.artanis_weapon_aspect_passive,
+            self.player,
+        )
+
+    def artanis_active_ability_count(self, state: CollectionState) -> int:
+        return state.count_from_list(
+            item_groups.artanis_active_abilities + item_groups.artanis_weapon_aspect_active,
+            self.player,
+        )
+
+    def artanis_any_damage_item(self, state: CollectionState) -> bool:
+        return (
+            state.has_any(
+                {
+                    item_names.ARTANIS_VOLTAIC_SHOCK,
+                    item_names.ARTANIS_LIGHTNING_DASH,
+                },
+                self.player,
+            )
+            or (self.advanced_tactics and state.has(item_names.ARTANIS_TEMPERED_IN_TWILIGHT))
+            or self.artanis_aspect_damage_boost(state)
+        )
+    
+    def artanis_any_defensive_upgrade(self, state: CollectionState) -> bool:
+        return state.has_any(
+            {
+                item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN,
+                item_names.ARTANIS_FORCE_OF_WILL,
+                item_names.ARTANIS_SHIELD_OVERLOAD,
+            },
+            self.player,
+        ) or self.advanced_tactics and state.has_any( 
+            {
+                item_names.ARTANIS_RESURGENCE, #need to actively use revive to get value out of this
+            },
+            self.player
+        )
+
+    
+
+    def artanis_anti_air(self, state: CollectionState) -> bool:
+        # Require a weapon on standard tactics, or an anti-air ability on advanced tactics
+        return state.has(item_names.ARTANIS_PSIONIC_ASSAULT, self.player) \
+            or (self.advanced_tactics and state.has_any({item_names.ARTANIS_VOLTAIC_SHOCK, item_names.ARTANIS_SHADOW_SLICE}, self.player))
+
+ 
     # endregion Global Protoss
 
     # ###################################################################################################### #

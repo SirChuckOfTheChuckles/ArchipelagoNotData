@@ -808,6 +808,70 @@ class SpearOfAdunMaxAutocastAbilities(Range):
     default = range_end
 
 
+class ArtanisMaxWeaponAspectActiveAbilities(Range):
+    """
+    Determines the maximum number of Artanis weapon aspect actives that can be present in the game.
+    Additional abilities may spawn if those are required to beat the game.
+    """
+    display_name = "Artanis Maximum Weapon Aspect Actives"
+    range_start = 0
+    range_end = sum(
+        item_tables.item_table[item_name].quantity
+        for item_name in item_groups.artanis_weapon_aspect_active
+    )
+    default = range_end
+
+
+class ArtanisMaxWeaponAspectPassiveAbilities(Range):
+    """
+    Determines the maximum number of Artanis weapon aspect passives that can be present in the game.
+    Additional abilities may spawn if those are required to beat the game.
+    """
+    display_name = "Artanis Maximum Weapon Aspect Passives"
+    range_start = 0
+    range_end = sum(
+        item_tables.item_table[item_name].quantity
+        for item_name in item_groups.artanis_weapon_aspect_passive
+    )
+    default = range_end
+
+
+class ArtanisMaxActiveAbilities(Range):
+    """
+    Determines the maximum number of Artanis non-aspect active abilities that can be present in the game.
+    Additional abilities may spawn if those are required to beat the game.
+    """
+    display_name = "Artanis Maximum Global Actives"
+    range_start = 0
+    range_end = sum(
+        item_tables.item_table[item_name].quantity
+        for item_name in item_groups.artanis_active_abilities
+    )
+    default = range_end
+
+
+class ArtanisMaxPassiveUpgrades(Range):
+    """
+    Determines the maximum number of Artanis non-aspect passive upgrades that can be present in the game.
+    Additional abilities may spawn if those are required to beat the game.
+    """
+    display_name = "Artanis Maximum Passive Upgrades"
+    range_start = 0
+    range_end = sum(
+        item_tables.item_table[item_name].quantity
+        for item_name in item_groups.artanis_passive_abilities
+    )
+    default = range_end
+
+
+class ArtanisOneItemPerAspect(Toggle):
+    """
+    When enabled, each Artanis weapon aspect can generate either its active or its passive item, but not both.
+    If both are required to beat the game, generation may still keep both.
+    """
+    display_name = "Artanis One Item Per Aspect"
+
+
 class GrantStoryTech(Choice):
     """
     Controls handling of no-build missions that may require very specific items, such as Kerrigan or Nova abilities.
@@ -1402,6 +1466,11 @@ class Starcraft2Options(PerGameCommonOptions):
     spear_of_adun_passive_present_in_no_build: SpearOfAdunPassivesPresentInNoBuild
     spear_of_adun_max_active_abilities: SpearOfAdunMaxActiveAbilities
     spear_of_adun_max_passive_abilities: SpearOfAdunMaxAutocastAbilities
+    artanis_max_weapon_aspect_active_abilities: ArtanisMaxWeaponAspectActiveAbilities
+    artanis_max_weapon_aspect_passive_abilities: ArtanisMaxWeaponAspectPassiveAbilities
+    artanis_max_active_abilities: ArtanisMaxActiveAbilities
+    artanis_max_passive_upgrades: ArtanisMaxPassiveUpgrades
+    artanis_one_item_per_aspect: ArtanisOneItemPerAspect
     grant_story_tech: GrantStoryTech
     grant_story_levels: GrantStoryLevels
     nova_max_weapons: NovaMaxWeapons
@@ -1493,6 +1562,13 @@ option_groups = [
         SpearOfAdunPassivesPresentInNoBuild,
         SpearOfAdunMaxActiveAbilities,
         SpearOfAdunMaxAutocastAbilities,
+    ]),
+    OptionGroup("Artanis", [
+        ArtanisMaxWeaponAspectActiveAbilities,
+        ArtanisMaxWeaponAspectPassiveAbilities,
+        ArtanisMaxActiveAbilities,
+        ArtanisMaxPassiveUpgrades,
+        ArtanisOneItemPerAspect,
     ]),
     OptionGroup("Nova", [
         NovaMaxWeapons,

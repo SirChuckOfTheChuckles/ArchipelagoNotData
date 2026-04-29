@@ -7,7 +7,7 @@ from typing import List, Set, Iterable
 from BaseClasses import ItemClassification, MultiWorld
 import Options as CoreOptions
 from .. import options, locations
-from ..item import item_tables
+from ..item import item_names, item_tables
 from ..rules import SC2Logic
 from ..mission_tables import SC2Race, MissionFlag, lookup_name_to_mission
 
@@ -83,6 +83,29 @@ class TestWorld:
 
         self.player = 1
         self.multiworld = MultiWorld(1)
+
+
+class StaticInventory:
+    def __init__(self, *items: str) -> None:
+        self.items = set(items)
+
+    def has(self, item: str, player: int, count: int = 1) -> bool:
+        return item in self.items
+
+    def has_any(self, items: Iterable[str], player: int) -> bool:
+        return any(item in self.items for item in items)
+
+    def has_all(self, items: Iterable[str], player: int) -> bool:
+        return all(item in self.items for item in items)
+
+    def count(self, item: str, player: int) -> int:
+        return int(item in self.items)
+
+    def count_from_list(self, items: Iterable[str], player: int) -> int:
+        return sum(item in self.items for item in items)
+
+    def count_from_list_unique(self, items: Iterable[str], player: int) -> int:
+        return self.count_from_list(items, player)
 
 
 class TestRules(unittest.TestCase):
@@ -179,5 +202,4 @@ class TestRules(unittest.TestCase):
                 rule = logic.has_race_units(target, race)
                 for _ in range(10):
                     rule(test_inventory)
-
 

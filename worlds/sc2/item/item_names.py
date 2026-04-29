@@ -947,6 +947,28 @@ OPPRESSOR_VULCAN_BLASTER                                = "Vulcan Blaster (Oppre
 CALADRIUS_CORONA_BEAM                                   = "Corona Beam (Caladrius)"
 MISTWING_PHANTOM_DASH                                   = "Phantom Dash (Mist Wing)"
 
+# Artanis
+ARTANIS_LIGHTNING_DASH                                  = "Lightning Dash (Artanis Ability)"
+ARTANIS_PHASE_PRISM                                     = "Phase Prism (Artanis Ability)"
+ARTANIS_VALOR_OF_THE_FIRSTBORN                          = "Valor of the Firstborn (Artanis Passive)"
+ARTANIS_VOLTAIC_SHOCK                                   = "Voltaic Shock (Artanis Ability)"
+ARTANIS_ASTRAL_WIND                                     = "Astral Wind (Artanis Ability)"
+ARTANIS_SHIELD_OVERLOAD                                 = "Shield Overload (Artanis Passive)"
+ARTANIS_RESURGENCE                                      = "Resurgence (Artanis Passive)"
+ARTANIS_PSIONIC_ASSAULT                                 = "Psionic Assault (Artanis Passive)"
+ARTANIS_FORCE_OF_WILL                                   = "Force of Will (Artanis Passive)"
+ARTANIS_TEMPERED_IN_TWILIGHT                            = "Tempered in Twilight (Artanis Passive)"
+ARTANIS_STRENGTH_IN_UNITY                               = "Strength in Unity (Artanis Ability)"
+ARTANIS_SUPPRESSION_PULSE                               = "Suppression Pulse (Artanis Ability)"
+ARTANIS_EXTERMINATE                                     = "Exterminate (Artanis Aspect)"
+ARTANIS_MALASHS_MALEVOLENCE                             = "Malash's Malevolence (Artanis Aspect)"
+ARTANIS_CLEANSING_SMITE                                 = "Cleansing Smite (Artanis Aspect)"
+ARTANIS_CLOLARIONS_CONFIDENCE                           = "Clolarion's Confidence (Artanis Aspect)"
+ARTANIS_SHADOW_SLICE                                    = "Shadow Slice (Artanis Aspect)"
+ARTANIS_RASZAGALS_RHYTHM                                = "Raszagal's Rhythm (Artanis Aspect)"
+ARTANIS_BLADE_WALTZ                                     = "Blade Waltz (Artanis Aspect)"
+ARTANIS_TASSADARS_TEACHINGS                             = "Tassadar's Teachings (Artanis Aspect)"
+
 # Spear Of Adun
 SOA_CHRONO_SURGE            = "Chrono Surge (Spear of Adun)"
 SOA_PROGRESSIVE_PROXY_PYLON = "Progressive Proxy Pylon (Spear of Adun)"
