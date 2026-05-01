@@ -9,11 +9,13 @@ from kvui import GameManager, HoverBehavior, ServerToolTip, KivyJSONtoTextParser
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.clipboard import Clipboard
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.tooltip import MDTooltip
 from kivy.uix.scrollview import ScrollView
@@ -41,6 +43,7 @@ class MissionButton(HoverableButton, MDTooltip):
     mission_id = NumericProperty(-1)
     is_exit = BooleanProperty(False)
     is_goal = BooleanProperty(False)
+    is_dimmed = BooleanProperty(False)
     showing_tooltip = BooleanProperty(False)
 
     def __init__(self, *args, **kwargs) -> None:
@@ -93,6 +96,9 @@ class MissionLayout(GridLayout):
 class MissionCategory(GridLayout):
     pass
 
+class MissionSearchInput(TextInput):
+    pass
+
 
 class SC2JSONtoKivyParser(KivyJSONtoTextParser):
     def _handle_item_name(self, node: JSONMessagePart) -> str:
@@ -135,6 +141,8 @@ class SC2Manager(GameManager):
 
     campaign_panel: Optional[MultiCampaignLayout] = None
     campaign_scroll_panel: Optional[CampaignScroll] = None
+    mission_search_input: Optional[MissionSearchInput] = None
+    mission_search_tokens: Dict[int, List[str]] = {}
     last_checked_locations: Set[int] = set()
     last_items_received: List[int] = []
     last_shown_tooltip: int = -1
@@ -183,14 +191,46 @@ class SC2Manager(GameManager):
     def build(self):
         container = super().build()
 
-        panel = self.add_client_tab("Starcraft 2 Launcher", CampaignScroll())
-        self.campaign_scroll_panel = panel.content
+        tab_layout = BoxLayout(orientation='vertical', spacing=dp(4), padding=[dp(6), dp(6), dp(6), 0])
+
+        self.mission_search_input = MissionSearchInput()
+        self.mission_search_input.bind(text=self._on_search_text)
+        tab_layout.add_widget(self.mission_search_input)
+
+        campaign_scroll = CampaignScroll()
+        tab_layout.add_widget(campaign_scroll)
+
+        panel = self.add_client_tab("Starcraft 2 Launcher", tab_layout)
+        self.campaign_scroll_panel = campaign_scroll
         self.campaign_panel = MultiCampaignLayout()
-        panel.content.add_widget(self.campaign_panel)
+        campaign_scroll.add_widget(self.campaign_panel)
 
         Clock.schedule_interval(self.build_mission_table, 0.5)
 
         return container
+
+    @staticmethod
+    def _normalize_for_search(text: str) -> str:
+        return "".join(c for c in text.lower() if c.isalnum())
+
+    def _search_query_words(self) -> List[str]:
+        if not self.mission_search_input:
+            return []
+        return [
+            word for word in (
+                self._normalize_for_search(part) for part in self.mission_search_input.text.split()
+            ) if word
+        ]
+
+    @staticmethod
+    def _query_matches_tokens(query_words: List[str], tokens: List[str]) -> bool:
+        return all(any(word in token for token in tokens) for word in query_words)
+
+    def _on_search_text(self, instance, _value: str) -> None:
+        words = self._search_query_words()
+        for button in self.mission_buttons:
+            tokens = self.mission_search_tokens.get(button.mission_id, [])
+            button.is_dimmed = bool(words) and not self._query_matches_tokens(words, tokens)
 
     def build_mission_table(self, dt) -> None:
         if self.launching:
@@ -251,6 +291,7 @@ class SC2Manager(GameManager):
         self.pending_redraw = False
 
         self.mission_buttons = []
+        search_words = self._search_query_words()
 
         available_missions, available_layouts, available_campaigns, unfinished_missions = calc_unfinished_nodes(self.ctx)
 
@@ -324,7 +365,33 @@ class SC2Manager(GameManager):
                         race = campaign_race_exceptions.get(mission_obj, mission_race)
                         if race in self.button_colors:
                             mission_button.background_color = self.button_colors[race]
+                        search_parts = [
+                            mission_obj.mission_name,
+                            race.name,
+                            mission_obj.campaign.campaign_name,
+                            mission_obj.campaign.folder,
+                        ]
+                        if any(loc in self.hints_to_highlight for loc in self.ctx.locations_for_mission_id(mission_id)):
+                            search_parts.append("hint hinted")
+                        if self.ctx.mission_order_scouting != MissionOrderScouting.option_none:
+                            mission_remaining, _, _ = self.sort_unfinished_locations(mission_id)
+                            mission_available = mission_id in available_missions
+                            campaign_locked = campaign_idx not in available_campaigns
+                            layout_locked = layout_idx not in available_layouts[campaign_idx]
+                            if self.is_scoutable(mission_remaining, mission_available, layout_locked, campaign_locked):
+                                categories: Set[str] = set()
+                                for _, location_name, _ in mission_remaining:
+                                    categories.update(self._scout_search_categories(location_name))
+                                search_parts.extend(categories)
+                        tokens = [
+                            self._normalize_for_search(word)
+                            for part in search_parts for word in part.split()
+                        ]
+                        tokens = [t for t in tokens if t]
+                        self.mission_search_tokens[mission_id] = tokens
                         mission_button.tooltip_text = tooltip
+                        if search_words and not self._query_matches_tokens(search_words, tokens):
+                            mission_button.is_dimmed = True
                         mission_button.bind(on_press=self.mission_callback)
                         self.mission_buttons.append(mission_button)
                         category_panel.add_widget(mission_button)
@@ -672,6 +739,21 @@ class SC2Manager(GameManager):
         if SC2World.settings.scouting_show_traps and ItemClassification.trap & item_classification_key:
             return " [color=FA8072](Trap)[/color]"
         return " [color=00EEEE](Filler)[/color]"
+
+    def _scout_search_categories(self, location_name: str) -> List[str]:
+        if self.ctx.mission_item_classification is None:
+            return []
+        if " Cache (" in location_name:
+            location_name = location_name.split(" Cache")[0]
+        classification = self.ctx.mission_item_classification[location_name]
+        cats: List[str] = []
+        if ItemClassification.progression & classification:
+            cats.append("progression")
+        if ItemClassification.useful & classification:
+            cats.append("useful")
+        if SC2World.settings.scouting_show_traps and ItemClassification.trap & classification:
+            cats.append("trap")
+        return cats or ["filler"]
 
 
 def start_gui(context: SC2Context):
