@@ -748,7 +748,7 @@ item_descriptions = {
     item_names.HIVE_QUEEN_PSIONIC_MITOCHONDRIA: "Hive Queens spawn with +25 energy, gain +50 maximum energy, and regenerate energy faster on creep.",
     item_names.HIVE_QUEEN_STRAIN_INJECTION: _ability_desc("Hive Queens", "Inject Strains", "causes zerg tech structures to spawn units or manifest attacks."),
     item_names.HIVE_QUEEN_SWELLED_TRANSFUSION: "Hive Queen Transfusion heals +25 life immediately, and can be used off creep.",
-    item_names.SWARM_QUEEN_DEEP_TUNNEL: _ability_desc("Swarm Queens", "Deep Tunnel"),
+    item_names.SWARM_QUEEN_DEEP_TUNNEL: _ability_desc("Impalers", "Deep Tunnel", "allows them to burrow to any visible location on the map covered in creep"),
     item_names.SWARM_QUEEN_ORGANIC_CARAPACE: "Swarm Queens gain +25 life.",
     item_names.SWARM_QUEEN_BIO_MECHANICAL_TRANSFUSION: "Swarm Queen Burst Heal heals an additional +10 life and can now target mechanical units.",
     item_names.SWARM_QUEEN_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.SWARM_QUEEN),
