@@ -141,8 +141,8 @@ class SC2Manager(GameManager):
 
     campaign_panel: Optional[MultiCampaignLayout] = None
     campaign_scroll_panel: Optional[CampaignScroll] = None
-    mission_search_input: Optional[MissionSearchInput] = None
-    mission_search_tokens: Dict[int, List[str]] = {}
+    mission_search_input: MissionSearchInput | None = None
+    mission_search_tokens: dict[int, list[str]] = {}
     last_checked_locations: Set[int] = set()
     last_items_received: List[int] = []
     last_shown_tooltip: int = -1
@@ -226,7 +226,7 @@ class SC2Manager(GameManager):
     def _query_matches_tokens(query_words: List[str], tokens: List[str]) -> bool:
         return all(any(word in token for token in tokens) for word in query_words)
 
-    def _on_search_text(self, instance, _value: str) -> None:
+    def _on_search_text(self, _value: str) -> None:
         words = self._search_query_words()
         for button in self.mission_buttons:
             tokens = self.mission_search_tokens.get(button.mission_id, [])
@@ -745,13 +745,13 @@ class SC2Manager(GameManager):
             return []
         if " Cache (" in location_name:
             location_name = location_name.split(" Cache")[0]
-        classification = self.ctx.mission_item_classification[location_name]
+        search_terms = self.ctx.mission_item_classification[location_name]
         cats: List[str] = []
-        if ItemClassification.progression & classification:
+        if ItemClassification.progression & search_terms:
             cats.append("progression")
-        if ItemClassification.useful & classification:
+        if ItemClassification.useful & search_terms:
             cats.append("useful")
-        if SC2World.settings.scouting_show_traps and ItemClassification.trap & classification:
+        if SC2World.settings.scouting_show_traps and ItemClassification.trap & search_terms:
             cats.append("trap")
         return cats or ["filler"]
 
