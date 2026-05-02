@@ -14,9 +14,21 @@
     canvas.before:
         Color:
             rgba: (0xd2/0xff, 0x33/0xff, 0, 1)
-        Rectangle: 
+        Rectangle:
             pos: (self.x - 8, self.y - 8)
             size: (self.width + 30, self.height + 16)
+
+<MissionSearchInput>:
+    hint_text: 'Search...'
+    size_hint_y: None
+    height: dp(34)
+    multiline: False
+    write_tab: False
+    background_color: 0.15, 0.15, 0.15, 1
+    foreground_color: 1, 1, 1, 1
+    cursor_color: 1, 1, 1, 1
+    hint_text_color: 0.5, 0.5, 0.5, 1
+    padding: dp(10), dp(7)
 
 <MultiCampaignLayout>
     cols: 1
@@ -59,3 +71,8 @@
         Line:
             width: 1
             rectangle: (self.x + 2, self.y + 3, self.width - 4, self.height - 4)
+        Color:
+            rgba: (0, 0, 0, 0.65 * root.is_dimmed)
+        Rectangle:
+            pos: self.pos
+            size: self.size
