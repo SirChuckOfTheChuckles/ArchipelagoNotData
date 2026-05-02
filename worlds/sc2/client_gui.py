@@ -201,6 +201,7 @@ class SC2Manager(GameManager):
         tab_layout.add_widget(campaign_scroll)
 
         panel = self.add_client_tab("Starcraft 2 Launcher", tab_layout)
+        panel.bind(active=self._on_launcher_tab_active)
         self.campaign_scroll_panel = campaign_scroll
         self.campaign_panel = MultiCampaignLayout()
         campaign_scroll.add_widget(self.campaign_panel)
@@ -226,11 +227,21 @@ class SC2Manager(GameManager):
     def _query_matches_tokens(query_words: List[str], tokens: List[str]) -> bool:
         return all(any(word in token for token in tokens) for word in query_words)
 
-    def _on_search_text(self, _value: str) -> None:
+    def _on_search_text(self, _instance: "MissionSearchInput", _value: str) -> None:
         words = self._search_query_words()
         for button in self.mission_buttons:
             tokens = self.mission_search_tokens.get(button.mission_id, [])
             button.is_dimmed = bool(words) and not self._query_matches_tokens(words, tokens)
+
+    def _on_launcher_tab_active(self, _instance, active: bool) -> None:
+        if active and self.mission_search_input is not None:
+            # Defer so focus survives the tab transition / click that triggered the switch
+            Clock.schedule_once(lambda _dt: self._focus_search_input(), 0.05)
+
+    def _focus_search_input(self) -> None:
+        if self.mission_search_input is not None:
+            self.mission_search_input.focus = True
+
 
     def build_mission_table(self, dt) -> None:
         if self.launching:
@@ -580,6 +591,8 @@ class SC2Manager(GameManager):
             mission_id: int = button.mission_id
             if self.ctx.play_mission(mission_id):
                 self.launching = mission_id
+                if self.mission_search_input is not None:
+                    self.mission_search_input.text = ""
                 Clock.schedule_once(self.finish_launching, 6)
 
     def open_mission_menu(self, button: MissionButton) -> None:
@@ -745,15 +758,15 @@ class SC2Manager(GameManager):
             return []
         if " Cache (" in location_name:
             location_name = location_name.split(" Cache")[0]
-        search_terms = self.ctx.mission_item_classification[location_name]
-        cats: List[str] = []
-        if ItemClassification.progression & search_terms:
-            cats.append("progression")
-        if ItemClassification.useful & search_terms:
-            cats.append("useful")
-        if SC2World.settings.scouting_show_traps and ItemClassification.trap & search_terms:
-            cats.append("trap")
-        return cats or ["filler"]
+        classification = self.ctx.mission_item_classification[location_name]
+        categories: list[str] = []
+        if ItemClassification.progression & classification:
+            categories.append("progression")
+        if ItemClassification.useful & classification:
+            categories.append("useful")
+        if SC2World.settings.scouting_show_traps and ItemClassification.trap & classification:
+            categories.append("trap")
+        return categories or ["filler"]
 
 
 def start_gui(context: SC2Context):
