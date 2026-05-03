@@ -1580,6 +1580,16 @@ item_table = {
         ItemData(456 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 2, SC2Race.ZERG, parent=parent_names.INFESTED_UNITS),
     item_names.INFESTED_SCV_RESOURCEFUL:
         ItemData(457 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 3, SC2Race.ZERG, parent=parent_names.INFESTED_UNITS),
+    item_names.RAVAGER_DISINTEGRATING_ACID:
+        ItemData(458 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 4, SC2Race.ZERG, parent=item_names.RAVAGER),
+    item_names.RAVAGER_AERIAL_CORROSIVE_BILE:
+        ItemData(459 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 5, SC2Race.ZERG, parent=item_names.RAVAGER),
+    item_names.RAVAGER_BURROWED_BOMBARDMENT:
+        ItemData(460 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 6, SC2Race.ZERG, parent=item_names.RAVAGER),
+    item_names.RAVAGER_BONE_PLATING:
+        ItemData(461 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 7, SC2Race.ZERG, parent=item_names.RAVAGER),
+    item_names.RAVAGER_WRITHING_ABOMINATION:
+        ItemData(462 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_6, 8, SC2Race.ZERG, parent=item_names.RAVAGER),
 
     item_names.KERRIGAN_LEVELS_10: ItemData(500 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Level, 10, SC2Race.ZERG, quantity=0, classification=ItemClassification.progression),
     item_names.KERRIGAN_LEVELS_9: ItemData(501 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Level, 9, SC2Race.ZERG, quantity=0, classification=ItemClassification.progression),

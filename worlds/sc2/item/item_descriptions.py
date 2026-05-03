@@ -68,7 +68,7 @@ resource_efficiency_cost_reduction = {
     DISPLAY_NAME_CLOAKED_ASSASSIN: (0, 50, 0),
     item_names.SCOUT:         (75, 25, 0),
     item_names.DESTROYER:     (50, 25, 1),
-    DISPLAY_NAME_WORMS:       (50, 75, 0),
+    DISPLAY_NAME_WORMS:       (25, 25, 0),
 
     # Frightful Fleshwelder
     item_names.INFESTED_SIEGE_TANK:   (0, 25, 0),
@@ -723,9 +723,20 @@ item_descriptions = {
     item_names.LURKER_CARAPACE: "Lurkers gain +100 temporary life for 10 seconds on burrowing and unburrowing.",
     item_names.LURKER_RAPID_MORPH: "Lurkers morph instantly from Hydralisks, and 15 seconds faster from Morphlings.",
     item_names.LURKER_SONAR_GLANDS: "Lurkers gain detection and +4 sight range while burrowed.",
-    item_names.RAVAGER_POTENT_BILE: "Ravager Corrosive Bile deals an additional +40 damage.",
-    item_names.RAVAGER_BLOATED_BILE_DUCTS: "Ravager Corrosive Bile hits a much larger area.",
-    item_names.RAVAGER_DEEP_TUNNEL: _ability_desc("Ravagers", "Deep Tunnel", "allows them to burrow to any visible location on the map"),
+    item_names.RAVAGER_POTENT_BILE: "Ravager Corrosive Bile deals an additional +40 damage to enemies.",
+    item_names.RAVAGER_BLOATED_BILE_DUCTS: "Ravager Corrosive Bile hits a much larger area and no longer deals friendly fire.",
+    item_names.RAVAGER_DEEP_TUNNEL: _ability_desc("Ravagers", "Deep Tunnel", "allows them to burrow to any visible location on the map on creep."),
+    item_names.RAVAGER_DISINTEGRATING_ACID: inspect.cleandoc("""
+        Ravagers reduce the armor of enemies they attack by 1, stacking up to 3 times.
+        Corrosive Bile applies max stacks instantly.
+    """),
+    item_names.RAVAGER_AERIAL_CORROSIVE_BILE: "Ravagers can launch a Corrosive Bile directly at the target location, but it can only damage air units.",
+    item_names.RAVAGER_BURROWED_BOMBARDMENT: inspect.cleandoc("""
+        Ravagers can attack air units with their weapon while burrowed.
+        Ravagers can use Corrosive Bile while burrowed.
+    """),
+    item_names.RAVAGER_BONE_PLATING: "Ravagers gain +35 maximum health and +1 armor.",
+    item_names.RAVAGER_WRITHING_ABOMINATION: "Ravagers spawn 2 Roachlings with Corrosive Bile and spawn 4 Roachlings on death.",
     item_names.VIPER_PARASITIC_BOMB: _ability_desc("Vipers", "Parasitic Bomb", "inflicts an area-damaging effect on an enemy air unit"),
     item_names.VIPER_PARALYTIC_BARBS: "Viper Abduct stuns units for an additional 5 seconds.",
     item_names.VIPER_VIRULENT_MICROBES: "All Viper abilities gain +4 range.",
@@ -739,7 +750,7 @@ item_descriptions = {
     item_names.HIVE_QUEEN_PSIONIC_MITOCHONDRIA: "Hive Queens spawn with +25 energy, gain +50 maximum energy, and regenerate energy faster on creep.",
     item_names.HIVE_QUEEN_STRAIN_INJECTION: _ability_desc("Hive Queens", "Inject Strains", "causes zerg tech structures to spawn units or manifest attacks."),
     item_names.HIVE_QUEEN_SWELLED_TRANSFUSION: "Hive Queen Transfusion heals +25 life immediately, and can be used off creep.",
-    item_names.SWARM_QUEEN_DEEP_TUNNEL: _ability_desc("Swarm Queens", "Deep Tunnel"),
+    item_names.SWARM_QUEEN_DEEP_TUNNEL: _ability_desc("Swarm Queens", "Deep Tunnel", "allows them to burrow to any visible location on the map covered in creep"),
     item_names.SWARM_QUEEN_ORGANIC_CARAPACE: "Swarm Queens gain +25 life.",
     item_names.SWARM_QUEEN_BIO_MECHANICAL_TRANSFUSION: "Swarm Queen Burst Heal heals an additional +10 life and can now target mechanical units.",
     item_names.SWARM_QUEEN_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.SWARM_QUEEN),
@@ -790,7 +801,7 @@ item_descriptions = {
     item_names.NYDUS_WORM_ECHIDNA_WORM_JORMUNGANDR_STRAIN: f"Removes emerge time for {DISPLAY_NAME_WORMS}, and allows them to be salvaged to return the resources spent on them.",
     item_names.NYDUS_WORM_RAVENOUS_APPETITE: "Allows Nydus Worms to unload and load units nearly instantly.",
     item_names.NYDUS_WORM_ECHIDNA_WORM_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(DISPLAY_NAME_WORMS),
-    item_names.ECHIDNA_WORM_OUROBOROS_STRAIN: "Allows Echidna Worms to train a limited assortment of combat units (Zerglings, Roaches, Hydralisks, and Aberrations) at a reduced time and cost.",
+    item_names.ECHIDNA_WORM_OUROBOROS_STRAIN: "Allows Echidna Worms to train a limited assortment of combat units \n(Zerglings, Pygalisks, Roaches, Hydralisks, and Aberrations) at a reduced time and cost.",
     item_names.INFESTED_SIEGE_TANK_PROGRESSIVE_AUTOMATED_MITOSIS:  inspect.cleandoc("""
         Level 1: Infested Siege Tanks generate 1 Volatile Biomass every 30 seconds.
         Level 2: Infested Siege Tanks generate 1 Volatile Biomass every 10 seconds.
@@ -1057,8 +1068,8 @@ item_descriptions = {
     item_names.STALWART_LATTICED_SHIELDING: "Increases Stalwart max shields by +50.",
     item_names.STALWART_SOLARITE_SCREEN: "Hardened Shields reduce damage to 5.",
     item_names.DISRUPTOR_CLOAKING_MODULE: "Disruptors are permanently cloaked.",
-    item_names.DISRUPTOR_PERFECTED_POWER: "Allows Purification Nova to hit air units. Bonus damage to shields is now baseline for enemies (friendly damage unaffected).",
-    item_names.DISRUPTOR_RESTRAINED_DESTRUCTION: "Purification Nova does 50% reduced damage to friendly units and structures.",
+    item_names.DISRUPTOR_PERFECTED_POWER: "Allows Purification Nova to hit air units. Bonus damage to shields is now baseline for enemies.",
+    item_names.DISRUPTOR_RESTRAINED_DESTRUCTION: "Purification Nova does 75% reduced damage to friendly units, and only deals friendly fire at the center of the nova.",
     item_names.COLOSSUS_PACIFICATION_PROTOCOL: "Increases Colossus attack speed.",
     item_names.WRATHWALKER_RAPID_POWER_CYCLING: "Reduces the charging time and increases attack speed of the Wrathwalker's Charged Blast.",
     item_names.WRATHWALKER_EYE_OF_WRATH: "Increases Wrathwalker weapon range by +1.",
