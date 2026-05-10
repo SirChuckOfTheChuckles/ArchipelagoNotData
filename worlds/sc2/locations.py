@@ -5955,7 +5955,7 @@ def get_locations(world: Optional["SC2World"]) -> Tuple[LocationData, ...]:
         ),
         make_location_data(
             SC2Mission.EVACUATION_P.mission_name,
-            "Western protoss Base",
+            "Western Zerg Base",
             SC2_RACESWAP_LOC_ID_OFFSET + 807,
             LocationType.MASTERY,
             logic.protoss_competent_comp,
@@ -5963,7 +5963,7 @@ def get_locations(world: Optional["SC2World"]) -> Tuple[LocationData, ...]:
         ),
         make_location_data(
             SC2Mission.EVACUATION_P.mission_name,
-            "Eastern protoss Base",
+            "Eastern Zerg Base",
             SC2_RACESWAP_LOC_ID_OFFSET + 808,
             LocationType.MASTERY,
             logic.protoss_competent_comp,
