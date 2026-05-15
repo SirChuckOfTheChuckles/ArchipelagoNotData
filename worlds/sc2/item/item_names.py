@@ -169,6 +169,7 @@ DOMINION_TROOPER_HAILSTORM_LAUNCHER                = "Hailstorm Launcher (Domini
 DOMINION_TROOPER_ADVANCED_ALLOYS                   = "Advanced Alloys (Dominion Trooper)"
 DOMINION_TROOPER_OPTIMIZED_LOGISTICS               = "Optimized Logistics (Dominion Trooper)"
 EMPERORS_SHADOW_SOVEREIGN_TACTICAL_MISSILES        = "Sovereign Tactical Missiles (Emperor's Shadow)"
+EMPERORS_SHADOW_EMP_BLAST                          = "EMP Blast (Emperor's Shadow)"
 FIREBAT_INCINERATOR_GAUNTLETS                      = "Incinerator Gauntlets (Firebat)"
 FIREBAT_JUGGERNAUT_PLATING                         = "Juggernaut Plating (Firebat)"
 FIREBAT_RESOURCE_EFFICIENCY                        = "Resource Efficiency (Firebat)"

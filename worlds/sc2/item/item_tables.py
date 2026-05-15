@@ -974,6 +974,9 @@ item_table = {
     item_names.BUNKER_EMERGENCY_PROVISIONS:
         ItemData(774 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 28, SC2Race.TERRAN,
                  parent=item_names.BUNKER),
+    item_names.EMPERORS_SHADOW_EMP_BLAST:
+        ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
