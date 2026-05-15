@@ -513,7 +513,7 @@ item_descriptions = {
     item_names.EMPERORS_SHADOW_SOVEREIGN_TACTICAL_MISSILES: "Tactical Missile Strikes no longer need to be channeled.",
     item_names.EMPERORS_SHADOW_EMP_BLAST: inspect.cleandoc("""
         Emperor's Shadows gain the EMP Blast spell.
-        Does 100 damage to shields and drains all energy from enemy units in the targeted area.                     
+        Does 100 damage to shields and drains all energy from enemy units in the targeted area.
         Cloaked units hit are revealed for a short time. Mechanic units hit are stunned.
     """),
     item_names.DOMINION_TROOPER_B2_HIGH_CAL_LMG: "Equipping the B-2 High-Cal LMG increases life by 10 and damage by an additional 2.",
