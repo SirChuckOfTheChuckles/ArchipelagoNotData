@@ -78,7 +78,7 @@ class SC2Logic:
         self.total_mission_count = 1
 
         # Conditionally changed by the world after finalizing missions
-        self.hero_presence: dict[SC2Campaign, dict[SC2Race, HeroFlag]] = {}
+        self.hero_presence: dict[SC2Mission, HeroFlag] = {}
         self.kerrigan_items_granted = False
         self.kerrigan_levels_granted = False
         self.kerrigan_build_missions = False
@@ -1167,7 +1167,7 @@ class SC2Logic:
         return levels >= target
 
     def get_hero_flag(self, mission: SC2Mission) -> HeroFlag:
-        return self.hero_presence.get(mission.campaign, {}).get(mission.race, HeroFlag.NONE)
+        return self.hero_presence.get(mission, HeroFlag.NONE)
 
     def active_hero(self, state: CollectionState, mission: SC2Mission) -> bool:
         return self.get_hero_flag(mission) != HeroFlag.NONE

@@ -25,6 +25,47 @@ if TYPE_CHECKING:
     from . import SC2World
 
 
+HERO_PRESENCE_CAMPAIGN_NAMES = {
+    SC2Campaign.WOL: "Wings of Liberty",
+    SC2Campaign.PROPHECY: "Prophecy",
+    SC2Campaign.HOTS: "Heart of the Swarm",
+    SC2Campaign.PROLOGUE: "Legacy of the Void Prologue",
+    SC2Campaign.LOTV: "Legacy of the Void",
+    SC2Campaign.EPILOGUE: "Legacy of the Void Epilogue",
+    SC2Campaign.NCO: "Nova Covert Ops",
+}
+HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
+HERO_PRESENCE_OPTION_KEYS = {
+    **{
+        campaign_name: (campaign, None, None)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} Build": (campaign, None, True)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} No Build": (campaign, None, False)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} {race.get_title()}": (campaign, race, None)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{campaign_name} {race.get_title()} Build": (campaign, race, True)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{campaign_name} {race.get_title()} No Build": (campaign, race, False)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+}
+
+
 class Sc2MissionSet(OptionSet):
     """Option set made for handling missions and expanding mission groups"""
     valid_keys: Iterable[str] = [x.mission_name for x in SC2Mission]
@@ -955,6 +996,19 @@ class HeroPresence(Choice):
     default = option_vanilla
 
 
+class KerriganPresence(OptionSet):
+    """
+    Overrides where Kerrigan appears. If empty, Kerrigan follows the Hero Presence option.
+
+    Values are campaign/race pairs, such as "Wings of Liberty Protoss" or "Heart of the Swarm Terran".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Wings of Liberty Protoss Build".
+    Campaign-wide values, such as "Heart of the Swarm" or "Heart of the Swarm No Build", affect all races.
+    """
+    display_name = "Kerrigan Presence"
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+
 class NovaMaxWeapons(Range):
     """
     Determines maximum number of Nova weapons that can be present in the game
@@ -1477,6 +1531,7 @@ class Starcraft2Options(PerGameCommonOptions):
     nova_max_gadgets: NovaMaxGadgets
     enabled_heroes: EnabledHeroes
     hero_presence: HeroPresence
+    kerrigan_presence: KerriganPresence
     take_over_ai_allies: TakeOverAIAllies
     locked_items: LockedItems
     excluded_items: ExcludedItems
@@ -1545,6 +1600,7 @@ option_groups = [
     ]),
     OptionGroup("Kerrigan", [
         GrantStoryLevels,
+        KerriganPresence,
         KerriganLevelsPerMissionCompleted,
         KerriganLevelsPerMissionCompletedCap,
         KerriganLevelItemSum,

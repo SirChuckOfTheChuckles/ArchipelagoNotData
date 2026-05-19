@@ -27,7 +27,7 @@ from .options import (
     get_enabled_campaigns, SpearOfAdunPassiveAbilityPresence, Starcraft2Options,
     GrantStoryTech, GrantStoryLevels, GenericUpgradeResearch, RequiredTactics,
     upgrade_included_names, EnableVoidTrade, FillerItemsDistribution, MissionOrderScouting, option_groups,
-    HeroPresence, HeroOptions, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems,
+    HeroPresence, HeroOptions, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems, HERO_PRESENCE_OPTION_KEYS,
     is_mission_in_soa_presence,
 )
 from . import options
@@ -115,7 +115,7 @@ class SC2World(World):
         self.locked_locations = []
         self.filler_items_distribution = FillerItemsDistribution.default
         self.logic = None
-        self.hero_presence: dict[SC2Campaign, dict[SC2Race, HeroFlag]] = {}
+        self.hero_presence: dict[SC2Mission, HeroFlag] = {}
 
     def create_item(self, name: str) -> StarcraftItem:
         data = item_tables.item_table[name]
@@ -177,9 +177,19 @@ class SC2World(World):
 
         setup_events(self.player, self.locked_locations, self.location_cache)
         set_up_filler_items_distribution(self)
-        self.hero_presence = calculate_hero_presence(
+        campaign_hero_presence = calculate_hero_presence(
             self.options.hero_presence.value,
             self.options.enabled_heroes.value
+        )
+        self.hero_presence = calculate_mission_hero_presence(
+            campaign_hero_presence,
+            get_all_missions(self.custom_mission_order),
+        )
+        apply_hero_presence_override(
+            self.hero_presence,
+            HeroFlag.KERRIGAN,
+            self.options.kerrigan_presence.value,
+            HeroOptions.KERRIGAN in self.options.enabled_heroes.value,
         )
         self.logic.hero_presence = self.hero_presence
         item_list: list[FilterItem] = create_and_flag_explicit_item_locks_and_excludes(self)
@@ -376,11 +386,11 @@ class SC2World(World):
                                         hint_data[self.player][location.address] = mission_position_name
 
 
-def pack_hero_presence(presence: dict[SC2Campaign, dict[SC2Race, HeroFlag]]) -> dict[str, int]:
+def pack_hero_presence(presence: dict[SC2Mission, HeroFlag]) -> dict[str, int]:
     result: dict[str, int] = {}
-    for campaign in presence:
-        for race in presence[campaign]:
-            result[f"{campaign.id}.{race.value}"] = presence[campaign][race].value
+    for mission, hero_flag in presence.items():
+        if hero_flag != HeroFlag.NONE:
+            result[str(mission.id)] = hero_flag.value
     return result
 
 
@@ -425,6 +435,43 @@ def calculate_hero_presence(presence: int, heroes: set[str]) -> dict[SC2Campaign
             result[SC2Campaign.HOTS][race] = kerrigan_flag
             result[SC2Campaign.NCO][race] = nova_flag
     return result
+
+
+def calculate_mission_hero_presence(
+    campaign_presence: dict[SC2Campaign, dict[SC2Race, HeroFlag]],
+    missions: list[SC2Mission],
+) -> dict[SC2Mission, HeroFlag]:
+    return {
+        mission: campaign_presence.get(mission.campaign, {}).get(mission.race, HeroFlag.NONE)
+        for mission in missions
+    }
+
+
+def apply_hero_presence_override(
+    presence: dict[SC2Mission, HeroFlag],
+    hero: HeroFlag,
+    selected_locations: set[str],
+    enabled: bool,
+) -> None:
+    if not selected_locations:
+        return
+
+    for mission in presence:
+        presence[mission] &= ~hero
+
+    if not enabled:
+        return
+
+    for location in selected_locations:
+        campaign, race, build_required = HERO_PRESENCE_OPTION_KEYS[location]
+        for mission in presence:
+            if mission.campaign != campaign:
+                continue
+            if race is not None and mission.race != race:
+                continue
+            if build_required is not None and (MissionFlag.NoBuild not in mission.flags) != build_required:
+                continue
+            presence[mission] |= hero
 
 
 def _get_column_display(index: int, single_row_layout: bool) -> str:
@@ -694,7 +741,7 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
         mission for mission in missions
         if ((MissionFlag.HeroSystemUnsupported | MissionFlag.Kerrigan) in mission.flags
             or (MissionFlag.HeroSystemUnsupported not in mission.flags
-                and HeroFlag.KERRIGAN in world.hero_presence[mission.campaign][mission.race]
+                and HeroFlag.KERRIGAN in world.hero_presence.get(mission, HeroFlag.NONE)
             )
         )
     ]
@@ -702,7 +749,7 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
         mission for mission in missions
         if ((MissionFlag.HeroSystemUnsupported | MissionFlag.Nova) in mission.flags
             or (MissionFlag.HeroSystemUnsupported not in mission.flags
-                and HeroFlag.NOVA in world.hero_presence[mission.campaign][mission.race]
+                and HeroFlag.NOVA in world.hero_presence.get(mission, HeroFlag.NONE)
             )
         )
     ]
@@ -710,7 +757,7 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
         mission for mission in missions
         if ((MissionFlag.HeroSystemUnsupported | MissionFlag.Artanis) in mission.flags
             or (MissionFlag.HeroSystemUnsupported not in mission.flags
-                and HeroFlag.ARTANIS in world.hero_presence[mission.campaign][mission.race]
+                and HeroFlag.ARTANIS in world.hero_presence.get(mission, HeroFlag.NONE)
             )
         )
     ]

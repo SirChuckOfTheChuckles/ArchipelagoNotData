@@ -766,7 +766,7 @@ class SC2Context(CommonContext):
         self.lowest_maximum_supply: int = options.LowestMaximumSupply.default
         self.research_cost_reduction_per_item: int = options.ResearchCostReductionPerItem.default
         self.enabled_heroes: frozenset[str] = EnabledHeroes.default
-        self.hero_presence: dict[SC2Campaign, dict[SC2Race], int] = HeroPresence.default
+        self.hero_presence: dict[SC2Mission, int] = {}
         self.mercenary_highlanders: bool = False
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
@@ -830,25 +830,33 @@ class SC2Context(CommonContext):
         elif str(SC2World.settings.game_speed).casefold() == 'faster':
             self.game_speed = GameSpeed.option_faster
 
-    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Campaign, dict[SC2Race, int]]:
-        campaigns = [campaign for campaign in SC2Campaign if campaign != SC2Campaign.GLOBAL]
-        result: dict[SC2Campaign, dict[SC2Race, int]] = {campaign: {} for campaign in campaigns}
+    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Mission, int]:
+        result: dict[SC2Mission, int] = {}
         for key, value in slot_data.items():
-            campaign, race, = key.split(".")
-            result[lookup_id_to_campaign[int(campaign)]][lookup_id_to_race[int(race)]] = int(value)
+            if "." in key:
+                campaign_id, race_id = key.split(".")
+                campaign = lookup_id_to_campaign[int(campaign_id)]
+                race = lookup_id_to_race[int(race_id)]
+                for mission in SC2Mission:
+                    if mission.campaign == campaign and mission.race == race:
+                        result[mission] = int(value)
+            else:
+                result[lookup_id_to_mission[int(key)]] = int(value)
         return result
 
-    def default_hero_presence(self, kerrigan_present: bool = True) -> dict[SC2Campaign, dict[SC2Race, int]]:
+    def default_hero_presence(self, kerrigan_present: bool = True) -> dict[SC2Mission, int]:
+        result = {
+            mission: HeroFlag.NOVA.value
+            for mission in SC2Mission
+            if mission.campaign == SC2Campaign.NCO and mission.race == SC2Race.TERRAN
+        }
         if kerrigan_present:
-            return {
-                SC2Campaign.HOTS: {SC2Race.ZERG: HeroFlag.KERRIGAN.value},
-                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
-            }
-        else:
-            return {
-                # only used by compat code
-                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
-            }
+            result.update({
+                mission: HeroFlag.KERRIGAN.value
+                for mission in SC2Mission
+                if mission.campaign == SC2Campaign.HOTS and mission.race == SC2Race.ZERG
+            })
+        return result
 
 
     def on_package(self, cmd: str, args: dict) -> None:
