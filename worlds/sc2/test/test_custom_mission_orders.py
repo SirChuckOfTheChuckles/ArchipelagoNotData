@@ -7,8 +7,78 @@ from .. import MissionFlag
 from ..item import item_tables, item_names
 from BaseClasses import ItemClassification
 from .. import options
+from ..mission_tables import SC2Mission
+from ..tables import HeroFlag
 
 class TestCustomMissionOrders(Sc2SetupTestBase):
+    def test_custom_mission_order_can_assign_exact_heroes_to_slots(self):
+        world_options = {
+            **self.ALL_CAMPAIGNS,
+            'mission_order': 'custom',
+            'hero_presence': 'anywhere',
+            'enabled_heroes': ['Kerrigan', 'Nova', 'Artanis'],
+            'custom_mission_order': {
+                'Hero Slots': {
+                    'type': 'column',
+                    'size': 3,
+                    'missions': [
+                        {
+                            'index': 0,
+                            'mission_pool': [SC2Mission.LIBERATION_DAY.mission_name],
+                            'heroes': ['kerrigan'],
+                        },
+                        {
+                            'index': 1,
+                            'mission_pool': [SC2Mission.RENDEZVOUS.mission_name],
+                            'heroes': ['nova', 'artanis'],
+                        },
+                        {
+                            'index': 2,
+                            'mission_pool': [SC2Mission.FOR_AIUR.mission_name],
+                            'heroes': [],
+                        },
+                    ],
+                },
+            },
+        }
+
+        self.generate_world(world_options)
+
+        self.assertEqual(self.world.hero_presence[SC2Mission.LIBERATION_DAY], HeroFlag.KERRIGAN)
+        self.assertEqual(self.world.hero_presence[SC2Mission.RENDEZVOUS], HeroFlag.NOVA | HeroFlag.ARTANIS)
+        self.assertEqual(self.world.hero_presence[SC2Mission.FOR_AIUR], HeroFlag.NONE)
+
+    def test_custom_mission_order_heroes_override_disabled_heroes(self):
+        world_options = {
+            **self.ALL_CAMPAIGNS,
+            'mission_order': 'custom',
+            'hero_presence': 'vanilla',
+            'enabled_heroes': [],
+            'custom_mission_order': {
+                'Disabled Hero Slot': {
+                    'type': 'column',
+                    'size': 1,
+                    'missions': [
+                        {
+                            'index': 0,
+                            'mission_pool': [SC2Mission.THE_OUTLAWS.mission_name],
+                            'heroes': ['Kerrigan', 'Nova', 'Artanis'],
+                        },
+                    ],
+                },
+            },
+        }
+
+        self.generate_world(world_options)
+
+        self.assertEqual(
+            self.world.hero_presence[SC2Mission.THE_OUTLAWS],
+            HeroFlag.KERRIGAN | HeroFlag.NOVA | HeroFlag.ARTANIS,
+        )
+        self.assertFalse(self.world.logic.kerrigan_items_granted)
+        self.assertFalse(self.world.logic.nova_items_granted)
+        self.assertFalse(self.world.logic.artanis_items_granted)
+
     def test_mini_wol_generates(self):
         world_options = {
             **self.ALL_CAMPAIGNS,

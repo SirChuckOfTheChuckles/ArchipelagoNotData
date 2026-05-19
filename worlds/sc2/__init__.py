@@ -191,6 +191,22 @@ class SC2World(World):
             self.options.kerrigan_presence.value,
             HeroOptions.KERRIGAN in self.options.enabled_heroes.value,
         )
+        apply_hero_presence_override(
+            self.hero_presence,
+            HeroFlag.NOVA,
+            self.options.nova_presence.value,
+            HeroOptions.NOVA in self.options.enabled_heroes.value,
+        )
+        apply_hero_presence_override(
+            self.hero_presence,
+            HeroFlag.ARTANIS,
+            self.options.artanis_presence.value,
+            HeroOptions.ARTANIS in self.options.enabled_heroes.value,
+        )
+        apply_custom_mission_order_hero_presence(
+            self.hero_presence,
+            self.custom_mission_order,
+        )
         self.logic.hero_presence = self.hero_presence
         item_list: list[FilterItem] = create_and_flag_explicit_item_locks_and_excludes(self)
         flag_excludes_by_faction_presence(self, item_list)
@@ -465,13 +481,32 @@ def apply_hero_presence_override(
     for location in selected_locations:
         campaign, race, build_required = HERO_PRESENCE_OPTION_KEYS[location]
         for mission in presence:
-            if mission.campaign != campaign:
+            if campaign is not None and mission.campaign != campaign:
                 continue
             if race is not None and mission.race != race:
                 continue
             if build_required is not None and (MissionFlag.NoBuild not in mission.flags) != build_required:
                 continue
             presence[mission] |= hero
+
+
+def apply_custom_mission_order_hero_presence(
+    presence: dict[SC2Mission, HeroFlag],
+    mission_order: SC2MissionOrder,
+) -> None:
+    hero_flags = {
+        HeroOptions.KERRIGAN: HeroFlag.KERRIGAN,
+        HeroOptions.NOVA: HeroFlag.NOVA,
+        HeroOptions.ARTANIS: HeroFlag.ARTANIS,
+    }
+    for mission_slot in mission_order.mission_order_node.get_missions():
+        if mission_slot.option_empty or mission_slot.option_heroes is None:
+            continue
+
+        flag = HeroFlag.NONE
+        for hero in mission_slot.option_heroes:
+            flag |= hero_flags[hero]
+        presence[mission_slot.mission] = flag
 
 
 def _get_column_display(index: int, single_row_layout: bool) -> str:

@@ -106,6 +106,63 @@ class TestOptions(unittest.TestCase):
         self.assertIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.RENDEZVOUS])
         self.assertIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.RENDEZVOUS_P])
 
+    def test_kerrigan_presence_override_can_target_race_across_campaigns(self) -> None:
+        hero_presence = calculate_mission_hero_presence(
+            calculate_hero_presence(options.HeroPresence.option_vanilla, {options.HeroOptions.KERRIGAN}),
+            [SC2Mission.RENDEZVOUS, SC2Mission.LIBERATION_DAY, SC2Mission.FOR_AIUR],
+        )
+
+        apply_hero_presence_override(
+            hero_presence,
+            HeroFlag.KERRIGAN,
+            {"Zerg"},
+            True,
+        )
+
+        self.assertIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.RENDEZVOUS])
+        self.assertNotIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.LIBERATION_DAY])
+        self.assertNotIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.FOR_AIUR])
+
+    def test_kerrigan_presence_keys_are_case_insensitive(self) -> None:
+        kerrigan_presence = options.KerriganPresence({
+            "zerg",
+            "heart of the swarm terran no build",
+        })
+
+        kerrigan_presence.verify(None, "Player", None)
+
+        self.assertEqual(kerrigan_presence.value, {"Zerg", "Heart of the Swarm Terran No Build"})
+
+    def test_nova_presence_keys_are_case_insensitive(self) -> None:
+        nova_presence = options.NovaPresence({
+            "terran",
+            "nova covert ops zerg no build",
+        })
+
+        nova_presence.verify(None, "Player", None)
+
+        self.assertEqual(nova_presence.value, {"Terran", "Nova Covert Ops Zerg No Build"})
+
+    def test_artanis_presence_keys_are_case_insensitive(self) -> None:
+        artanis_presence = options.ArtanisPresence({
+            "protoss",
+            "legacy of the void terran build",
+        })
+
+        artanis_presence.verify(None, "Player", None)
+
+        self.assertEqual(artanis_presence.value, {"Protoss", "Legacy of the Void Terran Build"})
+
+    def test_enabled_heroes_keys_are_case_insensitive(self) -> None:
+        enabled_heroes = options.EnabledHeroes({"kerrigan", "nova", "artanis"})
+
+        enabled_heroes.verify(None, "Player", None)
+
+        self.assertEqual(
+            enabled_heroes.value,
+            {options.HeroOptions.KERRIGAN, options.HeroOptions.NOVA, options.HeroOptions.ARTANIS},
+        )
+
     def test_kerrigan_presence_override_can_target_campaign_build_type(self) -> None:
         hero_presence = calculate_mission_hero_presence(
             calculate_hero_presence(options.HeroPresence.option_vanilla, {options.HeroOptions.KERRIGAN}),
@@ -122,3 +179,37 @@ class TestOptions(unittest.TestCase):
         self.assertNotIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.RENDEZVOUS])
         self.assertIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.ENEMY_WITHIN])
         self.assertIn(HeroFlag.KERRIGAN, hero_presence[SC2Mission.ENEMY_WITHIN_T])
+
+    def test_nova_presence_override_can_target_campaign_no_build(self) -> None:
+        hero_presence = calculate_mission_hero_presence(
+            calculate_hero_presence(options.HeroPresence.option_vanilla, {options.HeroOptions.NOVA}),
+            [SC2Mission.THE_ESCAPE, SC2Mission.IN_THE_ENEMY_S_SHADOW, SC2Mission.ENEMY_INTELLIGENCE],
+        )
+
+        apply_hero_presence_override(
+            hero_presence,
+            HeroFlag.NOVA,
+            {"Nova Covert Ops No Build"},
+            True,
+        )
+
+        self.assertIn(HeroFlag.NOVA, hero_presence[SC2Mission.THE_ESCAPE])
+        self.assertIn(HeroFlag.NOVA, hero_presence[SC2Mission.IN_THE_ENEMY_S_SHADOW])
+        self.assertNotIn(HeroFlag.NOVA, hero_presence[SC2Mission.ENEMY_INTELLIGENCE])
+
+    def test_artanis_presence_override_can_target_race_across_campaigns(self) -> None:
+        hero_presence = calculate_mission_hero_presence(
+            calculate_hero_presence(options.HeroPresence.option_vanilla, {options.HeroOptions.ARTANIS}),
+            [SC2Mission.THE_GROWING_SHADOW, SC2Mission.THE_OUTLAWS_P, SC2Mission.THE_OUTLAWS],
+        )
+
+        apply_hero_presence_override(
+            hero_presence,
+            HeroFlag.ARTANIS,
+            {"Protoss"},
+            True,
+        )
+
+        self.assertIn(HeroFlag.ARTANIS, hero_presence[SC2Mission.THE_GROWING_SHADOW])
+        self.assertIn(HeroFlag.ARTANIS, hero_presence[SC2Mission.THE_OUTLAWS_P])
+        self.assertNotIn(HeroFlag.ARTANIS, hero_presence[SC2Mission.THE_OUTLAWS])

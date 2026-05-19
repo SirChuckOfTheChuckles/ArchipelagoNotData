@@ -7,7 +7,7 @@ from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
-    OptionCounter,
+    OptionCounter, OptionError,
 )
 from Utils import get_fuzzy_results
 from BaseClasses import PlandoOptions
@@ -37,6 +37,18 @@ HERO_PRESENCE_CAMPAIGN_NAMES = {
 HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
 HERO_PRESENCE_OPTION_KEYS = {
     **{
+        race.get_title(): (None, race, None)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{race.get_title()} Build": (None, race, True)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{race.get_title()} No Build": (None, race, False)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
         campaign_name: (campaign, None, None)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
     },
@@ -64,6 +76,27 @@ HERO_PRESENCE_OPTION_KEYS = {
         for race in HERO_PRESENCE_RACES
     },
 }
+def normalize_option_set_keys(option: OptionSet, valid_keys: Iterable[str]) -> None:
+    key_lookup = {
+        key.casefold(): key
+        for key in valid_keys
+    }
+    normalized_value: set[str] = set()
+    invalid_keys: set[str] = set()
+    for key in option.value:
+        normalized_key = key_lookup.get(str(key).casefold())
+        if normalized_key is None:
+            invalid_keys.add(str(key))
+        else:
+            normalized_value.add(normalized_key)
+
+    if invalid_keys:
+        raise OptionError(
+            f"Found unexpected key {', '.join(sorted(invalid_keys))} in {getattr(option, 'display_name', option)}. "
+            f"Allowed keys: {set(valid_keys)}."
+        )
+
+    option.value = normalized_value
 
 
 class Sc2MissionSet(OptionSet):
@@ -975,6 +1008,9 @@ class EnabledHeroes(OptionSet):
         HeroOptions.NOVA,
     ))
 
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        normalize_option_set_keys(self, self.valid_keys)
+
 class HeroPresence(Choice):
     """
     Determines, which missions use which of the enabled Heroes
@@ -1000,13 +1036,54 @@ class KerriganPresence(OptionSet):
     """
     Overrides where Kerrigan appears. If empty, Kerrigan follows the Hero Presence option.
 
-    Values are campaign/race pairs, such as "Wings of Liberty Protoss" or "Heart of the Swarm Terran".
+    Values are races, campaigns, or campaign/race pairs, such as "Zerg", "Heart of the Swarm",
+    "Wings of Liberty Protoss", or "Heart of the Swarm Terran".
     Add "Build" or "No Build" to only affect matching mission types, such as "Wings of Liberty Protoss Build".
     Campaign-wide values, such as "Heart of the Swarm" or "Heart of the Swarm No Build", affect all races.
+    Race-wide values, such as "Zerg" or "Zerg No Build", affect matching races across all campaigns.
     """
     display_name = "Kerrigan Presence"
     valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
     default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        normalize_option_set_keys(self, self.valid_keys)
+
+
+class NovaPresence(OptionSet):
+    """
+    Overrides where Nova appears. If empty, Nova follows the Hero Presence option.
+
+    Values are races, campaigns, or campaign/race pairs, such as "Terran", "Nova Covert Ops",
+    "Wings of Liberty Protoss", or "Nova Covert Ops Zerg".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Nova Covert Ops No Build".
+    Campaign-wide values, such as "Nova Covert Ops" or "Nova Covert Ops No Build", affect all races.
+    Race-wide values, such as "Terran" or "Terran No Build", affect matching races across all campaigns.
+    """
+    display_name = "Nova Presence"
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        normalize_option_set_keys(self, self.valid_keys)
+
+
+class ArtanisPresence(OptionSet):
+    """
+    Overrides where Artanis appears. If empty, Artanis follows the Hero Presence option.
+
+    Values are races, campaigns, or campaign/race pairs, such as "Protoss", "Legacy of the Void",
+    "Wings of Liberty Protoss", or "Legacy of the Void Terran".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Legacy of the Void No Build".
+    Campaign-wide values, such as "Legacy of the Void" or "Legacy of the Void No Build", affect all races.
+    Race-wide values, such as "Protoss" or "Protoss No Build", affect matching races across all campaigns.
+    """
+    display_name = "Artanis Presence"
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        normalize_option_set_keys(self, self.valid_keys)
 
 
 class NovaMaxWeapons(Range):
@@ -1532,6 +1609,8 @@ class Starcraft2Options(PerGameCommonOptions):
     enabled_heroes: EnabledHeroes
     hero_presence: HeroPresence
     kerrigan_presence: KerriganPresence
+    nova_presence: NovaPresence
+    artanis_presence: ArtanisPresence
     take_over_ai_allies: TakeOverAIAllies
     locked_items: LockedItems
     excluded_items: ExcludedItems
@@ -1620,6 +1699,7 @@ option_groups = [
         SpearOfAdunMaxAutocastAbilities,
     ]),
     OptionGroup("Artanis", [
+        ArtanisPresence,
         ArtanisMaxWeaponAspectActiveAbilities,
         ArtanisMaxWeaponAspectPassiveAbilities,
         ArtanisMaxActiveAbilities,
@@ -1627,6 +1707,7 @@ option_groups = [
         ArtanisOneItemPerAspect,
     ]),
     OptionGroup("Nova", [
+        NovaPresence,
         NovaMaxWeapons,
         NovaMaxGadgets,
     ]),

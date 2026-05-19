@@ -521,6 +521,7 @@ class SC2MOGenMission(MissionOrderNode):
     option_difficulty: Difficulty  # difficulty pool this mission pulls from
     option_mission_pool: Set[int]  # Allowed mission IDs for this slot
     option_victory_cache: int  # Number of victory cache locations tied to the mission name
+    option_heroes: Optional[List[str]]  # Exact heroes assigned to this slot, or None to use normal hero presence
 
     entry_rule: SubRuleEntryRule
     min_depth: int # Smallest amount of missions to beat before this slot is accessible
@@ -546,6 +547,7 @@ class SC2MOGenMission(MissionOrderNode):
         self.prev = []
         self.min_depth = -1
         self.option_victory_cache = -1
+        self.option_heroes = None
 
     def update_with_data(self, data: Dict):
         self.option_goal = data.get("goal", self.option_goal)
@@ -557,6 +559,7 @@ class SC2MOGenMission(MissionOrderNode):
         self.option_difficulty = data.get("difficulty", self.option_difficulty)
         self.option_mission_pool = data.get("mission_pool", self.option_mission_pool)
         self.option_victory_cache = data.get("victory_cache", -1)
+        self.option_heroes = data.get("heroes", self.option_heroes)
     
     def is_always_unlocked(self, in_region_creation = False) -> bool:
         return self.entry_rule.is_always_fulfilled(in_region_creation)
