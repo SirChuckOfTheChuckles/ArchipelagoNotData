@@ -8,7 +8,7 @@ from .options import (
     LocationInclusion,
     get_enabled_campaigns,
 )
-from .mission_tables import SC2Mission, SC2Campaign
+from .mission_tables import SC2Mission, SC2Campaign, MissionPools, lookup_name_to_mission
 
 from BaseClasses import Location
 from worlds.AutoWorld import World
@@ -81,6 +81,32 @@ def make_location_data(
     hard_rule: Optional[Callable[["CollectionState"], bool]] = None,
 ) -> LocationData:
     return LocationData(region, f"{region}: {name}", code, type, rule, flags, hard_rule)
+
+
+def add_victory_hero_requirement(location_data: LocationData, logic) -> LocationData:
+    if location_data.type != LocationType.VICTORY:
+        return location_data
+
+    mission = lookup_name_to_mission.get(location_data.region)
+    if mission is None:
+        return location_data
+
+    if mission.pool in (MissionPools.MEDIUM, MissionPools.HARD):
+        hero_rule = lambda state: logic.basic_or_no_hero(state, mission, False)
+    elif mission.pool == MissionPools.VERY_HARD:
+        hero_rule = lambda state: logic.competent_or_no_hero(state, mission)
+    else:
+        return location_data
+
+    rule = location_data.rule
+    hard_rule = location_data.hard_rule
+    wrapped_rule = lambda state: rule(state) and hero_rule(state)
+    wrapped_hard_rule = (
+        (lambda state: hard_rule(state) and hero_rule(state))
+        if hard_rule is not None
+        else hero_rule
+    )
+    return location_data._replace(rule=wrapped_rule, hard_rule=wrapped_hard_rule)
 
 
 def get_location_types(world: "SC2World", inclusion_type: int) -> Set[LocationType]:
@@ -14807,6 +14833,9 @@ def get_locations(world: Optional["SC2World"]) -> Tuple[LocationData, ...]:
 
         location_table = [
             location for location in location_table if include_location(location)
+        ]
+        location_table = [
+            add_victory_hero_requirement(location, logic) for location in location_table
         ]
     beat_events: List[LocationData] = []
     victory_caches: List[LocationData] = []

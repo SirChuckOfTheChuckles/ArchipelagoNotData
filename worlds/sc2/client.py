@@ -118,6 +118,22 @@ class ConfigurableOptionInfo(NamedTuple):
     can_break_logic: bool = False
 
 
+class RuntimeHeroPresence(coreoptions.Choice):
+    """
+    Controls whether this hero is present at runtime.
+    """
+    option_disabled = 0
+    option_enabled = 1
+    default = option_disabled
+
+
+RUNTIME_HERO_PRESENCE_FLAGS: dict[str, HeroFlag] = {
+    "runtime_kerrigan_presence": HeroFlag.KERRIGAN,
+    "runtime_nova_presence": HeroFlag.NOVA,
+    "runtime_artanis_presence": HeroFlag.ARTANIS,
+}
+
+
 @dataclass
 class ConfigurableSettingInfo:
     setting_name: str
@@ -393,6 +409,9 @@ class StarcraftClientProcessor(ClientCommandProcessor):
 
             'grant_story_tech': ConfigurableOptionInfo('grant_story_tech', options.GrantStoryTech, can_break_logic=True),
             'control_ally': ConfigurableOptionInfo('take_over_ai_allies', options.TakeOverAIAllies, can_break_logic=True),
+            'kerrigan_presence': ConfigurableOptionInfo('runtime_kerrigan_presence', RuntimeHeroPresence, can_break_logic=True),
+            'nova_presence': ConfigurableOptionInfo('runtime_nova_presence', RuntimeHeroPresence, can_break_logic=True),
+            'artanis_presence': ConfigurableOptionInfo('runtime_artanis_presence', RuntimeHeroPresence, can_break_logic=True),
             # SoA
             'soa_presence': ConfigurableOptionInfo('spear_of_adun_presence', options.SpearOfAdunPresence, can_break_logic=True),
             'soa_in_nobuilds': ConfigurableOptionInfo('spear_of_adun_present_in_no_build', options.SpearOfAdunPresentInNoBuild, can_break_logic=True),
@@ -491,7 +510,11 @@ class StarcraftClientProcessor(ClientCommandProcessor):
                 SC2World.settings.__dict__[option.setting_name] = option_value
             force_settings_save_on_close()
         elif option.option_type == ConfigurableOptionType.ENUM and option_value in option.option_class.options:
-            self.ctx.__dict__[option.variable_name] = option.option_class.options[option_value]
+            old_value = self.ctx.__dict__[option.variable_name]
+            new_value = option.option_class.options[option_value]
+            self.ctx.__dict__[option.variable_name] = new_value
+            if old_value != new_value and option.variable_name in RUNTIME_HERO_PRESENCE_FLAGS:
+                self.ctx.rebuild_hero_presence()
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)
@@ -766,7 +789,11 @@ class SC2Context(CommonContext):
         self.lowest_maximum_supply: int = options.LowestMaximumSupply.default
         self.research_cost_reduction_per_item: int = options.ResearchCostReductionPerItem.default
         self.enabled_heroes: frozenset[str] = EnabledHeroes.default
+        self.base_hero_presence: dict[SC2Mission, int] = {}
         self.hero_presence: dict[SC2Mission, int] = {}
+        self.runtime_kerrigan_presence = RuntimeHeroPresence.option_disabled
+        self.runtime_nova_presence = RuntimeHeroPresence.option_disabled
+        self.runtime_artanis_presence = RuntimeHeroPresence.option_disabled
         self.mercenary_highlanders: bool = False
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
@@ -857,6 +884,39 @@ class SC2Context(CommonContext):
                 if mission.campaign == SC2Campaign.HOTS and mission.race == SC2Race.ZERG
             })
         return result
+
+    def _hero_exists_in_base_presence(self, hero_flag: HeroFlag) -> bool:
+        return any(hero_flag.value & mission_heroes for mission_heroes in self.base_hero_presence.values())
+
+    def reset_runtime_hero_presence(self) -> None:
+        for variable_name, hero_flag in RUNTIME_HERO_PRESENCE_FLAGS.items():
+            self.__dict__[variable_name] = (
+                RuntimeHeroPresence.option_enabled
+                if self._hero_exists_in_base_presence(hero_flag)
+                else RuntimeHeroPresence.option_disabled
+            )
+        self.rebuild_hero_presence()
+
+    def rebuild_hero_presence(self) -> None:
+        effective_presence = {
+            mission: hero_flags
+            for mission, hero_flags in self.base_hero_presence.items()
+            if hero_flags
+        }
+        for variable_name, hero_flag in RUNTIME_HERO_PRESENCE_FLAGS.items():
+            hero_value = hero_flag.value
+            if self.__dict__[variable_name] == RuntimeHeroPresence.option_enabled:
+                if not self._hero_exists_in_base_presence(hero_flag):
+                    for mission in SC2Mission:
+                        effective_presence[mission] = effective_presence.get(mission, HeroFlag.NONE.value) | hero_value
+            else:
+                for mission in SC2Mission:
+                    mission_heroes = effective_presence.get(mission, HeroFlag.NONE.value) & ~hero_value
+                    if mission_heroes:
+                        effective_presence[mission] = mission_heroes
+                    else:
+                        effective_presence.pop(mission, None)
+        self.hero_presence = effective_presence
 
 
     def on_package(self, cmd: str, args: dict) -> None:
@@ -994,9 +1054,9 @@ class SC2Context(CommonContext):
             self.nova_items_granted = args["slot_data"].get("nova_items_granted", False)
             hero_presence_args = args["slot_data"].get("hero_presence","0")
             if hero_presence_args != "0":
-                self.hero_presence = self.unpack_hero_presence(hero_presence_args)
+                self.base_hero_presence = self.unpack_hero_presence(hero_presence_args)
             else:
-                self.hero_presence = self.default_hero_presence(True)
+                self.base_hero_presence = self.default_hero_presence(True)
             # # TODO (Snarky): NCO Nova is currently disabled. Revisit if enabled.
             # # Generic Nova presence never made it to live, so it doesn't need compat code
             # if self.slot_data_version < 4:
@@ -1007,9 +1067,10 @@ class SC2Context(CommonContext):
             #     else:
             if self.slot_data_version < 5:
                 if args["slot_data"].get("kerrigan_presence", True):
-                    self.hero_presence = self.default_hero_presence(True)
+                    self.base_hero_presence = self.default_hero_presence(True)
                 else:
-                    self.hero_presence = self.default_hero_presence(False)
+                    self.base_hero_presence = self.default_hero_presence(False)
+            self.reset_runtime_hero_presence()
             self.trade_enabled = args["slot_data"].get("enable_void_trade", EnableVoidTrade.option_false)
             self.trade_age_limit = args["slot_data"].get("void_trade_age_limit", VoidTradeAgeLimit.default)
             self.trade_workers_allowed = args["slot_data"].get("void_trade_workers", VoidTradeWorkers.default)
