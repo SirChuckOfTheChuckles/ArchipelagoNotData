@@ -1,0 +1,39 @@
+name: SC2BuildNoBuild
+game: Starcraft 2
+description: Test Build and No Build hero presence filters for each hero.
+
+Starcraft 2:
+  game_difficulty: normal
+  game_speed: faster
+  mission_order: vanilla_shuffled
+  maximum_campaign_size: 83
+  required_tactics: standard
+  enabled_campaigns:
+    - Wings of Liberty
+    - Prophecy
+    - Heart of the Swarm
+    - "Whispers of Oblivion (Legacy of the Void: Prologue)"
+    - Legacy of the Void
+    - "Into the Void (Legacy of the Void: Epilogue)"
+    - Nova Covert Ops
+  selected_races:
+    - Terran
+    - Zerg
+    - Protoss
+  enable_race_swap: shuffle_all
+  mission_race_balancing: semi_balanced
+  enabled_heroes:
+    - Kerrigan
+    - Nova
+    - Artanis
+  hero_presence: vanilla
+  kerrigan_presence:
+    - Terran Build
+    - Legacy of the Void Zerg No Build
+  nova_presence:
+    - Zerg Build
+    - Heart of the Swarm Terran No Build
+  artanis_presence:
+    - Protoss Build
+    - Wings of Liberty Protoss No Build
+  mission_order_scouting: all

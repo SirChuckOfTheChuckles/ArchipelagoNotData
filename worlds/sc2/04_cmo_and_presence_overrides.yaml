@@ -1,0 +1,153 @@
+name: SC2CMOOverride
+game: Starcraft 2
+description: Test custom mission order slot heroes together with individual hero presence overrides.
+
+Starcraft 2:
+  game_difficulty: normal
+  game_speed: faster
+  mission_order: custom
+  maximum_campaign_size: 32
+  required_tactics: standard
+  enabled_campaigns:
+    - Wings of Liberty
+    - Prophecy
+    - Heart of the Swarm
+    - "Whispers of Oblivion (Legacy of the Void: Prologue)"
+    - Legacy of the Void
+    - "Into the Void (Legacy of the Void: Epilogue)"
+    - Nova Covert Ops
+  selected_races:
+    - Terran
+    - Zerg
+    - Protoss
+  enable_race_swap: shuffle_all
+  mission_race_balancing: semi_balanced
+  enabled_heroes:
+    - Kerrigan
+    - Nova
+    - Artanis
+  hero_presence: vanilla
+  kerrigan_presence:
+    - Legacy of the Void Zerg
+    - Nova Covert Ops Protoss
+    - Wings of Liberty No Build
+  nova_presence:
+    - Heart of the Swarm Protoss
+    - Legacy of the Void Terran
+    - Wings of Liberty Terran Build
+  artanis_presence:
+    - Heart of the Swarm Terran
+    - Nova Covert Ops Zerg
+    - Prophecy Protoss
+  mission_order_scouting: all
+  custom_mission_order:
+    CMO Plus Presence Overrides:
+      Open Override Grid:
+        type: grid
+        size: 32
+        mission_pool:
+          - all missions
+        missions:
+          # Start is intentionally broad so fill has room while hero interactions are tested later.
+          - index: 0
+            entrance: true
+            difficulty: starter
+            heroes: []
+          - index: 1
+            entrance: true
+            difficulty: easy
+            heroes:
+              - Kerrigan
+          - index: 2
+            entrance: true
+            difficulty: easy
+            heroes:
+              - Nova
+          - index: 3
+            entrance: true
+            difficulty: medium
+            heroes:
+              - Artanis
+          - index: 4
+            entrance: true
+            difficulty: medium
+            heroes:
+              - Kerrigan
+              - Nova
+          - index: 5
+            entrance: true
+            difficulty: medium
+            heroes:
+              - Nova
+              - Artanis
+
+          # Explicit mission slots that should override/compose with the presence options above.
+          - index: 8
+            mission_pool: Safe Haven (Terran)
+            heroes:
+              - Artanis
+          - index: 9
+            mission_pool: Welcome to the Jungle (Protoss)
+            heroes:
+              - Kerrigan
+          - index: 10
+            mission_pool: Fire in the Sky (Terran)
+            heroes:
+              - Nova
+          - index: 11
+            mission_pool: Sky Shield (Zerg)
+            heroes:
+              - Kerrigan
+              - Artanis
+          - index: 14
+            mission_pool: Ghosts in the Fog (Terran)
+            heroes:
+              - Nova
+          - index: 15
+            mission_pool: Death From Above (Protoss)
+            heroes:
+              - Kerrigan
+              - Nova
+          - index: 16
+            mission_pool: Trouble In Paradise (Zerg)
+            heroes:
+              - Artanis
+          - index: 19
+            mission_pool: All-In (Protoss)
+            heroes:
+              - Kerrigan
+              - Nova
+              - Artanis
+          - index: 20
+            mission_pool: The Reckoning (Terran)
+            heroes: []
+          - index: 21
+            mission_pool: The Host (Zerg)
+            heroes:
+              - Kerrigan
+          - index: 24
+            mission_pool: End Game (Protoss)
+            heroes:
+              - Nova
+              - Artanis
+          - index: 25
+            mission_pool: Into the Void (Terran)
+            heroes:
+              - Kerrigan
+              - Nova
+          - index: 26
+            mission_pool: Salvation (Zerg)
+            heroes:
+              - Artanis
+          - index: 30
+            mission_pool: The Essence of Eternity (Protoss)
+            heroes:
+              - Kerrigan
+              - Artanis
+          - index: 31
+            goal: true
+            mission_pool: Amon's Fall (Terran)
+            heroes:
+              - Kerrigan
+              - Nova
+              - Artanis
