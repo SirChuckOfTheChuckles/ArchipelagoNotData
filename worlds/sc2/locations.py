@@ -91,9 +91,9 @@ def add_victory_hero_requirement(location_data: LocationData, logic) -> Location
     if mission is None:
         return location_data
 
-    if mission.pool in (MissionPools.MEDIUM, MissionPools.HARD):
+    if mission.pool == MissionPools.MEDIUM:
         hero_rule = lambda state: logic.basic_or_no_hero(state, mission, False)
-    elif mission.pool == MissionPools.VERY_HARD:
+    elif mission.pool in (MissionPools.HARD, MissionPools.VERY_HARD):
         hero_rule = lambda state: logic.competent_or_no_hero(state, mission)
     else:
         return location_data

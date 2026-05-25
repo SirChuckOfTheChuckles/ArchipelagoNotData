@@ -884,17 +884,20 @@ If this option is omitted, the mission follows the normal `hero_presence` option
 
 ```yaml
 missions:
-  - index: 0
-    mission_pool: Liberation Day
-    heroes:
-      - Kerrigan
-  - index: 1
-    mission_pool: Rendezvous
-    heroes:
-      - Nova
-      - Artanis
-  - index: 2
-    heroes: []
+    - index: 0
+      entrance: true
+      difficulty: starter
+      heroes: []
+    - index: 1
+      entrance: true
+      difficulty: easy
+      heroes:
+        - Kerrigan
+    - index: 2
+      entrance: true
+      difficulty: easy
+      heroes:
+        - Nova
 ```
 
 ## Layout Types

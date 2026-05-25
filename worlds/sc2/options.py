@@ -29,9 +29,9 @@ HERO_PRESENCE_CAMPAIGN_NAMES = {
     SC2Campaign.WOL: "Wings of Liberty",
     SC2Campaign.PROPHECY: "Prophecy",
     SC2Campaign.HOTS: "Heart of the Swarm",
-    SC2Campaign.PROLOGUE: "Legacy of the Void Prologue",
+    SC2Campaign.PROLOGUE: "Whispers of Oblivion (Legacy of the Void: Prologue)",
     SC2Campaign.LOTV: "Legacy of the Void",
-    SC2Campaign.EPILOGUE: "Legacy of the Void Epilogue",
+    SC2Campaign.EPILOGUE: "Into the Void (Legacy of the Void: Epilogue)",
     SC2Campaign.NCO: "Nova Covert Ops",
 }
 HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
