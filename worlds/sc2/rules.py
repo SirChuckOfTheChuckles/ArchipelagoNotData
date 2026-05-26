@@ -552,9 +552,10 @@ class SC2Logic:
             state.has_any((
                 item_names.MARINE_COMBAT_SHIELD,
                 item_names.MARINE_MAGRAIL_MUNITIONS,
+                item_names.MARINE_MEDPACK,
                 item_names.MEDIC_STABILIZER_MEDPACKS,
             ), self.player)
-            or (state.count(item_names.MARINE_PROGRESSIVE_STIMPACK, self.player) >= 2
+            or (state.has_all((item_names.MARINE_STIMPACK, item_names.MARINE_MEDPACK), self.player)
                 and state.has_group("Missions", self.player, 1)
             )
             or (self.advanced_tactics
@@ -565,7 +566,7 @@ class SC2Logic:
     def marine_medic_firebat_upgrade(self, state: CollectionState) -> bool:
         return (
             self.marine_medic_upgrade(state)
-            or state.count(item_names.FIREBAT_PROGRESSIVE_STIMPACK, self.player) >= 2
+            or state.has_all((item_names.FIREBAT_STIMPACK, item_names.FIREBAT_MEDPACK), self.player)
             or state.has_any((item_names.FIREBAT_NANO_PROJECTORS, item_names.FIREBAT_JUGGERNAUT_PLATING), self.player)
         )
 
@@ -4416,12 +4417,12 @@ class SC2Logic:
 
     def zerg_handle_defiler(self, state: CollectionState, presence: HeroFlag = HeroFlag.NONE) -> bool:
         return (
-            state.has(item_names.ABERRATION,self.player)
-            or state.has(item_names.ULTRALISK,self.player)
+            state.has(item_names.ABERRATION, self.player)
+            or state.has(item_names.ULTRALISK, self.player)
             or self.morph_tyrannozor(state)
             or (self.advanced_tactics
                 and (
-                    state.has_any({item_names.INFESTOR, item_names.BROOD_QUEEN},self.player)
+                    state.has_any({item_names.INFESTOR, item_names.BROOD_QUEEN}, self.player)
                     or self.morph_viper(state)
                 )
             )
@@ -4430,8 +4431,8 @@ class SC2Logic:
 
     def protoss_handle_defiler(self, state: CollectionState, presence: HeroFlag = HeroFlag.NONE) -> bool:
         return (
-            state.has_all({item_names.COLOSSUS,item_names.COLOSSUS_FIRE_LANCE},self.player)
-            or (self.advanced_tactics and state.has_any({item_names.HIGH_TEMPLAR, item_names.ASCENDANT, item_names.DISRUPTOR},self.player))
+            state.has_all({item_names.COLOSSUS,item_names.COLOSSUS_FIRE_LANCE}, self.player)
+            or (self.advanced_tactics and state.has_any({item_names.HIGH_TEMPLAR, item_names.ASCENDANT, item_names.DISRUPTOR}, self.player))
             or self.hero_handle_defiler(state, presence)
         )
 
@@ -5134,8 +5135,8 @@ class SC2Logic:
                     self.advanced_tactics
                     and (
                         (
-                            state.has_all((item_names.MARINE, item_names.MARINE_PROGRESSIVE_STIMPACK), self.player)
-                            and (self.terran_bio_heal(state) or state.count(item_names.MARINE_PROGRESSIVE_STIMPACK, self.player) >= 2)
+                            state.has_all((item_names.MARINE, item_names.MARINE_STIMPACK), self.player)
+                            and (self.terran_bio_heal(state) or state.has(item_names.MARINE_MEDPACK, self.player) >= 2)
                         )
                         or (state.has(item_names.DOMINION_TROOPER, self.player) and self.terran_bio_heal(state))
                         or state.has_all(
