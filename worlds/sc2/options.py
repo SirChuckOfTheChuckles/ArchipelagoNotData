@@ -1,13 +1,15 @@
+import enum
 import functools
 from dataclasses import fields, Field, dataclass
-from typing import TYPE_CHECKING, Iterable, Any, Type, Iterator, Mapping
+from typing import TYPE_CHECKING, Iterable, Any, Type, Iterator, Mapping, NamedTuple
 from datetime import timedelta
 
 from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
-    OptionCounter, OptionError,
+    OptionCounter,
+    OptionError,
 )
 from Utils import get_fuzzy_results
 from BaseClasses import PlandoOptions
@@ -35,47 +37,62 @@ HERO_PRESENCE_CAMPAIGN_NAMES = {
     SC2Campaign.NCO: "Nova Covert Ops",
 }
 HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
-HERO_PRESENCE_OPTION_KEYS = {
+
+
+class HeroPresenceBuildFilter(enum.Enum):
+    ANY = enum.auto()
+    BUILD = enum.auto()
+    NO_BUILD = enum.auto()
+
+
+class HeroPresenceTarget(NamedTuple):
+    campaign: SC2Campaign | None
+    race: SC2Race | None
+    build_filter: HeroPresenceBuildFilter
+
+
+HERO_PRESENCE_OPTION_KEYS: dict[str, HeroPresenceTarget] = {
     **{
-        race.get_title(): (None, race, None)
+        race.get_title(): HeroPresenceTarget(None, race, HeroPresenceBuildFilter.ANY)
         for race in HERO_PRESENCE_RACES
     },
     **{
-        f"{race.get_title()} Build": (None, race, True)
+        f"{race.get_title()} Build": HeroPresenceTarget(None, race, HeroPresenceBuildFilter.BUILD)
         for race in HERO_PRESENCE_RACES
     },
     **{
-        f"{race.get_title()} No Build": (None, race, False)
+        f"{race.get_title()} No Build": HeroPresenceTarget(None, race, HeroPresenceBuildFilter.NO_BUILD)
         for race in HERO_PRESENCE_RACES
     },
     **{
-        campaign_name: (campaign, None, None)
+        campaign_name: HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.ANY)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
     },
     **{
-        f"{campaign_name} Build": (campaign, None, True)
+        f"{campaign_name} Build": HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.BUILD)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
     },
     **{
-        f"{campaign_name} No Build": (campaign, None, False)
+        f"{campaign_name} No Build": HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.NO_BUILD)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
     },
     **{
-        f"{campaign_name} {race.get_title()}": (campaign, race, None)
-        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
-        for race in HERO_PRESENCE_RACES
-    },
-    **{
-        f"{campaign_name} {race.get_title()} Build": (campaign, race, True)
+        f"{campaign_name} {race.get_title()}": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.ANY)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
         for race in HERO_PRESENCE_RACES
     },
     **{
-        f"{campaign_name} {race.get_title()} No Build": (campaign, race, False)
+        f"{campaign_name} {race.get_title()} Build": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.BUILD)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{campaign_name} {race.get_title()} No Build": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.NO_BUILD)
         for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
         for race in HERO_PRESENCE_RACES
     },
 }
+
 def normalize_option_set_keys(option: OptionSet, valid_keys: Iterable[str]) -> None:
     key_lookup = {
         key.casefold(): key

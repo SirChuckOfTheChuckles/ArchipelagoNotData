@@ -27,7 +27,8 @@ from .options import (
     get_enabled_campaigns, SpearOfAdunPassiveAbilityPresence, Starcraft2Options,
     GrantStoryTech, GrantStoryLevels, GenericUpgradeResearch, RequiredTactics,
     upgrade_included_names, EnableVoidTrade, FillerItemsDistribution, MissionOrderScouting, option_groups,
-    HeroPresence, HeroOptions, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems, HERO_PRESENCE_OPTION_KEYS,
+    HeroPresence, HeroOptions, MissionOrder, VanillaItemsOnly, ExcludeOverpoweredItems,
+    HERO_PRESENCE_OPTION_KEYS, HeroPresenceBuildFilter,
     is_mission_in_soa_presence,
 )
 from . import options
@@ -479,16 +480,17 @@ def apply_hero_presence_override(
         return
 
     for location in selected_locations:
-        campaign, race, build_required = HERO_PRESENCE_OPTION_KEYS[location]
+        target = HERO_PRESENCE_OPTION_KEYS[location]
         for mission in presence:
-            if campaign is not None and mission.campaign != campaign:
+            if target.campaign is not None and mission.campaign != target.campaign:
                 continue
-            if race is not None and mission.race != race:
+            if target.race is not None and mission.race != target.race:
                 continue
-            if build_required is not None and (MissionFlag.NoBuild not in mission.flags) != build_required:
+            if target.build_filter == HeroPresenceBuildFilter.BUILD and MissionFlag.NoBuild in mission.flags:
+                continue
+            if target.build_filter == HeroPresenceBuildFilter.NO_BUILD and MissionFlag.NoBuild not in mission.flags:
                 continue
             presence[mission] |= hero
-
 
 def apply_custom_mission_order_hero_presence(
     presence: dict[SC2Mission, HeroFlag],

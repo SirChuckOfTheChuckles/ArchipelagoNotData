@@ -1,14 +1,87 @@
 import unittest
+from types import SimpleNamespace
 from typing import Dict
 
-from .. import apply_hero_presence_override, calculate_hero_presence, calculate_mission_hero_presence
+from .. import apply_hero_presence_override, calculate_hero_presence, calculate_mission_hero_presence, locations
+from ..client import SC2Context
 from .. import options
 from ..item import item_parents
-from ..mission_tables import SC2Mission
+from ..mission_tables import SC2Campaign, SC2Mission, SC2Race
 from ..tables import HeroFlag
 
 
 class TestOptions(unittest.TestCase):
+
+    def test_unpack_hero_presence_mission_overrides_campaign_regardless_of_order(self) -> None:
+        context = SC2Context.__new__(SC2Context)
+        campaign_key = f"{SC2Campaign.HOTS.id}.{SC2Race.ZERG.value}"
+        mission_key = str(SC2Mission.RENDEZVOUS.id)
+
+        mission_after_campaign = context.unpack_hero_presence({
+            campaign_key: str(HeroFlag.KERRIGAN.value),
+            mission_key: str(HeroFlag.NOVA.value),
+        })
+        campaign_after_mission = context.unpack_hero_presence({
+            mission_key: str(HeroFlag.NOVA.value),
+            campaign_key: str(HeroFlag.KERRIGAN.value),
+        })
+
+        self.assertEqual(mission_after_campaign[SC2Mission.RENDEZVOUS], HeroFlag.NOVA.value)
+        self.assertEqual(campaign_after_mission[SC2Mission.RENDEZVOUS], HeroFlag.NOVA.value)
+        self.assertEqual(mission_after_campaign[SC2Mission.HARVEST_OF_SCREAMS], HeroFlag.KERRIGAN.value)
+
+    def test_runtime_hero_presence_can_enable_campaign(self) -> None:
+        context = SC2Context.__new__(SC2Context)
+        context.base_hero_presence = {}
+        context.reset_runtime_hero_presence()
+
+        context.set_runtime_hero_presence(HeroFlag.NOVA, "Legacy of the Void", True)
+
+        self.assertTrue(context.hero_presence[SC2Mission.FOR_AIUR] & HeroFlag.NOVA.value)
+        self.assertTrue(context.hero_presence[SC2Mission.THE_GROWING_SHADOW] & HeroFlag.NOVA.value)
+        self.assertNotIn(SC2Mission.RENDEZVOUS, context.hero_presence)
+
+    def test_runtime_hero_presence_can_disable_campaign_race(self) -> None:
+        context = SC2Context.__new__(SC2Context)
+        context.base_hero_presence = {
+            SC2Mission.OLD_SOLDIERS_T: HeroFlag.ARTANIS.value,
+            SC2Mission.RENDEZVOUS: HeroFlag.ARTANIS.value,
+        }
+        context.reset_runtime_hero_presence()
+
+        context.set_runtime_hero_presence(HeroFlag.ARTANIS, "Heart of the Swarm Terran", False)
+
+        self.assertNotIn(SC2Mission.OLD_SOLDIERS_T, context.hero_presence)
+        self.assertTrue(context.hero_presence[SC2Mission.RENDEZVOUS] & HeroFlag.ARTANIS.value)
+
+    def test_runtime_hero_presence_defaults_to_enable_build_targets(self) -> None:
+        context = SC2Context.__new__(SC2Context)
+        context.base_hero_presence = {}
+        context.reset_runtime_hero_presence()
+
+        context.set_runtime_hero_presence(HeroFlag.KERRIGAN, "Wings of Liberty Build", True)
+
+        self.assertTrue(context.hero_presence[SC2Mission.THE_OUTLAWS] & HeroFlag.KERRIGAN.value)
+        self.assertNotIn(SC2Mission.LIBERATION_DAY, context.hero_presence)
+
+    def test_victory_hero_requirement_skips_fully_disabled_heroes(self) -> None:
+        rule = lambda state: False
+        location = locations.make_location_data(
+            SC2Mission.RENDEZVOUS.mission_name,
+            "Victory",
+            1,
+            locations.LocationType.VICTORY,
+            rule=rule,
+        )
+        world = SimpleNamespace(
+            options=SimpleNamespace(enabled_heroes=SimpleNamespace(value=set())),
+            hero_presence={},
+        )
+
+        result = locations.add_victory_hero_requirement(location, None, world)
+
+        self.assertIs(result.rule, rule)
+        self.assertIsNone(result.hard_rule)
 
     def test_unit_max_upgrades_matching_items(self) -> None:
         upgrade_group_to_count: Dict[str, int] = {}

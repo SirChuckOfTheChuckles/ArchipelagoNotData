@@ -9,6 +9,7 @@ from .options import (
     get_enabled_campaigns,
 )
 from .mission_tables import SC2Mission, SC2Campaign, MissionPools, lookup_name_to_mission
+from .tables import HeroFlag
 
 from BaseClasses import Location
 from worlds.AutoWorld import World
@@ -16,6 +17,7 @@ from worlds.AutoWorld import World
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
     from . import SC2World
+    from .rules import SC2Logic
 
 
 SC2WOL_LOC_ID_OFFSET = 1000
@@ -83,13 +85,23 @@ def make_location_data(
     return LocationData(region, f"{region}: {name}", code, type, rule, flags, hard_rule)
 
 
-def add_victory_hero_requirement(location_data: LocationData, logic) -> LocationData:
+def add_victory_hero_requirement(
+    location_data: LocationData,
+    logic: "SC2Logic",
+    world: Optional["SC2World"] = None,
+) -> LocationData:
     if location_data.type != LocationType.VICTORY:
         return location_data
 
     mission = lookup_name_to_mission.get(location_data.region)
     if mission is None:
         return location_data
+
+    if world is not None:
+        if not world.options.enabled_heroes.value:
+            return location_data
+        if world.hero_presence and logic.get_hero_flag(mission) == HeroFlag.NONE:
+            return location_data
 
     if mission.pool == MissionPools.MEDIUM:
         hero_rule = lambda state: logic.basic_or_no_hero(state, mission, False)
@@ -14835,7 +14847,7 @@ def get_locations(world: Optional["SC2World"]) -> Tuple[LocationData, ...]:
             location for location in location_table if include_location(location)
         ]
         location_table = [
-            add_victory_hero_requirement(location, logic) for location in location_table
+            add_victory_hero_requirement(location, logic, world) for location in location_table
         ]
     beat_events: List[LocationData] = []
     victory_caches: List[LocationData] = []
