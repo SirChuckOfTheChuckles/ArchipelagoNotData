@@ -2,6 +2,8 @@ import unittest
 from types import SimpleNamespace
 from typing import Dict
 
+from Options import OptionError
+
 from .. import apply_hero_presence_override, calculate_hero_presence, calculate_mission_hero_presence, locations
 from ..client import SC2Context
 from .. import options
@@ -235,6 +237,48 @@ class TestOptions(unittest.TestCase):
             enabled_heroes.value,
             {options.HeroOptions.KERRIGAN, options.HeroOptions.NOVA, options.HeroOptions.ARTANIS},
         )
+
+    def test_enabled_campaigns_accept_shorthand_aliases(self) -> None:
+        enabled_campaigns = options.EnabledCampaigns({"lotv", "epilogue"})
+
+        enabled_campaigns.verify(None, "Player", None)
+
+        self.assertEqual(
+            enabled_campaigns.value,
+            {SC2Campaign.LOTV.campaign_name, SC2Campaign.EPILOGUE.campaign_name},
+        )
+
+    def test_hero_presence_accepts_campaign_shorthand_aliases(self) -> None:
+        artanis_presence = options.ArtanisPresence({
+            "lotv protoss build",
+            "epilogue zerg",
+        })
+
+        artanis_presence.verify(None, "Player", None)
+
+        self.assertEqual(
+            artanis_presence.value,
+            {
+                "Legacy of the Void Protoss Build",
+                "Into the Void (Legacy of the Void: Epilogue) Zerg",
+            },
+        )
+
+    def test_hero_presence_options_are_hidden_from_website(self) -> None:
+        self.assertEqual(options.KerriganPresence.visibility, options.VISIBILITY_NO_WEBSITE)
+        self.assertEqual(options.NovaPresence.visibility, options.VISIBILITY_NO_WEBSITE)
+        self.assertEqual(options.ArtanisPresence.visibility, options.VISIBILITY_NO_WEBSITE)
+
+    def test_option_set_error_message_is_stable_and_pluralized(self) -> None:
+        kerrigan_presence = options.KerriganPresence({"bad two", "bad one"})
+
+        with self.assertRaises(OptionError) as error:
+            kerrigan_presence.verify(None, "Player", None)
+
+        message = str(error.exception)
+        self.assertIn("unexpected keys bad one, bad two", message)
+        self.assertIn("kerrigan_presence (Kerrigan Presence)", message)
+        self.assertLess(message.index("Allowed keys: Heart of the Swarm"), message.index("Zerg"))
 
     def test_kerrigan_presence_override_can_target_campaign_build_type(self) -> None:
         hero_presence = calculate_mission_hero_presence(

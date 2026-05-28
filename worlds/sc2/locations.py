@@ -100,7 +100,8 @@ def add_victory_hero_requirement(
     if world is not None:
         if not world.options.enabled_heroes.value:
             return location_data
-        if world.hero_presence and logic.get_hero_flag(mission) == HeroFlag.NONE:
+        hero_presence = getattr(world, "hero_presence", None)
+        if hero_presence and logic.get_hero_flag(mission) == HeroFlag.NONE:
             return location_data
 
     if mission.pool == MissionPools.MEDIUM:

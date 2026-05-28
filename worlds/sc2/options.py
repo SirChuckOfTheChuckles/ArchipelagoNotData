@@ -8,7 +8,7 @@ from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
-    OptionCounter,
+    OptionCounter, Visibility,
     OptionError,
 )
 from Utils import get_fuzzy_results
@@ -37,6 +37,21 @@ HERO_PRESENCE_CAMPAIGN_NAMES = {
     SC2Campaign.NCO: "Nova Covert Ops",
 }
 HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
+CAMPAIGN_ALIASES: dict[str, SC2Campaign] = {
+    "wol": SC2Campaign.WOL,
+    "prophecy": SC2Campaign.PROPHECY,
+    "hots": SC2Campaign.HOTS,
+    "prologue": SC2Campaign.PROLOGUE,
+    "lotv": SC2Campaign.LOTV,
+    "void": SC2Campaign.LOTV,
+    "epilogue": SC2Campaign.EPILOGUE,
+    "nco": SC2Campaign.NCO,
+}
+CAMPAIGN_OPTION_ALIASES: dict[str, str] = {
+    alias: campaign.campaign_name
+    for alias, campaign in CAMPAIGN_ALIASES.items()
+}
+VISIBILITY_NO_WEBSITE = Visibility.all & ~Visibility.simple_ui & ~Visibility.complex_ui
 
 
 class HeroPresenceBuildFilter(enum.Enum):
@@ -93,27 +108,69 @@ HERO_PRESENCE_OPTION_KEYS: dict[str, HeroPresenceTarget] = {
     },
 }
 
-def normalize_option_set_keys(option: OptionSet, valid_keys: Iterable[str]) -> None:
+def build_hero_presence_aliases() -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for campaign_alias, campaign in CAMPAIGN_ALIASES.items():
+        campaign_name = HERO_PRESENCE_CAMPAIGN_NAMES[campaign]
+        aliases[campaign_alias] = campaign_name
+        aliases[f"{campaign_alias} Build"] = f"{campaign_name} Build"
+        aliases[f"{campaign_alias} No Build"] = f"{campaign_name} No Build"
+        for race in HERO_PRESENCE_RACES:
+            race_name = race.get_title()
+            aliases[f"{campaign_alias} {race_name}"] = f"{campaign_name} {race_name}"
+            aliases[f"{campaign_alias} {race_name} Build"] = f"{campaign_name} {race_name} Build"
+            aliases[f"{campaign_alias} {race_name} No Build"] = f"{campaign_name} {race_name} No Build"
+    return aliases
+
+
+HERO_PRESENCE_OPTION_ALIASES: dict[str, str] = build_hero_presence_aliases()
+
+
+def get_option_error_name(option: OptionSet) -> str:
+    class_name = option.__class__.__name__
+    yaml_name = "".join(
+        f"_{char.lower()}" if char.isupper() and index > 0 else char.lower()
+        for index, char in enumerate(class_name)
+    )
+    display_name = getattr(option, "display_name", yaml_name)
+    if display_name == yaml_name:
+        return yaml_name
+    return f"{yaml_name} ({display_name})"
+
+
+def standardize_option_set_keys(
+    option: OptionSet,
+    valid_keys: Iterable[str],
+    aliases: Mapping[str, str] | None = None,
+) -> None:
     key_lookup = {
         key.casefold(): key
         for key in valid_keys
     }
-    normalized_value: set[str] = set()
+    if aliases is not None:
+        key_lookup.update({
+            alias.casefold(): standard_key
+            for alias, standard_key in aliases.items()
+        })
+
+    standardized_value: set[str] = set()
     invalid_keys: set[str] = set()
     for key in option.value:
-        normalized_key = key_lookup.get(str(key).casefold())
-        if normalized_key is None:
+        standard_key = key_lookup.get(str(key).casefold())
+        if standard_key is None:
             invalid_keys.add(str(key))
         else:
-            normalized_value.add(normalized_key)
+            standardized_value.add(standard_key)
 
     if invalid_keys:
+        key_plural = "s" if len(invalid_keys) > 1 else ""
+        option_name = get_option_error_name(option)
         raise OptionError(
-            f"Found unexpected key {', '.join(sorted(invalid_keys))} in {getattr(option, 'display_name', option)}. "
-            f"Allowed keys: {set(valid_keys)}."
+            f"Found unexpected key{key_plural} {', '.join(sorted(invalid_keys))} in {option_name}. "
+            f"Allowed keys: {', '.join(sorted(valid_keys))}."
         )
 
-    option.value = normalized_value
+    option.value = standardized_value
 
 
 class Sc2MissionSet(OptionSet):
@@ -341,6 +398,9 @@ class EnabledCampaigns(OptionSet):
     display_name = "Enabled Campaigns"
     valid_keys = frozenset(campaign.campaign_name for campaign in SC2Campaign if campaign != SC2Campaign.GLOBAL)
     default = frozenset((SC2Campaign.WOL.campaign_name,))
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys, CAMPAIGN_OPTION_ALIASES)
 
 
 class EnableRaceSwapVariants(Choice):
@@ -1026,7 +1086,8 @@ class EnabledHeroes(OptionSet):
     ))
 
     def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
-        normalize_option_set_keys(self, self.valid_keys)
+        standardize_option_set_keys(self, self.valid_keys)
+
 
 class HeroPresence(Choice):
     """
@@ -1060,11 +1121,12 @@ class KerriganPresence(OptionSet):
     Race-wide values, such as "Zerg" or "Zerg No Build", affect matching races across all campaigns.
     """
     display_name = "Kerrigan Presence"
+    visibility = VISIBILITY_NO_WEBSITE
     valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
     default = frozenset()
 
     def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
-        normalize_option_set_keys(self, self.valid_keys)
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
 
 
 class NovaPresence(OptionSet):
@@ -1078,11 +1140,12 @@ class NovaPresence(OptionSet):
     Race-wide values, such as "Terran" or "Terran No Build", affect matching races across all campaigns.
     """
     display_name = "Nova Presence"
+    visibility = VISIBILITY_NO_WEBSITE
     valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
     default = frozenset()
 
     def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
-        normalize_option_set_keys(self, self.valid_keys)
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
 
 
 class ArtanisPresence(OptionSet):
@@ -1096,11 +1159,12 @@ class ArtanisPresence(OptionSet):
     Race-wide values, such as "Protoss" or "Protoss No Build", affect matching races across all campaigns.
     """
     display_name = "Artanis Presence"
+    visibility = VISIBILITY_NO_WEBSITE
     valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
     default = frozenset()
 
     def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
-        normalize_option_set_keys(self, self.valid_keys)
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
 
 
 class NovaMaxWeapons(Range):
