@@ -390,11 +390,17 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             key.casefold(): key
             for key in options.HERO_PRESENCE_OPTION_KEYS
         }
+        key_lookup.update({
+            alias.casefold(): key
+            for alias, key in options.HERO_PRESENCE_OPTION_ALIASES.items()
+        })
         tokens = args.split()
         if not tokens or tokens[0].casefold() in {"help", "list"}:
             self.output(f"Usage: /{command_name} <target> [enabled|disabled]")
-            self.output(f"Example: /{command_name} Legacy of the Void enabled")
-            self.output("Available targets: " + ", ".join(options.HERO_PRESENCE_OPTION_KEYS))
+            self.output(
+                f"Examples: /{command_name} lotv enabled; /{command_name} hots zerg disabled; "
+                f"/{command_name} lotv protoss build (enabled by default)"
+            )
             return
 
         enabled = True
@@ -404,7 +410,7 @@ class StarcraftClientProcessor(ClientCommandProcessor):
         target = " ".join(tokens)
         target_key = key_lookup.get(target.casefold())
         if target_key is None:
-            self.output(f"Unknown {hero_name} presence target '{target}'. Use /{command_name} list to see valid targets.")
+            self.output(f"Unknown {hero_name} presence target '{target}'. Use /{command_name} help to see examples.")
             return
 
         affected_count = self.ctx.set_runtime_hero_presence(hero, target_key, enabled)
@@ -545,9 +551,12 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             else:
                 SC2World.settings.__dict__[option.setting_name] = option_value
             force_settings_save_on_close()
-        elif option.option_type == ConfigurableOptionType.ENUM and option_value in option.option_class.options:
-            new_value = option.option_class.options[option_value]
-            self.ctx.__dict__[option.variable_name] = new_value
+        elif option.option_type == ConfigurableOptionType.ENUM:
+            try:
+                new_value = option.option_class.from_text(option_value).value
+                self.ctx.__dict__[option.variable_name] = new_value
+            except (KeyError, coreoptions.OptionError):
+                self.output(f"Unknown option value '{option_value}'")
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)
