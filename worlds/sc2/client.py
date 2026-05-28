@@ -397,10 +397,12 @@ class StarcraftClientProcessor(ClientCommandProcessor):
         tokens = args.split()
         if not tokens or tokens[0].casefold() in {"help", "list"}:
             self.output(f"Usage: /{command_name} <target> [enabled|disabled]")
-            self.output(
-                f"Examples: /{command_name} lotv enabled; /{command_name} hots zerg disabled; "
-                f"/{command_name} lotv protoss build (enabled by default)"
-            )
+            self.output("Examples:")
+            self.output(f"  /{command_name} lotv enabled")
+            self.output(f"  /{command_name} zerg enabled")
+            self.output(f"  /{command_name} terran nobuild disabled")
+            self.output(f"  /{command_name} hots zerg disabled")
+            self.output(f"  /{command_name} lotv protoss build (defaults to enabled without 'enabled|disabled')")
             return
 
         enabled = True

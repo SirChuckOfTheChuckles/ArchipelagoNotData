@@ -8,7 +8,7 @@ from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
-    OptionCounter, 
+    OptionCounter,
     Visibility,
     OptionError,
 )
