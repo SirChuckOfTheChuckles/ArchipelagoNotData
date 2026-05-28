@@ -118,7 +118,6 @@ class ConfigurableOptionInfo(NamedTuple):
     can_break_logic: bool = False
 
 
-
 @dataclass
 class ConfigurableSettingInfo:
     setting_name: str
