@@ -8,7 +8,8 @@ from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
-    OptionCounter, Visibility,
+    OptionCounter, 
+    Visibility,
     OptionError,
 )
 from Utils import get_fuzzy_results
