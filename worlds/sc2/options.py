@@ -128,12 +128,11 @@ HERO_PRESENCE_OPTION_ALIASES: dict[str, str] = build_hero_presence_aliases()
 
 
 def get_option_error_name(option: OptionSet) -> str:
-    option_type = option.__class__
-    option_fields = [
-        class_field for class_field in fields(Starcraft2Options)
-        if class_field.type == option_type
+    field = [
+        f for f in fields(Starcraft2Options)
+        if f.type == option.__class__
     ]
-    yaml_name = "" if not option_fields else option_fields[0].name
+    yaml_name = "" if not field else field[0].name
     display_name = getattr(option, "display_name", yaml_name)
     if display_name == yaml_name:
         return yaml_name
