@@ -88,7 +88,7 @@ def make_location_data(
 def add_victory_hero_requirement(
     location_data: LocationData,
     logic: "SC2Logic",
-    world: Optional["SC2World"] = None,
+    world: "SC2World",
 ) -> LocationData:
     if location_data.type != LocationType.VICTORY:
         return location_data
@@ -97,12 +97,11 @@ def add_victory_hero_requirement(
     if mission is None:
         return location_data
 
-    if world is not None:
-        if not world.options.enabled_heroes.value:
-            return location_data
-        hero_presence = getattr(world, "hero_presence", None)
-        if hero_presence and logic.get_hero_flag(mission) == HeroFlag.NONE:
-            return location_data
+    if not world.options.enabled_heroes.value:
+        return location_data
+    hero_presence = getattr(world, "hero_presence", None)
+    if hero_presence and logic.get_hero_flag(mission) == HeroFlag.NONE:
+        return location_data
 
     if mission.pool == MissionPools.MEDIUM:
         hero_rule = lambda state: logic.basic_or_no_hero(state, mission, False)

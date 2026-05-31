@@ -557,8 +557,9 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             try:
                 new_value = option.option_class.from_text(option_value).value
                 self.ctx.__dict__[option.variable_name] = new_value
-            except (KeyError, coreoptions.OptionError):
+            except (KeyError, coreoptions.OptionError) as ex:
                 self.output(f"Unknown option value '{option_value}'")
+                sc2_logger.info(f"Option error message: {ex}")
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)

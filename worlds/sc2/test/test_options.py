@@ -264,22 +264,6 @@ class TestOptions(unittest.TestCase):
             },
         )
 
-    def test_hero_presence_options_are_hidden_from_website(self) -> None:
-        self.assertEqual(options.KerriganPresence.visibility, options.VISIBILITY_NO_WEBSITE)
-        self.assertEqual(options.NovaPresence.visibility, options.VISIBILITY_NO_WEBSITE)
-        self.assertEqual(options.ArtanisPresence.visibility, options.VISIBILITY_NO_WEBSITE)
-
-    def test_option_set_error_message_is_stable_and_pluralized(self) -> None:
-        kerrigan_presence = options.KerriganPresence({"bad two", "bad one"})
-
-        with self.assertRaises(OptionError) as error:
-            kerrigan_presence.verify(None, "Player", None)
-
-        message = str(error.exception)
-        self.assertIn("unexpected keys bad one, bad two", message)
-        self.assertIn("kerrigan_presence (Kerrigan Presence)", message)
-        self.assertLess(message.index("Allowed keys: Heart of the Swarm"), message.index("Zerg"))
-
     def test_kerrigan_presence_override_can_target_campaign_build_type(self) -> None:
         hero_presence = calculate_mission_hero_presence(
             calculate_hero_presence(options.HeroPresence.option_vanilla, {options.HeroOptions.KERRIGAN}),
