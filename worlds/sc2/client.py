@@ -559,14 +559,17 @@ class StarcraftClientProcessor(ClientCommandProcessor):
                 self.ctx.__dict__[option.variable_name] = new_value
             except (KeyError, coreoptions.OptionError) as ex:
                 self.output(f"Unknown option value '{option_value}'")
-                sc2_logger.info(f"Option error message: {ex}")
+                sc2_logger.exception(f"Option error message: {ex}", extra={"NoStream": True, "skip_gui": True})
+                return False
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)
             except:
                 self.output(f"{option_value} is not a valid integer")
+                return False
         else:
             self.output(f"Unknown option value '{option_value}'")
+            return False
         if isinstance(option, ConfigurableSettingInfo):
             presentable_value = str(SC2World.settings.__dict__.get(
                 option.setting_name,
