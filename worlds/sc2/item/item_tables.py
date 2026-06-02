@@ -974,10 +974,9 @@ item_table = {
     item_names.BUNKER_EMERGENCY_PROVISIONS:
         ItemData(774 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 28, SC2Race.TERRAN,
                  parent=item_names.BUNKER),
-    # reserved
-    # item_names.EMPERORS_SHADOW_EMP_BLAST:
-    #    ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
-    #             parent=item_names.EMPERORS_SHADOW),
+    item_names.EMPERORS_SHADOW_EMP_BLAST:
+        ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
     item_names.MARINE_MEDPACK:
         ItemData(776 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 5, SC2Race.TERRAN,
                  classification=ItemClassification.progression, parent=item_names.MARINE),
