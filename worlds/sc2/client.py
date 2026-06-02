@@ -415,9 +415,8 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             self.output(f"Unknown {hero_name} presence target '{target}'. Use /{command_name} help to see examples.")
             return
 
-        affected_count = self.ctx.set_runtime_hero_presence(hero, target_key, enabled)
         state = "enabled" if enabled else "disabled"
-        self.output(f"{hero_name} presence {state} for {target_key} ({affected_count} missions affected).")
+        self.output(f"{hero_name} presence {state} for {target_key}.")
 
     @mark_raw
     def _cmd_kerrigan_presence(self, args: str = "") -> None:
