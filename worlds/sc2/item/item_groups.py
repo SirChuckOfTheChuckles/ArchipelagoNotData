@@ -211,6 +211,7 @@ class ItemGroupNames:
 
     VANILLA_ITEMS = "Vanilla Items"
     OVERPOWERED_ITEMS = "Overpowered Items"
+    DISABLED_ITEMS = "Disabled Items"
     UNRELEASED_ITEMS = "Unreleased Items"
     LEGACY_ITEMS = "Legacy Items"
 
@@ -334,7 +335,7 @@ item_name_groups[ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS] = [
     item_names.SON_OF_KORHAL, item_names.FIELD_RESPONSE_THETA,
     item_names.AEGIS_GUARD, item_names.EMPERORS_SHADOW,
     # Elite Factory
-    item_names.BULWARK_COMPANY, 
+    item_names.BULWARK_COMPANY,
     item_names.SHOCK_DIVISION, item_names.BLACKHAMMER,
     # Elite Starport
     item_names.PRIDE_OF_AUGUSTRGRAD, item_names.SKY_FURY,
@@ -400,7 +401,7 @@ item_name_groups[ItemGroupNames.WOL_UPGRADES] = wol_upgrades = [
     item_names.SCV_ADVANCED_CONSTRUCTION, item_names.SCV_DUAL_FUSION_WELDERS,
     item_names.PROGRESSIVE_FIRE_SUPPRESSION_SYSTEM, item_names.COMMAND_CENTER_MULE, item_names.COMMAND_CENTER_SCANNER_SWEEP,
     # Armory Infantry
-    item_names.MARINE_PROGRESSIVE_STIMPACK, item_names.MARINE_COMBAT_SHIELD,
+    item_names.MARINE_STIMPACK, item_names.MARINE_COMBAT_SHIELD,
     item_names.MEDIC_ADVANCED_MEDIC_FACILITIES, item_names.MEDIC_STABILIZER_MEDPACKS,
     item_names.FIREBAT_INCINERATOR_GAUNTLETS, item_names.FIREBAT_JUGGERNAUT_PLATING,
     item_names.MARAUDER_CONCUSSIVE_SHELLS, item_names.MARAUDER_KINETIC_FOAM,
@@ -433,15 +434,14 @@ item_name_groups[ItemGroupNames.WOL_UPGRADES] = wol_upgrades = [
     # Other level is units (Raven, Science Vessel)
 ]
 item_name_groups[ItemGroupNames.TERRAN_STIMPACKS] = terran_stimpacks = [
-    item_names.MARINE_PROGRESSIVE_STIMPACK,
-    item_names.MARAUDER_PROGRESSIVE_STIMPACK,
-    item_names.REAPER_PROGRESSIVE_STIMPACK,
-    item_names.FIREBAT_PROGRESSIVE_STIMPACK,
-    item_names.HELLION_PROGRESSIVE_STIMPACK,
+    item_names.MARINE_STIMPACK,
+    item_names.MARAUDER_STIMPACK,
+    item_names.REAPER_STIMPACK,
+    item_names.FIREBAT_STIMPACK,
+    item_names.HELLION_STIMPACK,
 ]
 item_name_groups[ItemGroupNames.TERRAN_ORIGINAL_PROGRESSIVE_UPGRADES] = terran_original_progressive_upgrades = [
     item_names.PROGRESSIVE_FIRE_SUPPRESSION_SYSTEM,
-    item_names.MARINE_PROGRESSIVE_STIMPACK,
     item_names.VULTURE_PROGRESSIVE_REPLENISHABLE_MAGAZINE,
     item_names.DIAMONDBACK_PROGRESSIVE_TRI_LITHIUM_POWER_CELL,
     item_names.WRAITH_PROGRESSIVE_TOMAHAWK_POWER_CELLS,
@@ -475,20 +475,24 @@ item_name_groups[ItemGroupNames.NCO_BASELINE_UPGRADES] = nco_baseline_upgrades =
 ] + nco_buildings
 item_name_groups[ItemGroupNames.NCO_UNIT_TECHNOLOGY] = nco_unit_technology = [
     item_names.MARINE_LASER_TARGETING_SYSTEM,
-    item_names.MARINE_PROGRESSIVE_STIMPACK,
+    item_names.MARINE_STIMPACK,
+    item_names.MARINE_MEDPACK,
     item_names.MARINE_MAGRAIL_MUNITIONS,
     item_names.MARINE_OPTIMIZED_LOGISTICS,
     item_names.MARAUDER_LASER_TARGETING_SYSTEM,
     item_names.MARAUDER_INTERNAL_TECH_MODULE,
-    item_names.MARAUDER_PROGRESSIVE_STIMPACK,
+    item_names.MARAUDER_STIMPACK,
+    item_names.MARAUDER_MEDPACK,
     item_names.MARAUDER_MAGRAIL_MUNITIONS,
     item_names.REAPER_SPIDER_MINES,
     item_names.REAPER_LASER_TARGETING_SYSTEM,
-    item_names.REAPER_PROGRESSIVE_STIMPACK,
+    item_names.REAPER_STIMPACK,
+    item_names.REAPER_MEDPACK,
     item_names.REAPER_ADVANCED_CLOAKING_FIELD,
     # Reaper special ordnance gives anti-building attack, which is baseline in AP
     item_names.HELLION_JUMP_JETS,
-    item_names.HELLION_PROGRESSIVE_STIMPACK,
+    item_names.HELLION_STIMPACK,
+    item_names.HELLION_MEDPACK,
     item_names.HELLION_SMART_SERVOS,
     item_names.HELLION_OPTIMIZED_LOGISTICS,
     item_names.HELLION_THERMITE_FILAMENTS,  # Called Infernal Pre-Igniter in NCO
@@ -509,8 +513,8 @@ item_name_groups[ItemGroupNames.NCO_UNIT_TECHNOLOGY] = nco_unit_technology = [
     item_names.LIBERATOR_SMART_SERVOS,
     item_names.LIBERATOR_OPTIMIZED_LOGISTICS,
     # Liberators can't get laser targeting system in NCO
-    item_names.RAVEN_SPIDER_MINES, 
-    item_names.RAVEN_INTERNAL_TECH_MODULE, 
+    item_names.RAVEN_SPIDER_MINES,
+    item_names.RAVEN_INTERNAL_TECH_MODULE,
     item_names.RAVEN_RAILGUN_TURRET,        # Raven Magrail Munitions
     item_names.RAVEN_HUNTER_SEEKER_WEAPON,  # Raven Special Ordnance
     item_names.BATTLECRUISER_INTERNAL_TECH_MODULE,
@@ -1005,7 +1009,7 @@ item_name_groups[ItemGroupNames.PROTOSS_BUILDINGS] = protoss_buildings = [
 ]
 item_name_groups[ItemGroupNames.AIUR_UNITS] = [
     item_names.ZEALOT, item_names.DRAGOON, item_names.SENTRY, item_names.AVENGER, item_names.HIGH_TEMPLAR,
-    item_names.IMMORTAL, item_names.REAVER, item_names.MOTHERSHIP_AIUR, 
+    item_names.IMMORTAL, item_names.REAVER, item_names.MOTHERSHIP_AIUR,
     item_names.PHOENIX, item_names.SCOUT, item_names.ARBITER, item_names.CARRIER,
 ]
 item_name_groups[ItemGroupNames.NERAZIM_UNITS] = [
@@ -1254,13 +1258,20 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
     # Protoss general
     item_names.QUATRO,
     item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER,
-    item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING,
 
     # Mindless Broodwar garbage
     item_names.GHOST_BARGAIN_BIN_PRICES,
     item_names.SPECTRE_BARGAIN_BIN_PRICES,
     item_names.REAVER_BARGAIN_BIN_PRICES,
     item_names.SCOUT_SUPPLY_EFFICIENCY,
+]
+
+# Opt-In items that do not show up by default.
+# These items need to be explicitly added, either by certain options
+# or by putting them into locked items or start inventory
+item_name_groups[ItemGroupNames.DISABLED_ITEMS] = disabled_items = [
+    # Trap items
+    item_names.TRAP_GHOST_SPAWN,
 ]
 
 # Items not aimed to be officially released
@@ -1276,6 +1287,7 @@ item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
 # Don't place here anything that's present in the vanilla campaigns (if it's overpowered, use overpowered items instead)
 item_name_groups[ItemGroupNames.LEGACY_ITEMS] = legacy_items = [
     item_names.ASCENDANT_ARCHON_MERGE,
+    item_names.IMMORTAL_ADVANCED_TARGETING,
 ]
 
 item_name_groups[ItemGroupNames.KEYS] = keys = [
@@ -1284,7 +1296,7 @@ item_name_groups[ItemGroupNames.KEYS] = keys = [
 
 # ####################### #
 #   Internal-use groups   #
-# ####################### # 
+# ####################### #
 ENEMY_WITHIN_ZERG_STANDARD_UNITS = (
     item_names.ZERGLING, item_names.ROACH, item_names.HYDRALISK,
 )

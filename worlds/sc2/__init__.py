@@ -8,7 +8,7 @@ from BaseClasses import Item, MultiWorld, Location, Tutorial, ItemClassification
 from Options import Accessibility, OptionError
 from worlds.AutoWorld import WebWorld, World
 from . import location_groups
-from .item.item_groups import unreleased_items, war_council_upgrades
+from .item.item_groups import unreleased_items, war_council_upgrades, disabled_items
 from .item import (
     item_groups, item_names, item_tables, item_parents,
     FilterItem, ItemFilterFlags, StarcraftItem,
@@ -189,6 +189,7 @@ class SC2World(World):
         flag_start_inventory(self, item_list)
         flag_unused_upgrade_types(self, item_list)
         flag_unreleased_items(item_list)
+        flag_disabled_items(item_list)
         flag_war_council_items(self, item_list)
         flag_and_add_resource_locations(self, item_list)
         flag_mission_order_required_items(self, item_list)
@@ -831,8 +832,12 @@ def flag_allowed_orphan_items(world: SC2World, item_list: list[FilterItem]) -> N
     if SC2Mission.PIERCING_OF_THE_SHROUD in missions:
         for item in item_list:
             if item.name in (
-                    item_names.MARINE_COMBAT_SHIELD, item_names.MARINE_PROGRESSIVE_STIMPACK, item_names.MARINE_MAGRAIL_MUNITIONS,
-                    item_names.MEDIC_STABILIZER_MEDPACKS, item_names.MARINE_LASER_TARGETING_SYSTEM,
+                    item_names.MARINE_COMBAT_SHIELD,
+                    item_names.MARINE_STIMPACK,
+                    item_names.MARINE_MEDPACK,
+                    item_names.MARINE_MAGRAIL_MUNITIONS,
+                    item_names.MEDIC_STABILIZER_MEDPACKS,
+                    item_names.MARINE_LASER_TARGETING_SYSTEM,
             ):
                 item.flags |= ItemFilterFlags.AllowedOrphan
                 item.flags &= ~ItemFilterFlags.FilterExcluded
@@ -840,9 +845,16 @@ def flag_allowed_orphan_items(world: SC2World, item_list: list[FilterItem]) -> N
     if SC2Mission.BELLY_OF_THE_BEAST in missions and world.options.required_tactics == RequiredTactics.option_standard:
         for item in item_list:
             if item.name in (
-                    item_names.MARINE_COMBAT_SHIELD, item_names.MARINE_PROGRESSIVE_STIMPACK, item_names.MARINE_MAGRAIL_MUNITIONS,
-                    item_names.MEDIC_STABILIZER_MEDPACKS, item_names.MARINE_LASER_TARGETING_SYSTEM,
-                    item_names.FIREBAT_NANO_PROJECTORS, item_names.FIREBAT_JUGGERNAUT_PLATING, item_names.FIREBAT_PROGRESSIVE_STIMPACK
+                    item_names.MARINE_COMBAT_SHIELD,
+                    item_names.MARINE_STIMPACK,
+                    item_names.MARINE_MEDPACK,
+                    item_names.MARINE_MAGRAIL_MUNITIONS,
+                    item_names.MEDIC_STABILIZER_MEDPACKS,
+                    item_names.MARINE_LASER_TARGETING_SYSTEM,
+                    item_names.FIREBAT_NANO_PROJECTORS,
+                    item_names.FIREBAT_JUGGERNAUT_PLATING,
+                    item_names.FIREBAT_STIMPACK,
+                    item_names.FIREBAT_MEDPACK,
             ):
                 item.flags |= ItemFilterFlags.AllowedOrphan
                 item.flags &= ~ItemFilterFlags.FilterExcluded
@@ -1015,10 +1027,23 @@ def flag_unused_upgrade_types(world: SC2World, item_list: list[FilterItem]) -> N
                 elif ItemFilterFlags.UserExcluded not in item.flags:
                     upgrade_included_counts[item.name] = included + 1
 
+
 def flag_unreleased_items(item_list: list[FilterItem]) -> None:
     """Remove all unreleased items unless they're explicitly locked"""
     for item in item_list:
         if (item.name in unreleased_items
+            and not (ItemFilterFlags.Locked|ItemFilterFlags.StartInventory) & item.flags
+        ):
+            item.flags |= ItemFilterFlags.Removed
+
+
+def flag_disabled_items(item_list: list[FilterItem]) -> None:
+    """
+    Remove all disabled items unless they're explicitly locked.
+    Will be affected by options in the future.
+    """
+    for item in item_list:
+        if (item.name in disabled_items
             and not (ItemFilterFlags.Locked|ItemFilterFlags.StartInventory) & item.flags
         ):
             item.flags |= ItemFilterFlags.Removed

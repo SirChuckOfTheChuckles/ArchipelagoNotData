@@ -552,9 +552,10 @@ class SC2Logic:
             state.has_any((
                 item_names.MARINE_COMBAT_SHIELD,
                 item_names.MARINE_MAGRAIL_MUNITIONS,
+                item_names.MARINE_MEDPACK,
                 item_names.MEDIC_STABILIZER_MEDPACKS,
             ), self.player)
-            or (state.count(item_names.MARINE_PROGRESSIVE_STIMPACK, self.player) >= 2
+            or (state.has_all((item_names.MARINE_STIMPACK, item_names.MARINE_MEDPACK), self.player)
                 and state.has_group("Missions", self.player, 1)
             )
             or (self.advanced_tactics
@@ -565,7 +566,7 @@ class SC2Logic:
     def marine_medic_firebat_upgrade(self, state: CollectionState) -> bool:
         return (
             self.marine_medic_upgrade(state)
-            or state.count(item_names.FIREBAT_PROGRESSIVE_STIMPACK, self.player) >= 2
+            or state.has_all((item_names.FIREBAT_STIMPACK, item_names.FIREBAT_MEDPACK), self.player)
             or state.has_any((item_names.FIREBAT_NANO_PROJECTORS, item_names.FIREBAT_JUGGERNAUT_PLATING), self.player)
         )
 
@@ -1445,7 +1446,7 @@ class SC2Logic:
             or state.has_all((item_names.WARP_PRISM, item_names.WARP_PRISM_PHASE_BLASTER), self.player)
             or state.has_all((item_names.WRATHWALKER, item_names.WRATHWALKER_AERIAL_TRACKING), self.player)
             or state.has_all((item_names.DISRUPTOR, item_names.DISRUPTOR_PERFECTED_POWER), self.player)
-            or state.has_all((item_names.IMMORTAL, item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING), self.player)
+            or state.has_all((item_names.IMMORTAL, item_names.IMMORTAL_ADVANCED_TARGETING), self.player)
             or state.has_all((item_names.SKIRMISHER, item_names.SKIRMISHER_PEER_CONTEMPT), self.player)
             or (
                 state.has(item_names.DARK_TEMPLAR, self.player)
@@ -1495,8 +1496,12 @@ class SC2Logic:
             self.protoss_competent_anti_air(state)
             or state.has_any((item_names.SCOUT, item_names.MISTWING, item_names.DRAGOON), self.player)
             or (
-                state.has_any({item_names.IMMORTAL, item_names.ANNIHILATOR}, self.player)
-                and state.has(item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING, self.player)
+                state.has(item_names.IMMORTAL, self.player)
+                and state.has(item_names.IMMORTAL_ADVANCED_TARGETING, self.player)
+            )
+            or (
+                state.has(item_names.ANNIHILATOR, self.player)
+                and state.has(item_names.ANNIHILATOR_ADVANCED_TARGETING, self.player)
             )
             or state.has_all({item_names.WRATHWALKER, item_names.WRATHWALKER_AERIAL_TRACKING}, self.player)
         )
@@ -1543,10 +1548,14 @@ class SC2Logic:
         )
 
     def protoss_competent_anti_air(self, state: CollectionState) -> bool:
-        aa_immortals = (
-            state.has_any((item_names.IMMORTAL, item_names.ANNIHILATOR), self.player)
-            and state.has(item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING, self.player)
-        )
+        aa_immortals = ((
+                state.has(item_names.IMMORTAL, self.player)
+                and state.has(item_names.IMMORTAL_ADVANCED_TARGETING, self.player)
+            )
+            or (
+                state.has(item_names.ANNIHILATOR, self.player)
+                and state.has(item_names.ANNIHILATOR_ADVANCED_TARGETING, self.player)
+            ))
         return (
             state.has_any((
                 item_names.STALKER,
@@ -4408,12 +4417,12 @@ class SC2Logic:
 
     def zerg_handle_defiler(self, state: CollectionState, presence: HeroFlag = HeroFlag.NONE) -> bool:
         return (
-            state.has(item_names.ABERRATION,self.player)
-            or state.has(item_names.ULTRALISK,self.player)
+            state.has(item_names.ABERRATION, self.player)
+            or state.has(item_names.ULTRALISK, self.player)
             or self.morph_tyrannozor(state)
             or (self.advanced_tactics
                 and (
-                    state.has_any({item_names.INFESTOR, item_names.BROOD_QUEEN},self.player)
+                    state.has_any({item_names.INFESTOR, item_names.BROOD_QUEEN}, self.player)
                     or self.morph_viper(state)
                 )
             )
@@ -4422,8 +4431,8 @@ class SC2Logic:
 
     def protoss_handle_defiler(self, state: CollectionState, presence: HeroFlag = HeroFlag.NONE) -> bool:
         return (
-            state.has_all({item_names.COLOSSUS,item_names.COLOSSUS_FIRE_LANCE},self.player)
-            or (self.advanced_tactics and state.has_any({item_names.HIGH_TEMPLAR, item_names.ASCENDANT, item_names.DISRUPTOR},self.player))
+            state.has_all({item_names.COLOSSUS,item_names.COLOSSUS_FIRE_LANCE}, self.player)
+            or (self.advanced_tactics and state.has_any({item_names.HIGH_TEMPLAR, item_names.ASCENDANT, item_names.DISRUPTOR}, self.player))
             or self.hero_handle_defiler(state, presence)
         )
 
@@ -4682,7 +4691,7 @@ class SC2Logic:
         return (
             self.zerg_enemy_intelligence_garrisonable_unit(state)
             # TODO: revisit defense ratings
-            and self.zerg_competent_comp(state)
+            and self.zerg_competent_comp_competent_aa(state)
             and self.zerg_defense_rating(state, True, True) >= 5
         )
 
@@ -4801,7 +4810,7 @@ class SC2Logic:
         if presence != HeroFlag.NONE:
             return (
                 self.competent_hero(state, SC2Mission.TROUBLE_IN_PARADISE_Z)
-                and self.zerg_competent_comp(state)
+                and self.zerg_competent_comp_competent_aa(state)
                 and self.zerg_defense_rating(state, True, True) >= 5
                 and self.zerg_power_rating(state) >= 3
             )
@@ -4866,7 +4875,7 @@ class SC2Logic:
 
     def zerg_night_terrors_requirement(self, state: CollectionState) -> bool:
         return (
-            self.zerg_competent_comp(state)
+            self.zerg_competent_comp_moderate_aa(state)
             and self.zerg_power_rating(state) >= 3
         )
 
@@ -4907,7 +4916,7 @@ class SC2Logic:
 
     def zerg_flashpoint_far_requirement(self, state: CollectionState) -> bool:
         return (
-            self.zerg_competent_comp(state)
+            self.zerg_competent_comp_competent_aa(state)
             and self.zerg_mobile_detector(state)
             and self.zerg_defense_rating(state, True, False) >= 6
             and self.zerg_army_weapon_armor_upgrade_min_level(state) >= 2
@@ -5092,7 +5101,7 @@ class SC2Logic:
 
     def zerg_dark_skies_requirement(self, state: CollectionState) -> bool:
         return (
-            self.zerg_competent_comp(state)
+            self.zerg_competent_comp_competent_aa(state)
             and self.zerg_defense_rating(state, False, True) >= 8
             and self.zerg_power_rating(state) >= 5
             and self.competent_or_no_hero(state, SC2Mission.DARK_SKIES_Z)
@@ -5126,8 +5135,8 @@ class SC2Logic:
                     self.advanced_tactics
                     and (
                         (
-                            state.has_all((item_names.MARINE, item_names.MARINE_PROGRESSIVE_STIMPACK), self.player)
-                            and (self.terran_bio_heal(state) or state.count(item_names.MARINE_PROGRESSIVE_STIMPACK, self.player) >= 2)
+                            state.has_all((item_names.MARINE, item_names.MARINE_STIMPACK), self.player)
+                            and (self.terran_bio_heal(state) or state.has(item_names.MARINE_MEDPACK, self.player) >= 2)
                         )
                         or (state.has(item_names.DOMINION_TROOPER, self.player) and self.terran_bio_heal(state))
                         or state.has_all(

@@ -179,9 +179,9 @@ item_table = {
     item_names.PROGRESSIVE_ORBITAL_COMMAND:
         ItemData(207 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.Deprecated, -1, SC2Race.TERRAN,
                  quantity=0, classification=ItemClassification.progression),
-    item_names.MARINE_PROGRESSIVE_STIMPACK:
-        ItemData(208 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive, 0, SC2Race.TERRAN,
-                 classification=ItemClassification.progression, parent=item_names.MARINE, quantity=2),
+    item_names.MARINE_STIMPACK:
+        ItemData(208 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 0, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.MARINE),
     item_names.MARINE_COMBAT_SHIELD:
         ItemData(209 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_1, 9, SC2Race.TERRAN,
                  classification=ItemClassification.progression, parent=item_names.MARINE),
@@ -233,15 +233,15 @@ item_table = {
     item_names.MEDIC_RESOURCE_EFFICIENCY:
         ItemData(225 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_1, 24, SC2Race.TERRAN,
                  parent=item_names.MEDIC),
-    item_names.FIREBAT_PROGRESSIVE_STIMPACK:
-        ItemData(226 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive, 6, SC2Race.TERRAN,
-                 classification=ItemClassification.progression, parent=item_names.FIREBAT, quantity=2),
+    item_names.FIREBAT_STIMPACK:
+        ItemData(226 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 2, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.FIREBAT),
     item_names.FIREBAT_RESOURCE_EFFICIENCY:
         ItemData(227 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_1, 25, SC2Race.TERRAN,
                  parent=item_names.FIREBAT),
-    item_names.MARAUDER_PROGRESSIVE_STIMPACK:
-        ItemData(228 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive, 8, SC2Race.TERRAN,
-                 parent=item_names.MARAUDER, quantity=2),
+    item_names.MARAUDER_STIMPACK:
+        ItemData(228 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 1, SC2Race.TERRAN,
+                 parent=item_names.MARAUDER),
     item_names.MARAUDER_LASER_TARGETING_SYSTEM:
         ItemData(229 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_1, 26, SC2Race.TERRAN,
                  parent=item_names.MARAUDER),
@@ -304,9 +304,9 @@ item_table = {
     item_names.MEDIVAC_SCATTER_VEIL:
         ItemData(249 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_2, 16, SC2Race.TERRAN,
                  parent=item_names.MEDIVAC),
-    item_names.REAPER_PROGRESSIVE_STIMPACK:
-        ItemData(250 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive, 10, SC2Race.TERRAN,
-                 parent=item_names.REAPER, quantity=2),
+    item_names.REAPER_STIMPACK:
+        ItemData(250 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 3, SC2Race.TERRAN,
+                 parent=item_names.REAPER),
     item_names.REAPER_LASER_TARGETING_SYSTEM:
         ItemData(251 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_2, 17, SC2Race.TERRAN,
                  parent=item_names.REAPER),
@@ -332,9 +332,9 @@ item_table = {
     item_names.HELLION_JUMP_JETS:
         ItemData(258 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_2, 24, SC2Race.TERRAN,
                  parent=item_names.HELLION),
-    item_names.HELLION_PROGRESSIVE_STIMPACK:
-        ItemData(259 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive, 12, SC2Race.TERRAN,
-                 parent=item_names.HELLION, quantity=2),
+    item_names.HELLION_STIMPACK:
+        ItemData(259 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 4, SC2Race.TERRAN,
+                 parent=item_names.HELLION),
     item_names.VULTURE_ION_THRUSTERS:
         ItemData(260 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_2, 25, SC2Race.TERRAN,
                  parent=item_names.VULTURE),
@@ -977,6 +977,21 @@ item_table = {
     item_names.EMPERORS_SHADOW_EMP_BLAST:
         ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
                  parent=item_names.EMPERORS_SHADOW),
+    item_names.MARINE_MEDPACK:
+        ItemData(776 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 5, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.MARINE),
+    item_names.MARAUDER_MEDPACK:
+        ItemData(777 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 6, SC2Race.TERRAN,
+                 parent=item_names.MARAUDER),
+    item_names.FIREBAT_MEDPACK:
+        ItemData(778 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 7, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.FIREBAT),
+    item_names.REAPER_MEDPACK:
+        ItemData(779 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 8, SC2Race.TERRAN,
+                 parent=item_names.REAPER),
+    item_names.HELLION_MEDPACK:
+        ItemData(780 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 9, SC2Race.TERRAN,
+                 parent=item_names.HELLION),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
@@ -1008,11 +1023,14 @@ item_table = {
         ItemData(808 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.ResearchCost, 1, SC2Race.ANY, quantity=0,
                  classification=ItemClassification.filler),
 
-    # Trap Filler
+    # Traps
     item_names.REDUCED_MAX_SUPPLY:
         ItemData(850 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.MaxSupplyTrap, -1, SC2Race.ANY, quantity=0,
                  classification=ItemClassification.trap),
 
+    item_names.TRAP_GHOST_SPAWN:
+        ItemData(851 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.GhostSpawnTrap, 0, SC2Race.ANY, quantity=5,
+                 classification=ItemClassification.trap),
 
     # Nova gear
     item_names.NOVA_GHOST_VISOR:
@@ -1876,8 +1894,8 @@ item_table = {
     item_names.REAVER_RESOURCE_EFFICIENCY: ItemData(345 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 15, SC2Race.PROTOSS, parent=item_names.REAVER),
     item_names.VANGUARD_AGONY_LAUNCHERS: ItemData(346 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 16, SC2Race.PROTOSS, parent=item_names.VANGUARD),
     item_names.VANGUARD_MATTER_DISPERSION: ItemData(347 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 17, SC2Race.PROTOSS, parent=item_names.VANGUARD),
-    item_names.IMMORTAL_ANNIHILATOR_SINGULARITY_CHARGE: ItemData(348 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 18, SC2Race.PROTOSS, parent=parent_names.IMMORTAL_OR_ANNIHILATOR),
-    item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING: ItemData(349 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 19, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=parent_names.IMMORTAL_OR_ANNIHILATOR),
+    item_names.ANNIHILATOR_SINGULARITY_CHARGE: ItemData(348 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 18, SC2Race.PROTOSS, parent=item_names.ANNIHILATOR),
+    item_names.IMMORTAL_ADVANCED_TARGETING: ItemData(349 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 19, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.IMMORTAL),
     item_names.COLOSSUS_PACIFICATION_PROTOCOL: ItemData(350 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 20, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.COLOSSUS),
     item_names.WRATHWALKER_RAPID_POWER_CYCLING: ItemData(351 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 21, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.WRATHWALKER),
     item_names.WRATHWALKER_EYE_OF_WRATH: ItemData(352 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_2, 22, SC2Race.PROTOSS, parent=item_names.WRATHWALKER),
@@ -1908,7 +1926,7 @@ item_table = {
     item_names.ZEALOT_SHIELD_CAPACITY: ItemData(377 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 17, SC2Race.PROTOSS, classification=ItemClassification.progression_skip_balancing, parent=item_names.ZEALOT),
     item_names.ORACLE_BOSONIC_CORE: ItemData(378 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 18, SC2Race.PROTOSS, parent=item_names.ORACLE),
     item_names.SCOUT_RESOURCE_EFFICIENCY: ItemData(379 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 19, SC2Race.PROTOSS, parent=item_names.SCOUT),
-    item_names.IMMORTAL_ANNIHILATOR_DISRUPTOR_DISPERSION: ItemData(380 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 20, SC2Race.PROTOSS, parent=parent_names.IMMORTAL_OR_ANNIHILATOR),
+    item_names.ANNIHILATOR_DISRUPTOR_DISPERSION: ItemData(380 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 20, SC2Race.PROTOSS, parent=item_names.ANNIHILATOR),
     item_names.DISRUPTOR_CLOAKING_MODULE: ItemData(381 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 21, SC2Race.PROTOSS, parent=item_names.DISRUPTOR),
     item_names.DISRUPTOR_PERFECTED_POWER:  ItemData(382 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 22, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.DISRUPTOR),
     item_names.DISRUPTOR_RESTRAINED_DESTRUCTION: ItemData(383 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_3, 23, SC2Race.PROTOSS, parent=item_names.DISRUPTOR),
@@ -1948,7 +1966,7 @@ item_table = {
     item_names.DARK_TEMPLAR_ARCHON_MERGE: ItemData(417 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_4, 27, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.DARK_TEMPLAR),
     item_names.ASCENDANT_ARCHON_MERGE: ItemData(418 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_4, 28, SC2Race.PROTOSS, classification=ItemClassification.progression_skip_balancing, parent=item_names.ASCENDANT),
     item_names.SCOUT_SUPPLY_EFFICIENCY: ItemData(419 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_4, 29, SC2Race.PROTOSS, parent=item_names.SCOUT),
-    item_names.REAVER_BARGAIN_BIN_PRICES: ItemData(420 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 0, SC2Race.PROTOSS, parent=item_names.SCOUT),
+    item_names.REAVER_BARGAIN_BIN_PRICES: ItemData(420 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 0, SC2Race.PROTOSS, parent=item_names.REAVER),
     item_names.MOTHERSHIP_PURIFIER_AMPLIFIED_POWER_REROUTER: ItemData(421 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 1, SC2Race.PROTOSS, parent=item_names.MOTHERSHIP_PURIFIER),
     item_names.MOTHERSHIP_PURIFIER_PURIFIED_EMBERS: ItemData(422 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 2, SC2Race.PROTOSS, parent=item_names.MOTHERSHIP_PURIFIER),
     item_names.MOTHERSHIP_TALDARIM_SHADOW_OF_DEATH: ItemData(423 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 3, SC2Race.PROTOSS, parent=item_names.MOTHERSHIP_TALDARIM),
@@ -1971,7 +1989,17 @@ item_table = {
     item_names.BLOOD_HUNTER_ESSENCE_DRAIN: ItemData(440 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 20, SC2Race.PROTOSS, parent=item_names.BLOOD_HUNTER),
     item_names.BLOOD_HUNTER_FROZEN_IN_AGONY: ItemData(441 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 21, SC2Race.PROTOSS, parent=item_names.BLOOD_HUNTER),
     item_names.BLOOD_HUNTER_ALARAKS_CALL: ItemData(442 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 22, SC2Race.PROTOSS, parent=item_names.BLOOD_HUNTER),
-
+    item_names.IMMORTAL_COUNTERMEASURES: ItemData(443 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 23, SC2Race.PROTOSS, parent=item_names.IMMORTAL),
+    item_names.IMMORTAL_WARP_RELOCATE: ItemData(444 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 24, SC2Race.PROTOSS, parent=item_names.IMMORTAL),
+    item_names.IMMORTAL_ETERNAL_DUTY: ItemData(445 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 25, SC2Race.PROTOSS, parent=item_names.IMMORTAL),
+    item_names.IMMORTAL_NANO_REASSEMBLY: ItemData(446 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 26, SC2Race.PROTOSS, parent=item_names.IMMORTAL),
+    item_names.ANNIHILATOR_SHADOW_PATH: ItemData(447 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 27, SC2Race.PROTOSS, parent=item_names.ANNIHILATOR),
+    item_names.ANNIHILATOR_RESOURCE_EFFICIENCY: ItemData(448 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 28, SC2Race.PROTOSS, parent=item_names.ANNIHILATOR),
+    item_names.ANNIHILATOR_ADVANCED_TARGETING: ItemData(449 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_5, 29, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.ANNIHILATOR),
+    item_names.VANGUARD_ACCELERATED_WARP: ItemData(450 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_6, 0, SC2Race.PROTOSS, parent=item_names.VANGUARD),
+    item_names.VANGUARD_BLOODSHARD_COATING: ItemData(451 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_6, 1, SC2Race.PROTOSS, parent=item_names.VANGUARD),
+    item_names.VANGUARD_FLARE: ItemData(452 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_6, 2, SC2Race.PROTOSS, parent=item_names.VANGUARD),
+    item_names.DRAGOON_RESOURCE_EFFICIENCY: ItemData(453 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.Forge_6, 3, SC2Race.PROTOSS, parent=item_names.DRAGOON),
 
     # War Council
     item_names.ZEALOT_WHIRLWIND: ItemData(500 + SC2LOTV_ITEM_ID_OFFSET, ProtossItemType.War_Council, 0, SC2Race.PROTOSS, classification=ItemClassification.progression, parent=item_names.ZEALOT),

@@ -15,15 +15,21 @@ PROTOSS = "Protoss"
 
 LASER_TARGETING_SYSTEMS_DESCRIPTION = "Increases vision by 2 and weapon range by 1."
 STIMPACK_SMALL_COST = 10
-STIMPACK_SMALL_HEAL = 30
 STIMPACK_LARGE_COST = 20
-STIMPACK_LARGE_HEAL = 60
 STIMPACK_TEMPLATE = inspect.cleandoc("""
-    Level 1: Stimpack: Increases unit movement and attack speed for 15 seconds. Injures the unit for {} life.
-    Level 2: Super Stimpack: Instead of injuring the unit, heals the unit for {} life instead.
+    Increases unit movement and attack speed for 15 seconds. Injures the unit for {} life.
+    Combines with Medpack into Super Stimpack.
 """)
-STIMPACK_SMALL_DESCRIPTION = STIMPACK_TEMPLATE.format(STIMPACK_SMALL_COST, STIMPACK_SMALL_HEAL)
-STIMPACK_LARGE_DESCRIPTION = STIMPACK_TEMPLATE.format(STIMPACK_LARGE_COST, STIMPACK_LARGE_HEAL)
+STIMPACK_SMALL_DESCRIPTION = STIMPACK_TEMPLATE.format(STIMPACK_SMALL_COST)
+STIMPACK_LARGE_DESCRIPTION = STIMPACK_TEMPLATE.format(STIMPACK_LARGE_COST)
+MEDPACK_SMALL_HEAL = 30
+MEDPACK_LARGE_HEAL = 60
+MEDPACK_TEMPLATE = inspect.cleandoc("""
+    Heals the unit for {} life over 2 seconds.
+    Combines with Stimpack into Super Stimpack.
+""")
+MEDPACK_SMALL_DESCRIPTION = MEDPACK_TEMPLATE.format(MEDPACK_SMALL_HEAL)
+MEDPACK_LARGE_DESCRIPTION = MEDPACK_TEMPLATE.format(MEDPACK_LARGE_HEAL)
 SMART_SERVOS_DESCRIPTION = "Increases transformation speed between modes."
 INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE = "{} can be trained from a {} without an attached Tech Lab."
 CLOAK_DESCRIPTION_TEMPLATE = "Allows {} to use the Cloak ability."
@@ -69,6 +75,8 @@ resource_efficiency_cost_reduction = {
     item_names.SCOUT:         (75, 25, 0),
     item_names.DESTROYER:     (50, 25, 1),
     DISPLAY_NAME_WORMS:       (25, 25, 0),
+    item_names.ANNIHILATOR:   (25, 0, 1),
+    item_names.DRAGOON:       (0, 50, 0),
 
     # Frightful Fleshwelder
     item_names.INFESTED_SIEGE_TANK:   (0, 25, 0),
@@ -171,7 +179,7 @@ item_descriptions = {
     item_names.SHOCK_DIVISION: "Royal Guard heavy tank. Long-range artillery in Siege Mode.",
     item_names.BLACKHAMMER: "Royal Guard heavy assault mech.",
     item_names.AEGIS_GUARD: "Royal Guard heavy assault infantry.",
-    item_names.EMPERORS_SHADOW: "Royal Guard specialist. Can use Pyrokinetic Immolation and EMP Blast abilities. Can call down Tactical missiles.",
+    item_names.EMPERORS_SHADOW: "Royal Guard specialist. Can use Pyrokinetic Immolation and EMP Blast abilities.\nCan call down Tactical missiles.",
     item_names.SON_OF_KORHAL: "Royal Guard general-purpose infantry.",
     item_names.BULWARK_COMPANY: "Royal Guard heavy-fire support unit.",
     item_names.FIELD_RESPONSE_THETA: "Royal Guard support trooper. Heals nearby biological units.",
@@ -214,7 +222,8 @@ item_descriptions = {
     """),
     item_names.JUGGERNAUT_THRUSTERS: "Increases the movement speed of flying Terran buildings.",
     item_names.SUPPLY_DEPOT_COVERT_STOCKS: "Supply Depots are cloaked while lowered.",
-    item_names.MARINE_PROGRESSIVE_STIMPACK: STIMPACK_SMALL_DESCRIPTION,
+    item_names.MARINE_STIMPACK: STIMPACK_SMALL_DESCRIPTION,
+    item_names.MARINE_MEDPACK: MEDPACK_SMALL_DESCRIPTION,
     item_names.MARINE_COMBAT_SHIELD: "Increases Marine life by 10.",
     item_names.MEDIC_ADVANCED_MEDIC_FACILITIES: INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE.format("Medics", "Barracks"),
     item_names.MEDIC_STABILIZER_MEDPACKS: "Increases Medic heal speed. Reduces the amount of energy required for each heal.",
@@ -235,9 +244,11 @@ item_descriptions = {
     item_names.MEDIC_RESTORATION: _ability_desc("Medics", "Restoration", "removes negative status effects from a target allied unit"),
     item_names.MEDIC_OPTICAL_FLARE: _ability_desc("Medics", "Optical Flare", "reduces vision range of target enemy unit. Disables detection"),
     item_names.MEDIC_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.MEDIC),
-    item_names.FIREBAT_PROGRESSIVE_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.FIREBAT_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.FIREBAT_MEDPACK: MEDPACK_LARGE_DESCRIPTION,
     item_names.FIREBAT_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.FIREBAT),
-    item_names.MARAUDER_PROGRESSIVE_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.MARAUDER_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.MARAUDER_MEDPACK: MEDPACK_LARGE_DESCRIPTION,
     item_names.MARAUDER_LASER_TARGETING_SYSTEM: LASER_TARGETING_SYSTEMS_DESCRIPTION,
     item_names.MARAUDER_MAGRAIL_MUNITIONS: "Deals 20 damage to target unit. Autocast on attack with a cooldown.",
     item_names.MARAUDER_INTERNAL_TECH_MODULE: INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE.format("Marauders", "Barracks"),
@@ -262,7 +273,8 @@ item_descriptions = {
     item_names.PREDATOR_CLOAK: "Allows Predators to briefly cloak. Predators ignore unit collision while cloaked.",
     item_names.PREDATOR_CHARGE: "Allows Predators to intercept enemy ground units, and applies an AoE slow on arrival.",
     item_names.MEDIVAC_SCATTER_VEIL: "Medivacs get 100 shields.",
-    item_names.REAPER_PROGRESSIVE_STIMPACK: STIMPACK_SMALL_DESCRIPTION,
+    item_names.REAPER_STIMPACK: STIMPACK_SMALL_DESCRIPTION,
+    item_names.REAPER_MEDPACK: MEDPACK_SMALL_DESCRIPTION,
     item_names.REAPER_LASER_TARGETING_SYSTEM: LASER_TARGETING_SYSTEMS_DESCRIPTION,
     item_names.REAPER_ADVANCED_CLOAKING_FIELD: "Reapers are permanently cloaked.",
     item_names.REAPER_SPIDER_MINES: "Allows Reapers to lay Spider Mines. 3 charges per Reaper.",
@@ -274,7 +286,8 @@ item_descriptions = {
         Increases movement speed in Hellion mode.
         In Hellbat mode, launches the Hellbat toward enemy ground units and briefly stuns them.
     """),
-    item_names.HELLION_PROGRESSIVE_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.HELLION_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
+    item_names.HELLION_MEDPACK: MEDPACK_LARGE_DESCRIPTION,
     item_names.VULTURE_ION_THRUSTERS: "Increases Vulture movement speed.",
     item_names.VULTURE_AUTO_LAUNCHERS: "Allows Vultures to attack while moving.",
     item_names.SPIDER_MINE_HIGH_EXPLOSIVE_MUNITION: "Increases Spider mine damage.",
@@ -562,12 +575,12 @@ item_descriptions = {
         Allows Terran mechanical units to regenerate health while not in combat.
         Each level increases life regeneration speed.
     """),
-    item_names.HIVE_MIND_EMULATOR: "Unlocks the Hive Mind Emulator defensive structure, and allows it to permanently Mind Control Zerg units.",
-    item_names.ARGUS_AMPLIFIER: "Unlocks the Hive Mind Emulator defensive structure, and allows it to permanently Mind Control Protoss units.",
-    item_names.PSI_INDOCTRINATOR: "Unlocks the Hive Mind Emulator defensive structure, and allows it to permanently Mind Control Terran units.",
-    item_names.PSI_DISRUPTER: "Unlocks the Psi Disrupter defensive structure, and allows it to slow the attack and movement speeds of all nearby Zerg units.",
-    item_names.PSI_SCREEN: "Unlocks the Psi Disrupter defensive structure, and allows it to slow the attack and movement speeds of all nearby Protoss units.",
-    item_names.SONIC_DISRUPTER: "Unlocks the Psi Disrupter defensive structure, and allows it to slow the attack and movement speeds of all nearby Terran units.",
+    item_names.HIVE_MIND_EMULATOR: "Unlocks the Hive Mind Emulator defensive structure.\nAllows it to permanently Mind Control Zerg units.",
+    item_names.ARGUS_AMPLIFIER: "Unlocks the Hive Mind Emulator defensive structure.\nAllows it to permanently Mind Control Protoss units.",
+    item_names.PSI_INDOCTRINATOR: "Unlocks the Hive Mind Emulator defensive structure.\nAllows it to permanently Mind Control Terran units.",
+    item_names.PSI_DISRUPTER: "Unlocks the Psi Disrupter defensive structure.\nAllows it to slow the attack and movement speeds of all nearby Zerg units.",
+    item_names.PSI_SCREEN: "Unlocks the Psi Disrupter defensive structure.\nAllows it to slow the attack and movement speeds of all nearby Protoss units.",
+    item_names.SONIC_DISRUPTER: "Unlocks the Psi Disrupter defensive structure.\nAllows it to slow the attack and movement speeds of all nearby Terran units.",
     item_names.DEVASTATOR_TURRET: "Defensive structure. Deals increased damage to armored targets. Attacks ground units.",
     item_names.STRUCTURE_ARMOR: "Increases armor of all Terran structures by 2.",
     item_names.HI_SEC_AUTO_TRACKING: "Increases attack range of all Terran structures by 1.",
@@ -575,7 +588,7 @@ item_descriptions = {
     item_names.ROGUE_FORCES: "Terran Mercenary calldowns are no longer limited by charges.",
     item_names.MECHANICAL_KNOW_HOW: "Increases mechanical unit life by 20%.",
     item_names.MERCENARY_MUNITIONS: "Increases attack speed of all Terran combat units by 15%.",
-    item_names.PROGRESSIVE_FAST_DELIVERY: "At level 1, you can request one Mercenary unit immediately at the start of a mission. Level 2 allows you to calldown 3 Mercenary units immediately.",
+    item_names.PROGRESSIVE_FAST_DELIVERY: "Level 1: You can request one Mercenary unit immediately at the start of a mission.\nLevel 2: Request up to 3 Mercenary units immediately.",
     item_names.RAPID_REINFORCEMENT: "Reduces cooldowns of all Terran Mercenary calldowns by 60s.",
     item_names.SIGNAL_BEACON: "Terran Mercenary Calldowns are instantly deployed on rally point.",
     item_names.FUSION_CORE_FUSION_REACTOR: "Fusion Cores increase the energy regeneration of nearby units by +1 energy per second.",
@@ -584,7 +597,7 @@ item_descriptions = {
     item_names.HIGH_TEMPLAR: "Potent psionic master. Can use the Feedback and Psionic Storm abilities. Can merge into an Archon.",
     item_names.DARK_TEMPLAR: "Deadly warrior-assassin. Permanently cloaked. Can use the Shadow Fury ability.",
     item_names.IMMORTAL: "Assault strider. Can use Barrier to absorb damage.",
-    item_names.COLOSSUS: "Battle strider with a powerful area attack. Can walk up and down cliffs. Attacks set fire to the ground, dealing extra damage to enemies over time.",
+    item_names.COLOSSUS: "Battle strider with a powerful area attack. Can walk up and down cliffs.\nAttacks set fire to the ground, dealing extra damage to enemies over time.",
     item_names.PHOENIX: "Air superiority starfighter. Can use Graviton Beam and Phasing Armor abilities.",
     item_names.VOID_RAY: "Surgical strike craft. Has the Prismatic Alignment and Prismatic Range abilities.",
     item_names.CARRIER: "Capital ship. Builds and launches Interceptors that attack enemy targets. Repair Drones heal nearby mechanical units.",
@@ -593,6 +606,16 @@ item_descriptions = {
     item_names.STARTING_SUPPLY: "Increases the starting supply for all missions.",
     item_names.NOTHING: "Does nothing. Used to remove a location from the game.",
     item_names.MAX_SUPPLY: "Increases the maximum supply cap for all missions.",
+    item_names.TRAP_GHOST_SPAWN: inspect.cleandoc("""
+        Trap Item.
+
+        Creates a Nuclear Silo building for an enemy player.
+        The Nuclear Silo periodically spawns Ghost attack waves,
+        which will be able to use Nuclear Strikes.
+        Ghosts may use additional abilities, based on difficulty level.
+
+        Only works in build missions.
+    """),
     item_names.REDUCED_MAX_SUPPLY: "Trap Item. Decreases the maximum supply cap for all missions.",
     item_names.SHIELD_REGENERATION: "Increases shield regeneration of all own units.",
     item_names.BUILDING_CONSTRUCTION_SPEED: "Increases building construction speed.",
@@ -829,9 +852,9 @@ item_descriptions = {
     item_names.INFESTED_BANSHEE_BRACED_EXOSKELETON: "Infested Banshees gain +100 life.",
     item_names.INFESTED_BANSHEE_RAPID_HIBERNATION: "Allows Infested Banshees to Burrow. Infested Banshees regenerate 20 life and energy per second while burrowed.",
     item_names.INFESTED_BANSHEE_FLESHFUSED_TARGETING_OPTICS: "Infested Banshees gain +2 range while cloaked.",
-    item_names.INFESTED_LIBERATOR_CLOUD_DISPERSAL: "Infested Liberators instantly transform into a cloud of microscopic organisms while attacking, reducing the damage they take by 85%.",
+    item_names.INFESTED_LIBERATOR_CLOUD_DISPERSAL: "Infested Liberators instantly transform into a cloud of microscopic organisms while attacking.\nReduces incoming damage by 85% while active.",
     item_names.INFESTED_LIBERATOR_VIRAL_CONTAMINATION: "Increases the damage Infested Liberators deal to their primary target by 100%.",
-    item_names.INFESTED_LIBERATOR_DEFENDER_MODE: "Allows Infested Liberators to deploy into Defender Mode to attack ground units. Weapon knocks back the attack target and damages units behind it.",
+    item_names.INFESTED_LIBERATOR_DEFENDER_MODE: "Allows Infested Liberators to deploy into Defender Mode to attack ground units.\nWeapon knocks back the attack target and damages units behind it.",
     item_names.INFESTED_SIEGE_TANK_FRIGHTFUL_FLESHWELDER: _get_resource_efficiency_desc(item_names.INFESTED_SIEGE_TANK),
     item_names.INFESTED_DIAMONDBACK_FRIGHTFUL_FLESHWELDER: _get_resource_efficiency_desc(item_names.INFESTED_DIAMONDBACK),
     item_names.INFESTED_BANSHEE_FRIGHTFUL_FLESHWELDER: _get_resource_efficiency_desc(item_names.INFESTED_BANSHEE),
@@ -840,7 +863,7 @@ item_descriptions = {
     item_names.HIVE_CLUSTER_MATURATION: "Lairs are replaced with Hives, and Hatcheries can now upgrade directly to Hives at the Lair's original cost.",
     item_names.HYDRALISK_DEN_MATURATION: "Hydralisk Dens are replaced with Greater Hydralisk Dens, and Drones can now build Greater Hydralisk Dens directly.",
     item_names.SPIRE_MATURATION: "Spires are replaced with Greater Spires, and Drones can now build Greater Spires directly.",
-    item_names.MACROSCOPIC_RECUPERATION: "Zerg structures regenerate health rapidly while on creep and out of combat. Does not apply to uprooted structures, or structures with the Mechanical tag.",
+    item_names.MACROSCOPIC_RECUPERATION: "Zerg structures regenerate health rapidly while on creep and out of combat.\nDoes not apply to uprooted structures, or structures with the Mechanical tag.",
     item_names.BIOMECHANICAL_STOCKPILING: "Infested Factories and Starports can store 3 additional unit charges.",
     item_names.BROODLING_SPORE_SATURATION: "Zerg buildings release twice as many broodlings on death. Zerg defensive structures release 4 broodlings on death.",
     item_names.SPAWN_SPLITTERLINGS: "Zerg buildings release splitterlings alongside broodlings on death.",
@@ -920,7 +943,7 @@ item_descriptions = {
     item_names.RAVAGER: "Ranged artillery. Can use Corrosive Bile. Can attack ground units. Morphed from the Roach.",
     item_names.PRIMAL_IGNITER: "Assault unit. Has an area-damage attack. Regenerates life quickly when burrowed. Can attack ground units. Morphed by merging two Roaches.",
     item_names.NYDUS_WORM: "Long-range transport network. Nydus Worms and Nydus Networks can load friendly ground units to be unloaded to any other Nydus structure on the map.",
-    item_names.ECHIDNA_WORM: "Long-range deployable base. Unable to load and unload units, but can generate Creep and Creep Tumors. Can also serve as a dropoff point for resources and can create Drones.",
+    item_names.ECHIDNA_WORM: "Long-range deployable base. Unable to load and unload units, but can generate Creep and Creep Tumors.\nCan also serve as a dropoff point for resources and can create Drones.",
     item_names.TYRANNOZOR: "Heavy assault beast. Has a ground-area attack, and powerful anti-air attack. Morphed by merging two Ultralisks.",
     item_names.OBSERVER: "Flying spy. Cloak renders the unit invisible to enemies without detection.",
     item_names.CENTURION: "Powerful melee warrior. Has the Shadow Charge and Darkcoil abilities.",
@@ -953,11 +976,11 @@ item_descriptions = {
     item_names.DAWNBRINGER: "Flying Anti-Surface Assault Ship. Attacks in an area around the target. Attack count increases as it continues firing.",
     item_names.SCOUT: "Versatile high-speed fighter. Has a powerful anti-armored air attack and a weaker anti-ground attack.",
     item_names.OPPRESSOR: "Tal'Darim Scout variant. Has a weaker air attack, but a stronger ground attack. Can use the Vulcan Blaster ability.",
-    item_names.CALADRIUS: "Purifier Scout variant. Has no ground attack, but a stronger air attack, which can be upgraded to hit multiple targets. Can use the Corona Beam ability.",
+    item_names.CALADRIUS: "Purifier Scout variant. Has no ground attack, but a stronger air attack.\nCan be upgraded to hit multiple targets. Can use the Corona Beam ability.",
     item_names.MISTWING: "Nerazim Scout variant. Specialized stealth fighter. Can use the Cloak, Phantom Dash and Pilot (Transport) abilities.",
     item_names.TEMPEST: "Siege artillery craft. Attacks from long range. Can use the Disintegration ability.",
-    item_names.MOTHERSHIP_AIUR: "Ultimate Aiur vessel. Can use Battery Overcharge, Revitalize Shields, and Vortex. Cloaks nearby friendly units. Morphed from an Aiur Mothership Core.",
-    item_names.MOTHERSHIP_PURIFIER: "Ultimate Purifier vessel. Can use Enhanced Power Redirection, Overload Weapon Systems, and Vortex. Morphed from a Purifier Mothership Core.",
+    item_names.MOTHERSHIP_AIUR: "Ultimate Aiur vessel. Can use Battery Overcharge, Revitalize Shields, and Vortex.\nCloaks nearby friendly units. Morphed from an Aiur Mothership Core.",
+    item_names.MOTHERSHIP_PURIFIER: "Ultimate Purifier vessel. Can use Enhanced Power Redirection,\nOverload Weapon Systems, and Vortex. Morphed from a Purifier Mothership Core.",
     item_names.MOTHERSHIP_TALDARIM: "Ultimate Tal'darim vessel. Can use Thermal Lance, Vortex, and Blink.",
     item_names.ARBITER: "Army support craft. Has the Stasis Field and Recall abilities. Cloaks nearby units.",
     item_names.ORACLE: "Flying caster. Can use the Revelation and Stasis Ward abilities.",
@@ -987,11 +1010,12 @@ item_descriptions = {
     item_names.STALKER_DISINTEGRATING_PARTICLES: "Increases weapon damage of Stalkers.",
     item_names.STALKER_PARTICLE_REFLECTION: "Attacks fired by Stalkers have a chance to bounce to additional targets for reduced damage.",
     item_names.INSTIGATOR_BLINK_OVERDRIVE: "Instigators gain +2 maximum blink charges and +1 blink range.",
-    item_names.INSTIGATOR_RECONSTRUCTION: "Instigators gain the Reconstruction ability, allowing them to be reconstructed on death with a 240 seconds cooldown. Using Blink reduces the cooldown.",
+    item_names.INSTIGATOR_RECONSTRUCTION: "Instigators gain the Reconstruction ability, allowing them to be reconstructed on death with a 240 seconds cooldown.\nUsing Blink reduces the cooldown.",
     item_names.DRAGOON_CONCENTRATED_ANTIMATTER: "Dragoons deal increased damage.",
-    item_names.DRAGOON_TRILLIC_COMPRESSION_SYSTEM: "Dragoons gain +20 life and their shield regeneration rate is doubled. Allows Dragoons to regenerate shields in combat.",
+    item_names.DRAGOON_TRILLIC_COMPRESSION_SYSTEM: "Dragoons gain +20 life and their shield regeneration rate is doubled.\nAllows Dragoons to regenerate shields in combat.",
     item_names.DRAGOON_SINGULARITY_CHARGE: "Increases Dragoon range by +2.",
     item_names.DRAGOON_ENHANCED_STRIDER_SERVOS: "Increases Dragoon movement speed.",
+    item_names.DRAGOON_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.DRAGOON),
     item_names.SCOUT_COMBAT_SENSOR_ARRAY: "All Scout variants gain increased range against air and ground.",
     item_names.SCOUT_APIAL_SENSORS: "Scouts gain increased sight range.",
     item_names.SCOUT_GRAVITIC_THRUSTERS: "All Scout variants gain increased movement speed.",
@@ -1003,7 +1027,7 @@ item_descriptions = {
     item_names.CALADRIUS_SIDE_MISSILES: "Caladrius can hit up to 4 additional air targets with their missiles.",
     item_names.CALADRIUS_STRUCTURE_TARGETING: "Allows Caladrius to hit ground structures with their anti-air missiles.",
     item_names.CALADRIUS_SOLARITE_REACTOR: "If the Caladrius is low on shields, it recovers shields quickly for a short time.",
-    item_names.MISTWING_NULL_SHROUD: "Cloak no longer drains energy (but still prevents base energy regeneration). The Mist Wing becomes undetectable for 5 seconds upon cloaking.",
+    item_names.MISTWING_NULL_SHROUD: "Cloak no longer drains energy (but still prevents base energy regeneration).\nThe Mist Wing becomes undetectable for 5 seconds upon cloaking.",
     item_names.MISTWING_PILOT: _ability_desc("Mistwings", "Pilot", "can transport one unit as an additional co-pilot. A pilot grants a small bonus to damage and armor"),
     item_names.TEMPEST_TECTONIC_DESTABILIZERS: "Tempests deal increased damage to buildings.",
     item_names.TEMPEST_QUANTIC_REACTOR: "Tempests deal increased damage to massive units.",
@@ -1062,11 +1086,21 @@ item_descriptions = {
     item_names.REAVER_REAVER_CAPACITY: "Reavers can store 10 Scarabs.",
     item_names.REAVER_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.REAVER),
     item_names.REAVER_BARGAIN_BIN_PRICES: _get_resource_efficiency_desc(item_names.REAVER, op_re_cost_reduction),
+    item_names.IMMORTAL_ADVANCED_TARGETING: "Immortals can change their weapons into anti-air mode temporarily.",
+    item_names.IMMORTAL_WARP_RELOCATE: _ability_desc("Immortals", "Warp Relocate", "allows them to warp to a nearby location"),
+    item_names.IMMORTAL_COUNTERMEASURES: "Immortals deal damage to enemy units attacking them, while their Barrier is active.",
+    item_names.IMMORTAL_ETERNAL_DUTY: "Up to twice per mission, upon building a Robotics Facility, an Immortal is warped in immediately.\nThese Immortals do not use supply.",
+    item_names.IMMORTAL_NANO_REASSEMBLY: "Immortals regenerate life while not in combat.",
+    item_names.ANNIHILATOR_SINGULARITY_CHARGE: "Increases Annihilator attack range by +2.",
+    item_names.ANNIHILATOR_DISRUPTOR_DISPERSION: "Annihilator Shadow Cannon slows targets in a small area.",
+    item_names.ANNIHILATOR_ADVANCED_TARGETING: "Annihilators can change their weapons into anti-air mode temporarily.",
+    item_names.ANNIHILATOR_SHADOW_PATH: "Annihilators are cloaked and get additional movespeed while not in combat.",
+    item_names.ANNIHILATOR_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.ANNIHILATOR),
     item_names.VANGUARD_AGONY_LAUNCHERS: "Increases Vanguard attack range by +2.",
     item_names.VANGUARD_MATTER_DISPERSION: "Increases Vanguard attack area.",
-    item_names.IMMORTAL_ANNIHILATOR_SINGULARITY_CHARGE: "Increases Immortal and Annihilator attack range by +2.",
-    item_names.IMMORTAL_ANNIHILATOR_ADVANCED_TARGETING: "Immortals and Annihilators can attack air units.",
-    item_names.IMMORTAL_ANNIHILATOR_DISRUPTOR_DISPERSION: "Immortals and Annihilators deal minor splash damage.",
+    item_names.VANGUARD_FLARE: _ability_desc("Vanguards", "Flare", "reveals a target area and detects cloaked units"),
+    item_names.VANGUARD_ACCELERATED_WARP: "Vanguards gain increased training and warp-in speed.",
+    item_names.VANGUARD_BLOODSHARD_COATING: "Increases Vanguard life by +25 and armor by +1.",
     item_names.STALWART_HIGH_VOLTAGE_CAPACITORS: "Increases Stalwart attack bounce range by +1.",
     item_names.STALWART_REINTEGRATED_FRAMEWORK: "Increases the movement speed of Stalwarts.",
     item_names.STALWART_STABILIZED_ELECTRODES: "Allows Stalwarts to attack while moving, and increases attack range by +1.",
@@ -1239,7 +1273,7 @@ item_descriptions = {
         Level 1: Protoss structures can be moved anywhere within pylon power after a brief delay. Max 3 charges, shared globally.
         Level 2: No longer consumes or requires charges.
     """),
-    item_names.PROBE_WARPIN: "You can warp in additonal Probes from your Nexus to any visible location within a Pylon's power field. Has a 30 second cooldown and can store up to 2 charges.",
+    item_names.PROBE_WARPIN: "You can warp in additional Probes from your Nexus to any visible location within a Pylon's power field.\nHas a 30 second cooldown and can store up to 2 charges.",
     item_names.ELDER_PROBES: "You can warp in a group of 5 Elder Probes, tough builders from the Brood War.\nElder Probes can provide a Power Field and get reconstructed on death.\nCan only be used once per mission.",
     item_names.PYLON_PSI_ENHANCEMENT: "Pylons provide 50% more supply and a larger power field.",
     item_names.NEXUS_KHAYDARIN_CORE: "Each Nexus provides a power field.",
