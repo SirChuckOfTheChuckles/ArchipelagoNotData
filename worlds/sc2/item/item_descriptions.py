@@ -279,9 +279,9 @@ item_descriptions = {
     item_names.REAPER_ADVANCED_CLOAKING_FIELD: "Reapers are permanently cloaked.",
     item_names.REAPER_SPIDER_MINES: "Allows Reapers to lay Spider Mines. 3 charges per Reaper.",
     item_names.REAPER_COMBAT_DRUGS: "Reapers regenerate life while out of combat.",
-    item_names.HELLION_HELLBAT: "Allows Hellions to transform into Hellbats.",
+    item_names.HELLION_HELLBAT: "Allows building Hellbats. Allows Hellions to transform into Hellbats.",
     item_names.HELLION_SMART_SERVOS: "Transforms faster between modes. Hellions can attack while moving.",
-    item_names.HELLION_OPTIMIZED_LOGISTICS: "Increases Hellion training speed.",
+    item_names.HELLION_OPTIMIZED_LOGISTICS: "Increases Hellion and Hellbat training speed.",
     item_names.HELLION_JUMP_JETS: inspect.cleandoc("""
         Increases movement speed in Hellion mode.
         In Hellbat mode, launches the Hellbat toward enemy ground units and briefly stuns them.
@@ -362,7 +362,7 @@ item_descriptions = {
     item_names.COMMAND_CENTER_EXTRA_SUPPLIES: "Drops additional supplies, permanently increasing the supply output of the target Supply Depot by 8.",
     item_names.COMMAND_CENTER_TACTICAL_JUMP: "Allows a flying Command Center to warp to a target location anywhere on the map.",
     item_names.HELLION_TWIN_LINKED_FLAMETHROWER: "Doubles the width of the Hellion's flame attack.",
-    item_names.HELLION_THERMITE_FILAMENTS: "Hellions do an additional 10 damage to Light Armor.",
+    item_names.HELLION_THERMITE_FILAMENTS: "Hellions and Hellbats do an additional 10 damage to Light Armor.",
     item_names.SPIDER_MINE_CERBERUS_MINE: "Increases trigger and blast radius of Spider Mines.",
     item_names.VULTURE_PROGRESSIVE_REPLENISHABLE_MAGAZINE: inspect.cleandoc("""
         Level 1: Allows Vultures to replace used Spider Mines. Costs 15 minerals.
@@ -689,7 +689,7 @@ item_descriptions = {
     item_names.HYDRALISK_FRENZY: "Allows Hydralisks to use the Frenzy ability, which increases their attack speed by 50%.",
     item_names.HYDRALISK_ANCILLARY_CARAPACE: "Hydralisks gain +20 health.",
     item_names.HYDRALISK_GROOVED_SPINES: "Hydralisks gain +1 range.",
-    item_names.SPAWN_BANELINGS: "One Baneling Nest will periodically spawn temporary Banelings.",
+    item_names.SPAWN_BANELINGS: "One Baneling Nest will periodically spawn Banelings.",
     item_names.BANELING_CORROSIVE_ACID: "Increases the damage banelings deal to their primary target. Splash damage remains the same.",
     item_names.BANELING_RUPTURE: "Increases the splash radius of baneling attacks.",
     item_names.BANELING_REGENERATIVE_ACID: "Banelings will heal nearby friendly units when they explode.",
@@ -710,7 +710,7 @@ item_descriptions = {
     item_names.SCOURGE_VIRULENT_SPORES: "Scourge will deal splash damage.",
     item_names.SCOURGE_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.SCOURGE),
     item_names.SCOURGE_SWARM_SCOURGE: "An extra Scourge will be built from each egg at no additional cost.",
-    item_names.SPAWN_SCOURGE: "One Spire will periodically spawn temporary Scourges.",
+    item_names.SPAWN_SCOURGE: "One Spire will periodically spawn Scourges.",
     item_names.ZERGLING_SHREDDING_CLAWS: "Zergling attacks will temporarily reduce their target's armor to 0.",
     item_names.ROACH_GLIAL_RECONSTITUTION: "Increases Roach movement speed.",
     item_names.ROACH_ORGANIC_CARAPACE: "Increases Roach health by +25.",
@@ -1046,7 +1046,8 @@ item_descriptions = {
     item_names.ORACLE_BOSONIC_CORE: "Increases starting energy by 150 and maximum energy by 50.",
     item_names.ORACLE_SURFACE_STABILIZER: inspect.cleandoc("""
         Allows the Oracle to transform into Ground mode.
-        Ground mode grants increased life and shields, and allows attacking only air units.
+        Ground mode grants increased life, shields and weapon range.
+        Pulsar Beam does not use energy in Ground mode, and can only target air units.
     """),
     item_names.ARBITER_CHRONOSTATIC_REINFORCEMENT: "Arbiters gain +50 maximum life and +1 armor.",
     item_names.ARBITER_KHAYDARIN_CORE: _get_start_and_max_energy_desc("Arbiters"),
