@@ -14846,9 +14846,10 @@ def get_locations(world: Optional["SC2World"]) -> Tuple[LocationData, ...]:
         location_table = [
             location for location in location_table if include_location(location)
         ]
-        location_table = [
-            add_victory_hero_requirement(location, logic, world) for location in location_table
-        ]
+        if world is not None:
+            location_table = [
+                add_victory_hero_requirement(location, logic, world) for location in location_table
+            ]
     beat_events: List[LocationData] = []
     victory_caches: List[LocationData] = []
     VICTORY_CACHE_SIZE = 10
