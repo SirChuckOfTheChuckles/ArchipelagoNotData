@@ -15,6 +15,10 @@ SC2_DIRNAME = "StarCraft II"
 WINE_PREFIX_TO_SC2_INSTALL = "drive_c/Program Files (x86)/StarCraft II"
 DOCUMENTS_SC2_DIRNAME = f"Documents/{SC2_DIRNAME}"
 BANKS_DIRNAME = "Banks"
+# Note(mm): The case here is important; filepaths are case-sensitive on Linux, but the game searches for a
+# path case-insensitively, preferring "backup". So setting "Backup" here when "backup" already exists leads
+# to communication failures.
+BACKUP_DIRNAME = "backup"
 
 WINE_ENV_VAR = "WINE"
 WINE_PREFIX_ENV_VAR = "WINEPREFIX"
@@ -162,7 +166,7 @@ def _get_sc2_docs_folder() -> str:
             logger.warning("StarCraft II documents folder not found")
             return ""
         return result
-    
+
     # Linux handling
     wine_prefix = get_wine_prefix()
     if not isinstance(wine_prefix, Error):
@@ -284,7 +288,7 @@ def _get_sc2_install_dir() -> str:
             return result
         logger.warning(f"Could not find sc2 install path at {result}")
         return ""
-    
+
     # Linux handling
     wine_prefix = get_wine_prefix()
     if not isinstance(wine_prefix, Error):

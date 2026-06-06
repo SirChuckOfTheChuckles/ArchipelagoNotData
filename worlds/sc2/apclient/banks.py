@@ -155,7 +155,7 @@ class SC2Bank:
         bank_folder = user_paths.get_bank_folder()
         if isinstance(bank_folder, Error):
             return bank_folder
-        dir = f"{bank_folder}/Backup"
+        dir = f"{bank_folder}/{user_paths.BACKUP_DIRNAME}"
         lines: list[str] = []
         lines.append(         f'<?xml version="1.0" encoding="utf-8"?>')
         lines.append(         f'<Bank version="1">')
