@@ -415,6 +415,7 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             self.output(f"Unknown {hero_name} presence target '{target}'. Use /{command_name} help to see examples.")
             return
 
+        self.ctx.set_runtime_hero_presence(hero, target_key, enabled)
         state = "enabled" if enabled else "disabled"
         self.output(f"{hero_name} presence {state} for {target_key}.")
 
