@@ -78,7 +78,7 @@ class SC2Logic:
         self.total_mission_count = 1
 
         # Conditionally changed by the world after finalizing missions
-        self.hero_presence: dict[SC2Campaign, dict[SC2Race, HeroFlag]] = {}
+        self.hero_presence: dict[SC2Mission, HeroFlag] = {}
         self.kerrigan_items_granted = False
         self.kerrigan_levels_granted = False
         self.kerrigan_build_missions = False
@@ -1168,7 +1168,7 @@ class SC2Logic:
         return levels >= target
 
     def get_hero_flag(self, mission: SC2Mission) -> HeroFlag:
-        return self.hero_presence.get(mission.campaign, {}).get(mission.race, HeroFlag.NONE)
+        return self.hero_presence.get(mission, HeroFlag.NONE)
 
     def active_hero(self, state: CollectionState, mission: SC2Mission) -> bool:
         return self.get_hero_flag(mission) != HeroFlag.NONE
@@ -1176,7 +1176,7 @@ class SC2Logic:
     def basic_hero(self, state: CollectionState, mission: SC2Mission, story_tech_available: bool = True) -> bool:
         presence = self.get_hero_flag(mission)
         return ((HeroFlag.KERRIGAN in presence and self.basic_kerrigan(state, story_tech_available))
-            or (HeroFlag.NOVA in presence and self.nova_any_nobuild_damage(state))
+            or self.basic_nova(state, mission, story_tech_available)
             or (HeroFlag.ARTANIS in presence and self.basic_artanis(state, story_tech_available)))
 
     def basic_or_no_hero(self, state: CollectionState, mission: SC2Mission, story_tech_available: bool = True) -> bool:
@@ -1188,12 +1188,12 @@ class SC2Logic:
     def basic_nova(self, state: CollectionState, mission: SC2Mission, story_tech_available: bool = True) -> bool:
         # Separate check for Nova. Unlike Kerrigan and Artanis, Nova has no baseline attack
         presence = self.get_hero_flag(mission)
-        return HeroFlag.NOVA in presence and self.nova_any_nobuild_damage(state)
+        return HeroFlag.NOVA in presence and (self.nova_items_granted or self.nova_any_nobuild_damage(state))
 
     def basic_or_no_nova(self, state: CollectionState, mission: SC2Mission, story_tech_available: bool = True) -> bool:
         presence = self.get_hero_flag(mission)
         return (HeroFlag.NOVA not in presence
-                or (HeroFlag.NOVA in presence and self.nova_any_nobuild_damage(state)))
+                or self.basic_nova(state, mission, story_tech_available))
 
     def basic_kerrigan(self, state: CollectionState, story_tech_available: bool = True) -> bool:
         if (story_tech_available or self.kerrigan_items_granted):
@@ -2055,7 +2055,7 @@ class SC2Logic:
         """Outbreak mission requirement"""
         return (
             self.terran_defense_rating(state, True, False) >= 4
-            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK)
+            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK, False)
             and
                 (self.terran_common_unit(state)
                  or state.has(item_names.REAPER, self.player)
@@ -2070,7 +2070,7 @@ class SC2Logic:
         return (
             self.zerg_defense_rating(state, True, False) >= 4
             and self.zerg_common_unit(state)
-            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK_Z)
+            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK_Z, False)
             and (
                 state.has_any(
                     (
@@ -2104,7 +2104,7 @@ class SC2Logic:
             self.protoss_defense_rating(state, True) >= 4
             and self.protoss_common_unit(state)
             and self.protoss_basic_splash(state)
-            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK_P)
+            and self.basic_or_no_hero(state, SC2Mission.OUTBREAK_P, False)
             and (
                 state.has_any((
                     item_names.STALKER,
@@ -2280,7 +2280,7 @@ class SC2Logic:
         """
         Ability to deal with trains (moving target with a lot of HP)
         """
-        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY):
+        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY, False):
             return False
         return state.has_any(
             {item_names.SIEGE_TANK, item_names.DIAMONDBACK, item_names.MARAUDER, item_names.CYCLONE, item_names.BANSHEE}, self.player
@@ -2309,7 +2309,7 @@ class SC2Logic:
         """
         Ability to deal with trains (moving target with a lot of HP)
         """
-        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY_Z):
+        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY_Z, False):
             return False
         return (
             state.has_any((
@@ -2330,7 +2330,7 @@ class SC2Logic:
         """
         Ability to deal with trains (moving target with a lot of HP)
         """
-        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY_P):
+        if not self.basic_or_no_hero(state, SC2Mission.THE_GREAT_TRAIN_ROBBERY_P, False):
             return False
         return (
             state.has_any((
@@ -2419,18 +2419,18 @@ class SC2Logic:
         )
 
     def zerg_the_dig_start_requirement(self, state: CollectionState) -> bool:
-        return self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z)
+        return self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z, False)
 
     def zerg_the_dig_early_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z, False)
             and self.zerg_defense_rating(state, False, False) >= 6
             and self.zerg_common_unit(state)
         )
 
     def zerg_the_dig_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z, False)
             and self.zerg_defense_rating(state, False, False) >= 8
             and self.zerg_common_unit(state)
             and (
@@ -2441,25 +2441,25 @@ class SC2Logic:
 
     def zerg_the_dig_bases_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_Z, False)
             and self.zerg_defense_rating(state, False, False) >= 8
             and self.zerg_competent_anti_air(state)
             and self.zerg_base_buster(state)
         )
 
     def protoss_the_dig_start_requirement(self, state: CollectionState) -> bool:
-        return self.basic_or_no_hero(state, SC2Mission.THE_DIG_P)
+        return self.basic_or_no_hero(state, SC2Mission.THE_DIG_P, False)
 
     def protoss_the_dig_early_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P, False)
             and self.protoss_defense_rating(state, False) >= 6
             and self.protoss_common_unit(state)
         )
 
     def protoss_the_dig_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P, False)
             and self.protoss_defense_rating(state, False) >= 6
             and self.protoss_common_unit(state)
             and (
@@ -2470,7 +2470,7 @@ class SC2Logic:
 
     def protoss_the_dig_bases_requirement(self, state: CollectionState) -> bool:
         return (
-            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P)
+            self.basic_or_no_hero(state, SC2Mission.THE_DIG_P, False)
             and self.protoss_defense_rating(state, False) >= 6
             and self.protoss_common_unit(state)
             and self.protoss_anti_armor_anti_air(state)
@@ -2657,7 +2657,7 @@ class SC2Logic:
 
     def terran_engine_of_destruction_requirement(self, state: CollectionState) -> bool:
         power_rating = self.terran_power_rating(state)
-        if not self.basic_or_no_hero(state, SC2Mission.ENGINE_OF_DESTRUCTION):
+        if not self.basic_or_no_hero(state, SC2Mission.ENGINE_OF_DESTRUCTION, False):
             return False
         if power_rating < 3 or not self.marine_medic_upgrade(state) or not self.terran_common_unit(state):
             return False
@@ -3374,7 +3374,7 @@ class SC2Logic:
     def protoss_dark_whispers_requirement(self, state: CollectionState) -> bool:
         return (
             self.protoss_common_unit_basic_aa(state)
-            and self.basic_or_no_hero(state, SC2Mission.DARK_WHISPERS)
+            and self.basic_or_no_hero(state, SC2Mission.DARK_WHISPERS, False)
         )
 
     def protoss_dark_whispers_zerg_base(self, state: CollectionState) -> bool:
@@ -3521,21 +3521,21 @@ class SC2Logic:
         return (
             self.protoss_common_unit(state)
             and self.protoss_moderate_anti_air(state)
-            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW)
+            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW, False)
         )
 
     def terran_growing_shadow_requirement(self, state: CollectionState) -> bool:
         return (
             self.terran_common_unit(state)
             and self.terran_moderate_anti_air(state)
-            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW_T)
+            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW_T, False)
         )
 
     def zerg_growing_shadow_requirement(self, state: CollectionState) -> bool:
         return (
             self.zerg_common_unit(state)
             and self.zerg_moderate_anti_air(state)
-            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW_Z)
+            and self.basic_or_no_hero(state, SC2Mission.THE_GROWING_SHADOW_Z, False)
         )
 
     def terran_spear_of_adun_requirement(self, state: CollectionState) -> bool:
@@ -3543,7 +3543,7 @@ class SC2Logic:
             self.terran_common_unit(state)
             and self.terran_competent_anti_air(state)
             and self.terran_defense_rating(state, False, False) >= 5
-            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN_T)
+            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN_T, False)
         )
 
     def zerg_spear_of_adun_requirement(self, state: CollectionState) -> bool:
@@ -3551,7 +3551,7 @@ class SC2Logic:
             self.zerg_common_unit(state)
             and self.zerg_competent_anti_air(state)
             and self.zerg_defense_rating(state, False, False) >= 5
-            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN_Z)
+            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN_Z, False)
         )
 
     def protoss_spear_of_adun_requirement(self, state: CollectionState) -> bool:
@@ -3563,7 +3563,7 @@ class SC2Logic:
                 or self.protoss_basic_splash(state)
             )
             and self.protoss_defense_rating(state, False) >= 5
-            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN)
+            and self.basic_or_no_hero(state, SC2Mission.THE_SPEAR_OF_ADUN, False)
         )
 
     def terran_sky_shield_requirement(self, state: CollectionState) -> bool:
@@ -3571,7 +3571,7 @@ class SC2Logic:
             self.terran_common_unit(state)
             and self.terran_competent_anti_air(state)
             and self.terran_power_rating(state) >= 7
-            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD_T)
+            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD_T, False)
         )
 
     def zerg_sky_shield_requirement(self, state: CollectionState) -> bool:
@@ -3579,7 +3579,7 @@ class SC2Logic:
             self.zerg_common_unit(state)
             and self.zerg_competent_anti_air(state)
             and self.zerg_power_rating(state) >= 7
-            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD_Z)
+            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD_Z, False)
         )
 
     def protoss_sky_shield_requirement(self, state: CollectionState) -> bool:
@@ -3587,7 +3587,7 @@ class SC2Logic:
             self.protoss_common_unit(state)
             and self.protoss_competent_anti_air(state)
             and self.protoss_power_rating(state) >= 7
-            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD)
+            and self.basic_or_no_hero(state, SC2Mission.SKY_SHIELD, False)
         )
 
     def protoss_brothers_in_arms_requirement(self, state: CollectionState) -> bool:

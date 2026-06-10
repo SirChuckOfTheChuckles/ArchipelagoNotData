@@ -1,0 +1,42 @@
+name: SC2CrossCamp
+game: Starcraft 2
+description: Test campaign/race hero presence overrides across non-vanilla pairings.
+
+Starcraft 2:
+  game_difficulty: normal
+  game_speed: faster
+  mission_order: grid
+  maximum_campaign_size: 35
+  required_tactics: standard
+  enabled_campaigns:
+    - Wings of Liberty
+    - Prophecy
+    - Heart of the Swarm
+    - "Whispers of Oblivion (Legacy of the Void: Prologue)"
+    - Legacy of the Void
+    - "Into the Void (Legacy of the Void: Epilogue)"
+    - Nova Covert Ops
+  selected_races:
+    - Terran
+    - Zerg
+    - Protoss
+  enable_race_swap: shuffle_all
+  mission_race_balancing: fully_balanced
+  enabled_heroes:
+    - Kerrigan
+    - Nova
+    - Artanis
+  hero_presence: vanilla
+  kerrigan_presence:
+    - Legacy of the Void Zerg
+    - Nova Covert Ops Protoss
+    - Wings of Liberty No Build
+  nova_presence:
+    - Heart of the Swarm Protoss
+    - Legacy of the Void Terran
+    - Wings of Liberty Terran Build
+  artanis_presence:
+    - Heart of the Swarm Terran
+    - Nova Covert Ops Zerg
+    - Prophecy Protoss
+  mission_order_scouting: all

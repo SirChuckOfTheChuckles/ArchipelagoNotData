@@ -15,6 +15,7 @@ from ..mission_tables import lookup_name_to_mission
 from ..mission_groups import mission_groups
 from ..item.item_tables import item_table
 from ..item.item_groups import item_name_groups
+from ..tables import HeroOptions
 from . import layout_types
 from .layout_types import LayoutType, Column, Grid, Hopscotch, Gauntlet, Blitz, Canvas
 from .mission_pools import Difficulty
@@ -28,6 +29,11 @@ from .presets_scripted import make_golden_path
 
 GENERIC_KEY_NAME = "Key".casefold()
 GENERIC_PROGRESSIVE_KEY_NAME = "Progressive Key".casefold()
+HERO_OPTION_VALUES = {
+    HeroOptions.KERRIGAN.casefold(): HeroOptions.KERRIGAN,
+    HeroOptions.NOVA.casefold(): HeroOptions.NOVA,
+    HeroOptions.ARTANIS.casefold(): HeroOptions.ARTANIS,
+}
 
 STR_OPTION_VALUES: Dict[str, Dict[str, Any]] = {
     "type": {
@@ -167,6 +173,7 @@ class CustomMissionOrder(OptionDict):
                     Optional("mission_pool"): {int},
                     Optional("difficulty"): SchemaDifficulty,
                     Optional("victory_cache"): IntZeroToTen,
+                    Optional("heroes"): [str],
                 }],
             },
         }
@@ -288,6 +295,9 @@ def _resolve_special_option(option: str, option_value: Any) -> Any:
     if option == "entry_rules":
         rules = [_resolve_entry_rule(subrule) for subrule in option_value]
         return rules
+
+    if option == "heroes":
+        return _resolve_heroes(option_value)
     
     if option == "display_name":
         # Make sure all the values are strings
@@ -432,6 +442,26 @@ def _get_target_missions(term: str) -> Set[int]:
             return {lookup_name_to_mission[mission].id for mission in groups[0]}
         else:
             raise ValueError(f"Mission pool term \"{term}\" did not resolve to any specific mission or mission group.")
+
+
+def _resolve_heroes(option_value: Union[str, List[str]]) -> List[str]:
+    if type(option_value) == str:
+        heroes = [option_value]
+    else:
+        heroes = option_value
+
+    resolved: List[str] = []
+    for hero in heroes:
+        formatted_hero = str(hero).casefold()
+        if formatted_hero not in HERO_OPTION_VALUES:
+            raise ValueError(
+                f"Hero entry \"{hero}\" did not resolve to a known hero. "
+                f"Allowed values are: {list(HERO_OPTION_VALUES.values())}"
+            )
+        resolved_hero = HERO_OPTION_VALUES[formatted_hero]
+        if resolved_hero not in resolved:
+            resolved.append(resolved_hero)
+    return resolved
 
 
 # Class-agnostic version of AP Options.Range.custom_range

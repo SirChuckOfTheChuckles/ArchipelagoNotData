@@ -1,0 +1,125 @@
+name: SC2CMOHeroes
+game: Starcraft 2
+description: Test custom mission order with explicit heroes on selected missions and a forgiving start.
+
+Starcraft 2:
+  game_difficulty: normal
+  game_speed: faster
+  mission_order: custom
+  maximum_campaign_size: 30
+  required_tactics: standard
+  enabled_campaigns:
+    - Wings of Liberty
+    - Prophecy
+    - Heart of the Swarm
+    - "Whispers of Oblivion (Legacy of the Void: Prologue)"
+    - Legacy of the Void
+    - "Into the Void (Legacy of the Void: Epilogue)"
+    - Nova Covert Ops
+  selected_races:
+    - Terran
+    - Zerg
+    - Protoss
+  enable_race_swap: shuffle_all
+  mission_race_balancing: semi_balanced
+  enabled_heroes:
+    - Kerrigan
+    - Nova
+    - Artanis
+  hero_presence: vanilla
+  mission_order_scouting: all
+  custom_mission_order:
+    CMO Select Hero Missions:
+      Open Hero Grid:
+        type: grid
+        size: 30
+        mission_pool:
+          - all missions
+        missions:
+          # A few entrances keep the start from depending on one narrow mission.
+          - index: 0
+            entrance: true
+            difficulty: starter
+            heroes: []
+          - index: 1
+            entrance: true
+            difficulty: easy
+            heroes:
+              - Kerrigan
+          - index: 2
+            entrance: true
+            difficulty: easy
+            heroes:
+              - Nova
+          - index: 3
+            entrance: true
+            difficulty: medium
+            heroes:
+              - Artanis
+          - index: 4
+            entrance: true
+            difficulty: medium
+            heroes:
+              - Kerrigan
+              - Nova
+
+          # Fixed-ish hero stress slots after the opener.
+          - index: 7
+            mission_pool: Safe Haven (Terran)
+            heroes:
+              - Kerrigan
+          - index: 8
+            mission_pool: Welcome to the Jungle (Protoss)
+            heroes:
+              - Nova
+          - index: 9
+            mission_pool: Supernova (Terran)
+            heroes:
+              - Artanis
+          - index: 13
+            mission_pool: Death From Above (Zerg)
+            heroes:
+              - Kerrigan
+              - Nova
+          - index: 14
+            mission_pool: All-In (Terran)
+            heroes:
+              - Kerrigan
+              - Nova
+              - Artanis
+          - index: 18
+            mission_pool: The Reckoning (Protoss)
+            heroes: []
+          - index: 19
+            mission_pool: Sky Shield (Zerg)
+            heroes:
+              - Artanis
+          - index: 20
+            mission_pool: Flashpoint (Terran)
+            heroes:
+              - Nova
+          - index: 24
+            mission_pool: End Game (Protoss)
+            heroes:
+              - Nova
+              - Artanis
+          - index: 25
+            mission_pool: The Host (Terran)
+            heroes:
+              - Kerrigan
+          - index: 26
+            mission_pool: Salvation (Zerg)
+            heroes:
+              - Artanis
+          - index: 28
+            mission_pool: Into the Void (Terran)
+            heroes:
+              - Kerrigan
+              - Nova
+          - index: 29
+            goal: true
+            mission_pool: Amon's Fall (Protoss)
+            heroes:
+              - Kerrigan
+              - Nova
+              - Artanis

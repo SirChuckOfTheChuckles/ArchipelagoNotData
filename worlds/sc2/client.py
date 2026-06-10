@@ -57,7 +57,7 @@ from .locations import (
 from .mission_tables import (
     lookup_id_to_mission, SC2Campaign, MissionInfo,
     lookup_id_to_campaign, SC2Mission, campaign_mission_table,
-    lookup_id_to_race, SC2Race,
+    lookup_id_to_race, SC2Race, MissionFlag,
 )
 import colorama
 from NetUtils import (
@@ -371,6 +371,68 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             ).send(self.ctx)
         return True
 
+    def _handle_hero_presence_command(self, args: str, hero: HeroFlag, hero_name: str, command_name: str) -> None:
+        action_names = {
+            "enable": True,
+            "enabled": True,
+            "on": True,
+            "true": True,
+            "yes": True,
+            "+": True,
+            "disable": False,
+            "disabled": False,
+            "off": False,
+            "false": False,
+            "no": False,
+            "-": False,
+        }
+        key_lookup = {
+            key.casefold(): key
+            for key in options.HERO_PRESENCE_OPTION_KEYS
+        }
+        key_lookup.update({
+            alias.casefold(): key
+            for alias, key in options.HERO_PRESENCE_OPTION_ALIASES.items()
+        })
+        tokens = args.split()
+        if not tokens or tokens[0].casefold() in {"help", "list"}:
+            self.output(f"Usage: /{command_name} <target> [enabled|disabled]")
+            self.output("Examples:")
+            self.output(f"  /{command_name} lotv enabled")
+            self.output(f"  /{command_name} zerg enabled")
+            self.output(f"  /{command_name} terran nobuild disabled")
+            self.output(f"  /{command_name} hots zerg disabled")
+            self.output(f"  /{command_name} lotv protoss build (defaults to enabled without 'enabled|disabled')")
+            return
+
+        enabled = True
+        if tokens[-1].casefold() in action_names:
+            enabled = action_names[tokens[-1].casefold()]
+            tokens = tokens[:-1]
+        target = " ".join(tokens)
+        target_key = key_lookup.get(target.casefold())
+        if target_key is None:
+            self.output(f"Unknown {hero_name} presence target '{target}'. Use /{command_name} help to see examples.")
+            return
+
+        state = "enabled" if enabled else "disabled"
+        self.output(f"{hero_name} presence {state} for {target_key}.")
+
+    @mark_raw
+    def _cmd_kerrigan_presence(self, args: str = "") -> None:
+        """Enables or disables Kerrigan at runtime for a race, campaign, or campaign/race target."""
+        self._handle_hero_presence_command(args, HeroFlag.KERRIGAN, "Kerrigan", "kerrigan_presence")
+
+    @mark_raw
+    def _cmd_nova_presence(self, args: str = "") -> None:
+        """Enables or disables Nova at runtime for a race, campaign, or campaign/race target."""
+        self._handle_hero_presence_command(args, HeroFlag.NOVA, "Nova", "nova_presence")
+
+    @mark_raw
+    def _cmd_artanis_presence(self, args: str = "") -> None:
+        """Enables or disables Artanis at runtime for a race, campaign, or campaign/race target."""
+        self._handle_hero_presence_command(args, HeroFlag.ARTANIS, "Artanis", "artanis_presence")
+
     @mark_raw
     def _cmd_option(self, option_name: str = "", option_value: str = "") -> None:
         """Sets a Starcraft game option that can be changed after generation. Use "/option list" to see all options."""
@@ -490,15 +552,23 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             else:
                 SC2World.settings.__dict__[option.setting_name] = option_value
             force_settings_save_on_close()
-        elif option.option_type == ConfigurableOptionType.ENUM and option_value in option.option_class.options:
-            self.ctx.__dict__[option.variable_name] = option.option_class.options[option_value]
+        elif option.option_type == ConfigurableOptionType.ENUM:
+            try:
+                new_value = option.option_class.from_text(option_value).value
+                self.ctx.__dict__[option.variable_name] = new_value
+            except (KeyError, coreoptions.OptionError) as ex:
+                self.output(f"Unknown option value '{option_value}'")
+                sc2_logger.exception(f"Option error message: {ex}", extra={"NoStream": True, "skip_gui": True})
+                return False
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)
             except:
                 self.output(f"{option_value} is not a valid integer")
+                return False
         else:
             self.output(f"Unknown option value '{option_value}'")
+            return False
         if isinstance(option, ConfigurableSettingInfo):
             presentable_value = str(SC2World.settings.__dict__.get(
                 option.setting_name,
@@ -766,7 +836,8 @@ class SC2Context(CommonContext):
         self.lowest_maximum_supply: int = options.LowestMaximumSupply.default
         self.research_cost_reduction_per_item: int = options.ResearchCostReductionPerItem.default
         self.enabled_heroes: frozenset[str] = EnabledHeroes.default
-        self.hero_presence: dict[SC2Campaign, dict[SC2Race], int] = HeroPresence.default
+        self.base_hero_presence: dict[SC2Mission, int] = {}
+        self.hero_presence: dict[SC2Mission, int] = {}
         self.mercenary_highlanders: bool = False
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
@@ -830,26 +901,68 @@ class SC2Context(CommonContext):
         elif str(SC2World.settings.game_speed).casefold() == 'faster':
             self.game_speed = GameSpeed.option_faster
 
-    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Campaign, dict[SC2Race, int]]:
-        campaigns = [campaign for campaign in SC2Campaign if campaign != SC2Campaign.GLOBAL]
-        result: dict[SC2Campaign, dict[SC2Race, int]] = {campaign: {} for campaign in campaigns}
+    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Mission, int]:
+        result: dict[SC2Mission, int] = {}
         for key, value in slot_data.items():
-            campaign, race, = key.split(".")
-            result[lookup_id_to_campaign[int(campaign)]][lookup_id_to_race[int(race)]] = int(value)
+            if "." not in key:
+                continue
+            campaign_id, race_id = key.split(".")
+            campaign = lookup_id_to_campaign[int(campaign_id)]
+            race = lookup_id_to_race[int(race_id)]
+            for mission in SC2Mission:
+                if mission.campaign == campaign and mission.race == race:
+                    result[mission] = int(value)
+        for key, value in slot_data.items():
+            if "." in key:
+                continue
+            result[lookup_id_to_mission[int(key)]] = int(value)
         return result
 
-    def default_hero_presence(self, kerrigan_present: bool = True) -> dict[SC2Campaign, dict[SC2Race, int]]:
+    def default_hero_presence(self, kerrigan_present: bool = True) -> dict[SC2Mission, int]:
+        result = {
+            mission: HeroFlag.NOVA.value
+            for mission in SC2Mission
+            if mission.campaign == SC2Campaign.NCO and mission.race == SC2Race.TERRAN
+        }
         if kerrigan_present:
-            return {
-                SC2Campaign.HOTS: {SC2Race.ZERG: HeroFlag.KERRIGAN.value},
-                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
-            }
-        else:
-            return {
-                # only used by compat code
-                SC2Campaign.NCO: {SC2Race.TERRAN: HeroFlag.NOVA.value},
-            }
+            result.update({
+                mission: HeroFlag.KERRIGAN.value
+                for mission in SC2Mission
+                if mission.campaign == SC2Campaign.HOTS and mission.race == SC2Race.ZERG
+            })
+        return result
 
+    def reset_runtime_hero_presence(self) -> None:
+        self.hero_presence = {
+            mission: hero_flags
+            for mission, hero_flags in self.base_hero_presence.items()
+            if hero_flags
+        }
+
+    def set_runtime_hero_presence(self, hero_flag: HeroFlag, location_key: str, enabled: bool) -> int:
+        target = options.HERO_PRESENCE_OPTION_KEYS[location_key]
+        hero_value = hero_flag.value
+        affected_count = 0
+        for mission in SC2Mission:
+            if target.campaign is not None and mission.campaign != target.campaign:
+                continue
+            if target.race is not None and mission.race != target.race:
+                continue
+            if target.build_filter == options.HeroPresenceBuildFilter.BUILD and MissionFlag.NoBuild in mission.flags:
+                continue
+            if target.build_filter == options.HeroPresenceBuildFilter.NO_BUILD and MissionFlag.NoBuild not in mission.flags:
+                continue
+
+            affected_count += 1
+            if enabled:
+                self.hero_presence[mission] = self.hero_presence.get(mission, HeroFlag.NONE.value) | hero_value
+            else:
+                mission_heroes = self.hero_presence.get(mission, HeroFlag.NONE.value) & ~hero_value
+                if mission_heroes:
+                    self.hero_presence[mission] = mission_heroes
+                else:
+                    self.hero_presence.pop(mission, None)
+        return affected_count
 
     def on_package(self, cmd: str, args: dict) -> None:
         if cmd == "Connected":
@@ -986,9 +1099,9 @@ class SC2Context(CommonContext):
             self.nova_items_granted = args["slot_data"].get("nova_items_granted", False)
             hero_presence_args = args["slot_data"].get("hero_presence","0")
             if hero_presence_args != "0":
-                self.hero_presence = self.unpack_hero_presence(hero_presence_args)
+                self.base_hero_presence = self.unpack_hero_presence(hero_presence_args)
             else:
-                self.hero_presence = self.default_hero_presence(True)
+                self.base_hero_presence = self.default_hero_presence(True)
             # # TODO (Snarky): NCO Nova is currently disabled. Revisit if enabled.
             # # Generic Nova presence never made it to live, so it doesn't need compat code
             # if self.slot_data_version < 4:
@@ -999,9 +1112,10 @@ class SC2Context(CommonContext):
             #     else:
             if self.slot_data_version < 5:
                 if args["slot_data"].get("kerrigan_presence", True):
-                    self.hero_presence = self.default_hero_presence(True)
+                    self.base_hero_presence = self.default_hero_presence(True)
                 else:
-                    self.hero_presence = self.default_hero_presence(False)
+                    self.base_hero_presence = self.default_hero_presence(False)
+            self.reset_runtime_hero_presence()
             self.trade_enabled = args["slot_data"].get("enable_void_trade", EnableVoidTrade.option_false)
             self.trade_age_limit = args["slot_data"].get("void_trade_age_limit", VoidTradeAgeLimit.default)
             self.trade_workers_allowed = args["slot_data"].get("void_trade_workers", VoidTradeWorkers.default)

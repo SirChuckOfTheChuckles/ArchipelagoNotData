@@ -873,6 +873,33 @@ Valid values are integers in the range 0 to 10. Sets the number of extra locatio
 
 By default, when this value is not set, the option is set to 0 for goal missions and to the global `victory_cache` option for all other missions.
 
+---
+### Heroes
+```yaml
+heroes: []
+```
+Assigns exact hero presence to this mission slot. Valid values are `Kerrigan`, `Nova`, and `Artanis`.
+
+If this option is omitted, the mission follows the normal `hero_presence` options. If this option is present, the mission gets exactly the listed heroes, even if they are not included in `enabled_heroes`. An empty list forces no heroes on that slot.
+
+```yaml
+missions:
+    - index: 0
+      entrance: true
+      difficulty: starter
+      heroes: []
+    - index: 1
+      entrance: true
+      difficulty: easy
+      heroes:
+        - Kerrigan
+    - index: 2
+      entrance: true
+      difficulty: easy
+      heroes:
+        - Nova
+```
+
 ## Layout Types
 
 The below types are listed with their custom options and their defaults.

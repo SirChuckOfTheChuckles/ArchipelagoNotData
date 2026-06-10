@@ -3,7 +3,7 @@ from enum import IntFlag
 class HeroOptions:
     KERRIGAN = "Kerrigan"
     NOVA = "Nova"
-    ARTANIS = "Artanis"  # not yet implemented
+    ARTANIS = "Artanis"
 
 
 class HeroFlag(IntFlag):

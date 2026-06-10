@@ -1,6 +1,7 @@
+import enum
 import functools
 from dataclasses import fields, Field, dataclass
-from typing import TYPE_CHECKING, Iterable, Any, Type, Iterator, Mapping
+from typing import TYPE_CHECKING, Iterable, Any, Type, Iterator, Mapping, NamedTuple
 from datetime import timedelta
 
 from Options import (
@@ -8,6 +9,8 @@ from Options import (
     PerGameCommonOptions, VerifyKeys, StartInventory,
     OptionGroup, ItemDict,
     OptionCounter,
+    Visibility,
+    OptionError,
 )
 from Utils import get_fuzzy_results
 from BaseClasses import PlandoOptions
@@ -23,6 +26,152 @@ from .tables import HeroOptions
 if TYPE_CHECKING:
     from worlds.AutoWorld import World
     from . import SC2World
+
+
+HERO_PRESENCE_CAMPAIGN_NAMES = {
+    SC2Campaign.WOL: "Wings of Liberty",
+    SC2Campaign.PROPHECY: "Prophecy",
+    SC2Campaign.HOTS: "Heart of the Swarm",
+    SC2Campaign.PROLOGUE: "Whispers of Oblivion (Legacy of the Void: Prologue)",
+    SC2Campaign.LOTV: "Legacy of the Void",
+    SC2Campaign.EPILOGUE: "Into the Void (Legacy of the Void: Epilogue)",
+    SC2Campaign.NCO: "Nova Covert Ops",
+}
+HERO_PRESENCE_RACES = (SC2Race.TERRAN, SC2Race.ZERG, SC2Race.PROTOSS)
+CAMPAIGN_ALIASES: dict[str, SC2Campaign] = {
+    "wol": SC2Campaign.WOL,
+    "prophecy": SC2Campaign.PROPHECY,
+    "hots": SC2Campaign.HOTS,
+    "prologue": SC2Campaign.PROLOGUE,
+    "lotv": SC2Campaign.LOTV,
+    "void": SC2Campaign.LOTV,
+    "epilogue": SC2Campaign.EPILOGUE,
+    "nco": SC2Campaign.NCO,
+}
+CAMPAIGN_OPTION_ALIASES: dict[str, str] = {
+    alias: campaign.campaign_name
+    for alias, campaign in CAMPAIGN_ALIASES.items()
+}
+VISIBILITY_NO_WEBSITE = Visibility.all & ~Visibility.simple_ui & ~Visibility.complex_ui
+
+
+class HeroPresenceBuildFilter(enum.Enum):
+    ANY = enum.auto()
+    BUILD = enum.auto()
+    NO_BUILD = enum.auto()
+
+
+class HeroPresenceTarget(NamedTuple):
+    campaign: SC2Campaign | None
+    race: SC2Race | None
+    build_filter: HeroPresenceBuildFilter
+
+
+HERO_PRESENCE_OPTION_KEYS: dict[str, HeroPresenceTarget] = {
+    **{
+        race.get_title(): HeroPresenceTarget(None, race, HeroPresenceBuildFilter.ANY)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{race.get_title()} Build": HeroPresenceTarget(None, race, HeroPresenceBuildFilter.BUILD)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{race.get_title()} No Build": HeroPresenceTarget(None, race, HeroPresenceBuildFilter.NO_BUILD)
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        campaign_name: HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.ANY)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} Build": HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.BUILD)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} No Build": HeroPresenceTarget(campaign, None, HeroPresenceBuildFilter.NO_BUILD)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+    },
+    **{
+        f"{campaign_name} {race.get_title()}": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.ANY)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{campaign_name} {race.get_title()} Build": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.BUILD)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+    **{
+        f"{campaign_name} {race.get_title()} No Build": HeroPresenceTarget(campaign, race, HeroPresenceBuildFilter.NO_BUILD)
+        for campaign, campaign_name in HERO_PRESENCE_CAMPAIGN_NAMES.items()
+        for race in HERO_PRESENCE_RACES
+    },
+}
+
+def build_hero_presence_aliases() -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for campaign_alias, campaign in CAMPAIGN_ALIASES.items():
+        campaign_name = HERO_PRESENCE_CAMPAIGN_NAMES[campaign]
+        aliases[campaign_alias] = campaign_name
+        aliases[f"{campaign_alias} Build"] = f"{campaign_name} Build"
+        aliases[f"{campaign_alias} No Build"] = f"{campaign_name} No Build"
+        for race in HERO_PRESENCE_RACES:
+            race_name = race.get_title()
+            aliases[f"{campaign_alias} {race_name}"] = f"{campaign_name} {race_name}"
+            aliases[f"{campaign_alias} {race_name} Build"] = f"{campaign_name} {race_name} Build"
+            aliases[f"{campaign_alias} {race_name} No Build"] = f"{campaign_name} {race_name} No Build"
+    return aliases
+
+
+HERO_PRESENCE_OPTION_ALIASES: dict[str, str] = build_hero_presence_aliases()
+
+
+def get_option_error_name(option: OptionSet) -> str:
+    field = [
+        f for f in fields(Starcraft2Options)
+        if f.type == option.__class__
+    ]
+    yaml_name = "" if not field else field[0].name
+    display_name = getattr(option, "display_name", yaml_name)
+    if display_name == yaml_name:
+        return yaml_name
+    return f"{yaml_name} ({display_name})"
+
+
+def standardize_option_set_keys(
+    option: OptionSet,
+    valid_keys: Iterable[str],
+    aliases: Mapping[str, str] | None = None,
+) -> None:
+    key_lookup = {
+        key.casefold(): key
+        for key in valid_keys
+    }
+    if aliases is not None:
+        key_lookup.update({
+            alias.casefold(): standard_key
+            for alias, standard_key in aliases.items()
+        })
+
+    standardized_value: set[str] = set()
+    invalid_keys: set[str] = set()
+    for key in option.value:
+        standard_key = key_lookup.get(str(key).casefold())
+        if standard_key is None:
+            invalid_keys.add(str(key))
+        else:
+            standardized_value.add(standard_key)
+
+    if invalid_keys:
+        key_plural = "s" if len(invalid_keys) > 1 else ""
+        option_name = get_option_error_name(option)
+        raise OptionError(
+            f"Found unexpected key{key_plural} {', '.join(sorted(invalid_keys))} in {option_name}. "
+            f"Allowed keys: {', '.join(sorted(valid_keys))}."
+        )
+
+    option.value = standardized_value
 
 
 class Sc2MissionSet(OptionSet):
@@ -250,6 +399,9 @@ class EnabledCampaigns(OptionSet):
     display_name = "Enabled Campaigns"
     valid_keys = frozenset(campaign.campaign_name for campaign in SC2Campaign if campaign != SC2Campaign.GLOBAL)
     default = frozenset((SC2Campaign.WOL.campaign_name,))
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys, CAMPAIGN_OPTION_ALIASES)
 
 
 class EnableRaceSwapVariants(Choice):
@@ -934,6 +1086,10 @@ class EnabledHeroes(OptionSet):
         HeroOptions.NOVA,
     ))
 
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys)
+
+
 class HeroPresence(Choice):
     """
     Determines, which missions use which of the enabled Heroes
@@ -953,6 +1109,63 @@ class HeroPresence(Choice):
     option_original_race = 5
     option_anywhere = 6
     default = option_vanilla
+
+
+class KerriganPresence(OptionSet):
+    """
+    Overrides where Kerrigan appears. If empty, Kerrigan follows the Hero Presence option.
+
+    Values are races, campaigns, or campaign/race pairs, such as "Zerg", "Heart of the Swarm",
+    "Wings of Liberty Protoss", or "Heart of the Swarm Terran".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Wings of Liberty Protoss Build".
+    Campaign-wide values, such as "Heart of the Swarm" or "Heart of the Swarm No Build", affect all races.
+    Race-wide values, such as "Zerg" or "Zerg No Build", affect matching races across all campaigns.
+    """
+    display_name = "Kerrigan Presence"
+    visibility = VISIBILITY_NO_WEBSITE
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
+
+
+class NovaPresence(OptionSet):
+    """
+    Overrides where Nova appears. If empty, Nova follows the Hero Presence option.
+
+    Values are races, campaigns, or campaign/race pairs, such as "Terran", "Nova Covert Ops",
+    "Wings of Liberty Protoss", or "Nova Covert Ops Zerg".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Nova Covert Ops No Build".
+    Campaign-wide values, such as "Nova Covert Ops" or "Nova Covert Ops No Build", affect all races.
+    Race-wide values, such as "Terran" or "Terran No Build", affect matching races across all campaigns.
+    """
+    display_name = "Nova Presence"
+    visibility = VISIBILITY_NO_WEBSITE
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
+
+
+class ArtanisPresence(OptionSet):
+    """
+    Overrides where Artanis appears. If empty, Artanis follows the Hero Presence option.
+
+    Values are races, campaigns, or campaign/race pairs, such as "Protoss", "Legacy of the Void",
+    "Wings of Liberty Protoss", or "Legacy of the Void Terran".
+    Add "Build" or "No Build" to only affect matching mission types, such as "Legacy of the Void No Build".
+    Campaign-wide values, such as "Legacy of the Void" or "Legacy of the Void No Build", affect all races.
+    Race-wide values, such as "Protoss" or "Protoss No Build", affect matching races across all campaigns.
+    """
+    display_name = "Artanis Presence"
+    visibility = VISIBILITY_NO_WEBSITE
+    valid_keys = HERO_PRESENCE_OPTION_KEYS.keys()
+    default = frozenset()
+
+    def verify(self, world: Type['World'], player_name: str, plando_options: PlandoOptions) -> None:
+        standardize_option_set_keys(self, self.valid_keys, HERO_PRESENCE_OPTION_ALIASES)
 
 
 class NovaMaxWeapons(Range):
@@ -1477,6 +1690,9 @@ class Starcraft2Options(PerGameCommonOptions):
     nova_max_gadgets: NovaMaxGadgets
     enabled_heroes: EnabledHeroes
     hero_presence: HeroPresence
+    kerrigan_presence: KerriganPresence
+    nova_presence: NovaPresence
+    artanis_presence: ArtanisPresence
     take_over_ai_allies: TakeOverAIAllies
     locked_items: LockedItems
     excluded_items: ExcludedItems
@@ -1545,6 +1761,7 @@ option_groups = [
     ]),
     OptionGroup("Kerrigan", [
         GrantStoryLevels,
+        KerriganPresence,
         KerriganLevelsPerMissionCompleted,
         KerriganLevelsPerMissionCompletedCap,
         KerriganLevelItemSum,
@@ -1564,6 +1781,7 @@ option_groups = [
         SpearOfAdunMaxAutocastAbilities,
     ]),
     OptionGroup("Artanis", [
+        ArtanisPresence,
         ArtanisMaxWeaponAspectActiveAbilities,
         ArtanisMaxWeaponAspectPassiveAbilities,
         ArtanisMaxActiveAbilities,
@@ -1571,6 +1789,7 @@ option_groups = [
         ArtanisOneItemPerAspect,
     ]),
     OptionGroup("Nova", [
+        NovaPresence,
         NovaMaxWeapons,
         NovaMaxGadgets,
     ]),
