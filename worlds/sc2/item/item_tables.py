@@ -1,17 +1,9 @@
-from typing import *
-
 from BaseClasses import ItemClassification
-import typing
 
 from ..mission_tables import SC2Mission, SC2Race, SC2Campaign
 from ..item import parent_names, ItemData, TerranItemType, FactionlessItemType, ProtossItemType, ZergItemType
 from ..mission_order.presets_static import get_used_layout_names
 from . import item_names
-
-
-
-def get_full_item_list():
-    return item_table
 
 
 SC2WOL_ITEM_ID_OFFSET = 1000
@@ -104,7 +96,7 @@ item_table = {
         ItemData(24 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Unit_2, 4, SC2Race.TERRAN,
                  classification=ItemClassification.progression),
     # Elites, currently disabled for balance
-    item_names.PRIDE_OF_AUGUSTRGRAD:
+    item_names.PRIDE_OF_AUGUSTGRAD:
         ItemData(50 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Unit, 28, SC2Race.TERRAN,
                  classification=ItemClassification.progression),
     item_names.SKY_FURY:
@@ -2221,9 +2213,6 @@ key_item_table.update(numbered_progressive_keys)
 key_item_table.update(special_keys)
 item_table.update(key_item_table)
 
-def get_item_table():
-    return item_table
-
 
 basic_units = {
     SC2Race.TERRAN: {
@@ -2353,12 +2342,12 @@ spear_of_adun_calldowns = {
 }
 
 nova_equipment = {
-    *[item_name for item_name, item_data in get_full_item_list().items()
+    *[item_name for item_name, item_data in item_table.items()
       if item_data.type == TerranItemType.Nova_Gear],
     item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE
 }
 
-upgrade_bundles: Dict[str, List[str]] = {
+upgrade_bundles: dict[str, list[str]] = {
     # Terran
     item_names.PROGRESSIVE_TERRAN_WEAPON_UPGRADE:
         [
@@ -2448,7 +2437,7 @@ upgrade_bundles: Dict[str, List[str]] = {
 }
 
 # Used for logic
-upgrade_bundle_inverted_lookup: Dict[str, List[str]] = dict()
+upgrade_bundle_inverted_lookup: dict[str, list[str]] = dict()
 for key, values in upgrade_bundles.items():
     for value in values:
         if upgrade_bundle_inverted_lookup.get(value) is None:
@@ -2462,7 +2451,10 @@ for key, values in upgrade_bundles.items():
             # Shield handling is trickier as it's max of Ground/Air group, not their sum
             upgrade_bundle_inverted_lookup[value].append(key)
 
-lookup_id_to_name: typing.Dict[int, str] = {data.code: item_name for item_name, data in get_full_item_list().items() if
-                                            data.code}
+lookup_id_to_name: dict[int, str] = {
+    data.code: item_name
+    for item_name, data in item_table.items()
+    if data.code
+}
 
 upgrade_item_types = (TerranItemType.Upgrade, ZergItemType.Upgrade, ProtossItemType.Upgrade)

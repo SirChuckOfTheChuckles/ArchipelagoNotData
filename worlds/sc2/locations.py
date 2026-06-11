@@ -1,12 +1,10 @@
 import enum
 from typing import List, Tuple, Optional, Callable, NamedTuple, Set, TYPE_CHECKING
 from .item import item_names
-from .item.item_groups import kerrigan_logic_ultimates
 from .options import (
     get_option_value,
     RequiredTactics,
     LocationInclusion,
-    get_enabled_campaigns,
 )
 from .mission_tables import SC2Mission, SC2Campaign, MissionPools, lookup_name_to_mission
 from .tables import HeroFlag
@@ -50,17 +48,6 @@ class LocationFlag(enum.IntFlag):
     """Locations that are about doing something fast"""
     PREVENTATIVE = enum.auto()
     """Locations that are about preventing something from happening"""
-
-    def values(self):
-        """Hacky iterator for backwards-compatibility with Python <= 3.10. Not necessary on Python 3.11+"""
-        return tuple(
-            val
-            for val in (
-                LocationFlag.SPEEDRUN,
-                LocationFlag.PREVENTATIVE,
-            )
-            if val in self
-        )
 
 
 class LocationData(NamedTuple):

@@ -151,6 +151,18 @@ item_descriptions = {
         Can also call down Tactical Nukes.
     """),
     item_names.THOR: "Heavy assault mech.",
+    item_names.DOMINION_TROOPER: inspect.cleandoc("""
+        General-purpose infantry. Can be outfitted with a B-2 High-Cal LMG, effective against all units.
+        Can equip other weapons for different combat situations, if available.
+    """),
+    item_names.HERC: "Front-line infantry. Can use Grapple.",
+    item_names.WIDOW_MINE: inspect.cleandoc("""
+        Robotic mine. Launches missiles at nearby enemy units while burrowed.
+        Attacks deal splash damage in a small area around the target.
+        Widow Mine is revealed when Sentinel Missile is on cooldown.
+    """),
+    item_names.CYCLONE: "Mobile assault vehicle. Can use Lock On to quickly fire while moving.",
+    item_names.WARHOUND: "Anti-vehicle mech. Haywire missiles do bonus damage to mechanical units.",
     item_names.LIBERATOR: inspect.cleandoc("""
         Artillery fighter. Loaded with missiles that deal area damage to enemy air targets.
         Can switch into Defender Mode to provide siege support.
@@ -159,36 +171,24 @@ item_descriptions = {
         Advanced anti-aircraft fighter.
         Able to use cluster missiles that deal area damage to air targets.
     """),
-    item_names.WIDOW_MINE: inspect.cleandoc("""
-        Robotic mine. Launches missiles at nearby enemy units while burrowed.
-        Attacks deal splash damage in a small area around the target.
-        Widow Mine is revealed when Sentinel Missile is on cooldown.
-    """),
-    item_names.CYCLONE: "Mobile assault vehicle. Can use Lock On to quickly fire while moving.",
-    item_names.HERC: "Front-line infantry. Can use Grapple.",
-    item_names.WARHOUND: "Anti-vehicle mech. Haywire missiles do bonus damage to mechanical units.",
-    item_names.DOMINION_TROOPER: inspect.cleandoc("""
-        General-purpose infantry. Can be outfitted with a B-2 High-Cal LMG, effective against all units.
-        Can equip other weapons for different combat situations, if available.
-    """),
-    item_names.PRIDE_OF_AUGUSTRGRAD: "Powerful Royal Guard warship.",
     item_names.SKY_FURY: inspect.cleandoc("""
         Durable Royal Guard support flyer. Loaded with strong anti-capital air missiles.
         Can switch into Assault Mode to attack ground units.
     """),
-    item_names.SHOCK_DIVISION: "Royal Guard heavy tank. Long-range artillery in Siege Mode.",
-    item_names.BLACKHAMMER: "Royal Guard heavy assault mech.",
+    item_names.SON_OF_KORHAL: "Royal Guard general-purpose infantry.",
+    item_names.FIELD_RESPONSE_THETA: "Royal Guard support trooper. Heals nearby biological units.",
     item_names.AEGIS_GUARD: "Royal Guard heavy assault infantry.",
     item_names.EMPERORS_SHADOW: "Royal Guard specialist. Can use Pyrokinetic Immolation and EMP Blast abilities.\nCan call down Tactical missiles.",
-    item_names.SON_OF_KORHAL: "Royal Guard general-purpose infantry.",
     item_names.BULWARK_COMPANY: "Royal Guard heavy-fire support unit.",
-    item_names.FIELD_RESPONSE_THETA: "Royal Guard support trooper. Heals nearby biological units.",
+    item_names.SHOCK_DIVISION: "Royal Guard heavy tank. Long-range artillery in Siege Mode.",
+    item_names.BLACKHAMMER: "Royal Guard heavy assault mech.",
+    item_names.NIGHT_HAWK: "Royal Guard highly mobile flying unit. Excellent at surgical strikes.",
+    item_names.NIGHT_WOLF: "Royal Guard tactical-strike aircraft.",
     item_names.EMPERORS_GUARDIAN: inspect.cleandoc("""
         Royal Guard artillery fighter. Loaded with missiles that deal area damage to enemy air targets.
         Can switch into Defender Mode to provide siege support.
     """),
-    item_names.NIGHT_HAWK: "Royal Guard highly mobile flying unit. Excellent at surgical strikes.",
-    item_names.NIGHT_WOLF: "Royal Guard tactical-strike aircraft.",
+    item_names.PRIDE_OF_AUGUSTGRAD: "Powerful Royal Guard warship.",
     item_names.PROGRESSIVE_TERRAN_INFANTRY_WEAPON: GENERIC_UPGRADE_TEMPLATE.format("damage", TERRAN, "infantry"),
     item_names.PROGRESSIVE_TERRAN_INFANTRY_ARMOR: GENERIC_UPGRADE_TEMPLATE.format("armor", TERRAN, "infantry"),
     item_names.PROGRESSIVE_TERRAN_VEHICLE_WEAPON: GENERIC_UPGRADE_TEMPLATE.format("damage", TERRAN, "vehicles"),

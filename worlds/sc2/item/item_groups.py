@@ -1,4 +1,3 @@
-import typing
 from . import item_tables, item_names
 from .item_tables import key_item_table
 from ..mission_tables import campaign_mission_table, SC2Campaign, SC2Mission, SC2Race
@@ -20,12 +19,14 @@ For non-developers the following will be useful:
 * Hand-crafted item groups can be found at the bottom of this file
 """
 
-item_name_groups: typing.Dict[str, typing.List[str]] = {}
+item_name_groups: dict[str, list[str]] = {}
 
 # Groups for use in world logic
 item_name_groups["Missions"] = ["Beat " + mission.mission_name for mission in SC2Mission]
-item_name_groups["WoL Missions"] = ["Beat " + mission.mission_name for mission in campaign_mission_table[SC2Campaign.WOL]] + \
-                                   ["Beat " + mission.mission_name for mission in campaign_mission_table[SC2Campaign.PROPHECY]]
+item_name_groups["WoL Missions"] = (
+    ["Beat " + mission.mission_name for mission in campaign_mission_table[SC2Campaign.WOL]]
+    + ["Beat " + mission.mission_name for mission in campaign_mission_table[SC2Campaign.PROPHECY]]
+)
 
 # These item name groups should not show up in documentation
 unlisted_item_name_groups = {
@@ -41,7 +42,7 @@ unlisted_item_name_groups = {
 
 # Some item names only differ in bracketed parts
 # These items are ambiguous for short-hand name groups
-bracketless_duplicates: typing.Set[str]
+bracketless_duplicates: set[str]
 # This is a list of names in ItemNames with bracketed parts removed, for internal use
 _shortened_names = [(name[:name.find(' (')] if '(' in name else name)
                     for name in [item_names.__dict__[name] for name in item_names.__dir__() if not name.startswith('_')]]
@@ -54,7 +55,7 @@ bracketless_duplicates = set(_shortened_names)
 del _shortened_names
 
 # All items get sorted into their data type
-for item, data in item_tables.get_full_item_list().items():
+for item, data in item_tables.item_table.items():
     # Items get assigned to their flaggroup's display type
     item_name_groups.setdefault(data.type.display_name, []).append(item)
     # Items with a bracket get a short-hand name group for ease of use in YAMLs
@@ -218,7 +219,7 @@ class ItemGroupNames:
     KEYS = "Keys"
 
     @classmethod
-    def get_all_group_names(cls) -> typing.Set[str]:
+    def get_all_group_names(cls) -> set[str]:
         return {
             name for identifier, name in cls.__dict__.items()
             if not identifier.startswith('_')
@@ -242,32 +243,40 @@ item_name_groups[ItemGroupNames.TERRAN_GENERIC_UPGRADES] = terran_generic_upgrad
 ]
 barracks_wa_group = [
     item_names.MARINE, item_names.FIREBAT, item_names.MARAUDER,
-    item_names.REAPER, item_names.GHOST, item_names.SPECTRE, item_names.HERC, item_names.AEGIS_GUARD,
-    item_names.EMPERORS_SHADOW, item_names.DOMINION_TROOPER, item_names.SON_OF_KORHAL,
+    item_names.REAPER, item_names.GHOST, item_names.SPECTRE, item_names.HERC,
+    item_names.DOMINION_TROOPER,
 ]
 item_name_groups[ItemGroupNames.BARRACKS_UNITS] = barracks_units = (barracks_wa_group + [
     item_names.MEDIC,
+    item_names.SON_OF_KORHAL,
     item_names.FIELD_RESPONSE_THETA,
+    item_names.AEGIS_GUARD,
+    item_names.EMPERORS_SHADOW,
 ])
 factory_wa_group = [
     item_names.HELLION, item_names.VULTURE, item_names.GOLIATH, item_names.DIAMONDBACK,
     item_names.SIEGE_TANK, item_names.THOR, item_names.PREDATOR,
-    item_names.CYCLONE, item_names.WARHOUND, item_names.SHOCK_DIVISION, item_names.BLACKHAMMER,
-    item_names.BULWARK_COMPANY,
+    item_names.CYCLONE, item_names.WARHOUND,
 ]
 item_name_groups[ItemGroupNames.FACTORY_UNITS] = factory_units = (factory_wa_group + [
     item_names.WIDOW_MINE,
+    item_names.BULWARK_COMPANY,
+    item_names.SHOCK_DIVISION,
+    item_names.BLACKHAMMER,
 ])
 starport_wa_group = [
-    item_names.WRAITH, item_names.VIKING, item_names.BANSHEE,
-    item_names.BATTLECRUISER, item_names.RAVEN_HUNTER_SEEKER_WEAPON,
-    item_names.LIBERATOR, item_names.VALKYRIE, item_names.PRIDE_OF_AUGUSTRGRAD, item_names.SKY_FURY,
-    item_names.EMPERORS_GUARDIAN, item_names.NIGHT_HAWK, item_names.NIGHT_WOLF,
+    item_names.WRAITH,
+    item_names.VIKING,
+    item_names.BANSHEE,
+    item_names.BATTLECRUISER,
+    item_names.LIBERATOR,
+    item_names.VALKYRIE,
+    item_names.RAVEN_HUNTER_SEEKER_WEAPON,
 ]
 item_name_groups[ItemGroupNames.STARPORT_UNITS] = starport_units = [
     item_names.MEDIVAC, item_names.WRAITH, item_names.VIKING, item_names.BANSHEE,
     item_names.BATTLECRUISER, item_names.HERCULES, item_names.SCIENCE_VESSEL, item_names.RAVEN,
-    item_names.LIBERATOR, item_names.VALKYRIE, item_names.PRIDE_OF_AUGUSTRGRAD, item_names.SKY_FURY,
+    item_names.LIBERATOR, item_names.VALKYRIE, item_names.PRIDE_OF_AUGUSTGRAD, item_names.SKY_FURY,
     item_names.EMPERORS_GUARDIAN, item_names.NIGHT_HAWK, item_names.NIGHT_WOLF,
 ]
 item_name_groups[ItemGroupNames.TERRAN_MERCENARIES] = terran_mercenaries = [
@@ -338,7 +347,7 @@ item_name_groups[ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS] = [
     item_names.BULWARK_COMPANY,
     item_names.SHOCK_DIVISION, item_names.BLACKHAMMER,
     # Elite Starport
-    item_names.PRIDE_OF_AUGUSTRGRAD, item_names.SKY_FURY,
+    item_names.PRIDE_OF_AUGUSTGRAD, item_names.SKY_FURY,
     item_names.NIGHT_HAWK, item_names.EMPERORS_GUARDIAN,
     item_names.NIGHT_WOLF,
 ]
@@ -591,7 +600,7 @@ item_name_groups[ItemGroupNames.COOP_MENGSK_UNITS] = [
     item_names.EMPERORS_SHADOW,
     item_names.SHOCK_DIVISION,
     item_names.BLACKHAMMER,
-    item_names.PRIDE_OF_AUGUSTRGRAD,
+    item_names.PRIDE_OF_AUGUSTGRAD,
     item_names.SKY_FURY,
     item_names.DOMINION_TROOPER,
     item_names.MEDIVAC,  # Imperial Intercessor

@@ -1193,7 +1193,6 @@ class NovaMaxGadgets(Range):
     range_start = 0
     range_end = len(item_groups.nova_gadgets)
     default = range_end
-    
 
 
 class TakeOverAIAllies(Toggle):

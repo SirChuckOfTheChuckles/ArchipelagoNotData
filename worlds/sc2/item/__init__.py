@@ -1,7 +1,6 @@
 import enum
-import typing
 from dataclasses import dataclass
-from typing import Optional, Union, Dict, Type
+from typing import Optional, Union, Dict, Type, NamedTuple
 
 from BaseClasses import Item, ItemClassification
 from ..mission_tables import SC2Race
@@ -149,14 +148,14 @@ race_to_item_type: Dict[SC2Race, Type[ItemTypeEnum]] = {
 }
 
 
-class ItemData(typing.NamedTuple):
+class ItemData(NamedTuple):
     code: int
     type: ItemType
     number: int  # Important for bot commands to send the item into the game
     race: SC2Race
     classification: ItemClassification = ItemClassification.useful
     quantity: int = 1
-    parent: typing.Optional[str] = None
+    parent: str | None = None
     important_for_filtering: bool = False
 
     def is_important_for_filtering(self):

@@ -8,7 +8,6 @@ from .options import (
     RequiredTactics,
     AllInMap,
     GrantStoryTech,
-    GrantStoryLevels,
     SpearOfAdunPassiveAbilityPresence,
     SpearOfAdunPresence,
     MissionOrder,
@@ -19,9 +18,9 @@ from .options import (
     get_enabled_campaigns,
     get_enabled_races,
 )
+from .item import item_tables
 from .item.item_tables import (
     kerrigan_levels,
-    get_full_item_list,
     no_logic_basic_units,
     advanced_basic_units,
     basic_units,
@@ -280,7 +279,7 @@ class SC2Logic:
             item_names.NIGHT_HAWK,
             item_names.EMPERORS_GUARDIAN,
             item_names.NIGHT_WOLF,
-            item_names.PRIDE_OF_AUGUSTRGRAD,
+            item_names.PRIDE_OF_AUGUSTGRAD,
         ), self.player)
 
     def terran_competent_ground_to_air(self, state: CollectionState) -> bool:
@@ -344,7 +343,7 @@ class SC2Logic:
                     item_names.BRYNHILDS,
                     item_names.BATTLECRUISER,
                     item_names.JACKSONS_REVENGE,
-                    item_names.PRIDE_OF_AUGUSTRGRAD,
+                    item_names.PRIDE_OF_AUGUSTGRAD,
                     item_names.RAVEN,
                     # Buildings
                     item_names.MISSILE_TURRET,
@@ -405,7 +404,7 @@ class SC2Logic:
                 and (
                     state.has_any((
                         item_names.WIDOW_MINE,
-                        item_names.PRIDE_OF_AUGUSTRGRAD,
+                        item_names.PRIDE_OF_AUGUSTGRAD,
                         item_names.BLACKHAMMER,
                         item_names.EMPERORS_SHADOW,
                         item_names.EMPERORS_GUARDIAN,
@@ -1047,7 +1046,7 @@ class SC2Logic:
     def zerg_competent_comp_competent_aa(self, state: CollectionState) -> bool:
         return self.zerg_competent_comp(state) and self.zerg_competent_anti_air(state)
 
-    def spread_creep(self, state: CollectionState, free_creep_tumor=True) -> bool:
+    def spread_creep(self, state: CollectionState, free_creep_tumor: bool = True) -> bool:
         return (self.advanced_tactics and free_creep_tumor) or state.has_any(
             {item_names.SWARM_QUEEN, item_names.OVERSEER}, self.player
         )
@@ -1158,7 +1157,7 @@ class SC2Logic:
             levels = min2(levels, self.kerrigan_levels_per_mission_completed_cap)
         # Levels from items
         for kerrigan_level_item in kerrigan_levels:
-            level_amount = get_full_item_list()[kerrigan_level_item].number
+            level_amount = item_tables.item_table[kerrigan_level_item].number
             item_count = state.count(kerrigan_level_item, self.player)
             levels += item_count * level_amount
         # Total level cap
@@ -1686,8 +1685,12 @@ class SC2Logic:
         )
 
     def protoss_can_merge_dark_archon(self, state: CollectionState) -> bool:
-        return state.has(item_names.DARK_ARCHON, self.player) or state.has_all(
-            {item_names.DARK_TEMPLAR, item_names.DARK_TEMPLAR_DARK_ARCHON_MELD}, self.player
+        return (
+            state.has(item_names.DARK_ARCHON, self.player)
+            or state.has_all((
+                item_names.DARK_TEMPLAR,
+                item_names.DARK_TEMPLAR_DARK_ARCHON_MELD
+            ), self.player)
         )
 
     def protoss_competent_comp(self, state: CollectionState) -> bool:
@@ -1697,52 +1700,45 @@ class SC2Logic:
             return True
         if self.protoss_deathball(state):
             return True
-        core_unit: bool = state.has_any(
-            (
-                item_names.ZEALOT,
-                item_names.CENTURION,
-                item_names.SENTINEL,
-                item_names.STALKER,
-                item_names.INSTIGATOR,
-                item_names.SLAYER,
-                item_names.ADEPT,
-            ),
-            self.player,
-        )
+        core_unit: bool = state.has_any((
+            item_names.ZEALOT,
+            item_names.CENTURION,
+            item_names.SENTINEL,
+            item_names.STALKER,
+            item_names.INSTIGATOR,
+            item_names.SLAYER,
+            item_names.ADEPT,
+        ), self.player)
         support_unit: bool = (
-            state.has_any(
-                (
-                    item_names.SENTRY,
-                    item_names.ENERGIZER,
-                    item_names.IMMORTAL,
-                    item_names.VANGUARD,
-                    item_names.COLOSSUS,
-                    item_names.REAVER,
-                    item_names.VOID_RAY,
-                    item_names.PHOENIX,
-                    item_names.CORSAIR,
-                ),
-                self.player,
-            )
+            state.has_any((
+                item_names.SENTRY,
+                item_names.ENERGIZER,
+                item_names.IMMORTAL,
+                item_names.VANGUARD,
+                item_names.COLOSSUS,
+                item_names.REAVER,
+                item_names.VOID_RAY,
+                item_names.PHOENIX,
+                item_names.CORSAIR,
+            ), self.player)
             or state.has_all((item_names.MIRAGE, item_names.MIRAGE_GRAVITON_BEAM), self.player)
-            or state.has_all(
-                (item_names.DARK_TEMPLAR, item_names.DARK_TEMPLAR_LESSER_SHADOW_FURY, item_names.DARK_TEMPLAR_GREATER_SHADOW_FURY), self.player
-            )
+            or state.has_all((
+                item_names.DARK_TEMPLAR,
+                item_names.DARK_TEMPLAR_LESSER_SHADOW_FURY,
+                item_names.DARK_TEMPLAR_GREATER_SHADOW_FURY
+            ), self.player)
             or (
                 self.advanced_tactics
                 and (
-                    state.has_any(
-                        (
-                            item_names.HIGH_TEMPLAR,
-                            item_names.SIGNIFIER,
-                            item_names.ASCENDANT,
-                            item_names.ANNIHILATOR,
-                            item_names.WRATHWALKER,
-                            item_names.SKIRMISHER,
-                            item_names.ARBITER,
-                        ),
-                        self.player,
-                    )
+                    state.has_any((
+                        item_names.HIGH_TEMPLAR,
+                        item_names.SIGNIFIER,
+                        item_names.ASCENDANT,
+                        item_names.ANNIHILATOR,
+                        item_names.WRATHWALKER,
+                        item_names.SKIRMISHER,
+                        item_names.ARBITER,
+                    ), self.player)
                 )
             )
         )
@@ -1767,8 +1763,16 @@ class SC2Logic:
         )
 
     def protoss_heal(self, state: CollectionState) -> bool:
-        return state.has_any((item_names.SENTRY, item_names.SHIELD_BATTERY, item_names.RECONSTRUCTION_BEAM), self.player) or state.has_all(
-            (item_names.CARRIER, item_names.CARRIER_REPAIR_DRONES), self.player
+        return (
+            state.has_any((
+                item_names.SENTRY,
+                item_names.SHIELD_BATTERY,
+                item_names.RECONSTRUCTION_BEAM
+            ), self.player)
+            or state.has_all((
+                item_names.CARRIER,
+                item_names.CARRIER_REPAIR_DRONES
+            ), self.player)
         )
 
     def protoss_mineral_dump(self, state: CollectionState) -> bool:
@@ -1793,19 +1797,16 @@ class SC2Logic:
         ), self.player)
 
     def artanis_aspect_damage_boost(self, state: CollectionState) -> bool:
-        return state.has_any(
-            {
-                item_names.ARTANIS_EXTERMINATE,
-                item_names.ARTANIS_BLADE_WALTZ,
-                item_names.ARTANIS_SHADOW_SLICE,
-                item_names.ARTANIS_CLEANSING_SMITE,
-                item_names.ARTANIS_TASSADARS_TEACHINGS, #make sure to pair with active ability in logic
-                item_names.ARTANIS_RASZAGALS_RHYTHM, #make sure to pair with active ability in logic
-                item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
-                item_names.ARTANIS_MALASHS_MALEVOLENCE,
-            },
-            self.player,
-        )
+        return state.has_any((
+            item_names.ARTANIS_EXTERMINATE,
+            item_names.ARTANIS_BLADE_WALTZ,
+            item_names.ARTANIS_SHADOW_SLICE,
+            item_names.ARTANIS_CLEANSING_SMITE,
+            item_names.ARTANIS_TASSADARS_TEACHINGS,  # make sure to pair with active ability in logic
+            item_names.ARTANIS_RASZAGALS_RHYTHM,  # make sure to pair with active ability in logic
+            item_names.ARTANIS_CLOLARIONS_CONFIDENCE,
+            item_names.ARTANIS_MALASHS_MALEVOLENCE,
+        ), self.player)
 
     def artanis_any_weapon_aspect(self, state: CollectionState) -> bool:
         return state.has_any(
@@ -1821,39 +1822,41 @@ class SC2Logic:
 
     def artanis_any_damage_item(self, state: CollectionState) -> bool:
         return (
-            state.has_any(
-                {
-                    item_names.ARTANIS_VOLTAIC_SHOCK,
-                    item_names.ARTANIS_LIGHTNING_DASH,
-                },
-                self.player,
-            )
-            or (self.advanced_tactics and state.has(item_names.ARTANIS_TEMPERED_IN_TWILIGHT))
+            state.has_any((
+                item_names.ARTANIS_VOLTAIC_SHOCK,
+                item_names.ARTANIS_LIGHTNING_DASH,
+            ), self.player)
+            or (self.advanced_tactics and state.has(item_names.ARTANIS_TEMPERED_IN_TWILIGHT, self.player))
             or self.artanis_aspect_damage_boost(state)
         )
 
     def artanis_any_defensive_upgrade(self, state: CollectionState) -> bool:
-        return state.has_any(
-            {
+        return (
+            state.has_any((
                 item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN,
                 item_names.ARTANIS_FORCE_OF_WILL,
                 item_names.ARTANIS_SHIELD_OVERLOAD,
-            },
-            self.player,
-        ) or self.advanced_tactics and state.has_any(
-            {
-                item_names.ARTANIS_RESURGENCE, #need to actively use revive to get value out of this
-            },
-            self.player
+            ), self.player)
+            or (
+                self.advanced_tactics
+                and state.has_any((
+                    item_names.ARTANIS_RESURGENCE,  # need to actively use revive to get value out of this
+                ), self.player)
+            )
         )
 
-
-
     def artanis_anti_air(self, state: CollectionState) -> bool:
-        # Require a weapon on standard tactics, or an anti-air ability on advanced tactics
-        return state.has(item_names.ARTANIS_PSIONIC_ASSAULT, self.player) \
-            or (self.advanced_tactics and state.has_any({item_names.ARTANIS_VOLTAIC_SHOCK, item_names.ARTANIS_SHADOW_SLICE}, self.player))
-
+        """Require a weapon on standard tactics, or an anti-air ability on advanced tactics"""
+        return (
+            state.has(item_names.ARTANIS_PSIONIC_ASSAULT, self.player)
+            or (
+                self.advanced_tactics
+                and state.has_any((
+                    item_names.ARTANIS_VOLTAIC_SHOCK,
+                    item_names.ARTANIS_SHADOW_SLICE
+                ), self.player)
+            )
+        )
 
     # endregion Global Protoss
 
@@ -5245,7 +5248,7 @@ class SC2Logic:
                         item_names.SKY_FURY,
                         item_names.NIGHT_WOLF,
                         item_names.NIGHT_HAWK,
-                        item_names.PRIDE_OF_AUGUSTRGRAD,
+                        item_names.PRIDE_OF_AUGUSTGRAD,
                     ), self.player)
                     or state.has_all((item_names.LIBERATOR, item_names.LIBERATOR_RAID_ARTILLERY), self.player)
                     or state.has_all((item_names.EMPERORS_GUARDIAN, item_names.LIBERATOR_RAID_ARTILLERY), self.player)

@@ -1,7 +1,7 @@
 """
 Utilities for interaction between apclient and game.
 """
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, Literal
 import logging
 import os
 import subprocess
@@ -22,7 +22,6 @@ from ..item import item_tables, item_names, item_groups
 from ..item import ZergItemType
 from ..mission_tables import (
     lookup_id_to_mission,
-    SC2Campaign,
     SC2Mission,
     SC2Race,
     MissionFlag,
@@ -514,15 +513,15 @@ class DllDirectory:
     _old: str | None = None
     _new: str | None = None
 
-    def __init__(self, new: str | None):
+    def __init__(self, new: str | None) -> None:
         self._new = new
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         old = self.get()
         if self.set(self._new):
             self._old = old
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         if self._old is not None:
             self.set(self._old)
 
@@ -885,7 +884,7 @@ def get_bundle_upgrade_member_numbers(bundled_item: str) -> list[int]:
     return [item_tables.item_table[item_name].number for item_name in upgrade_elements]
 
 
-def calc_difficulty(difficulty: int):
+def calc_difficulty(difficulty: int) -> Literal['C', 'N', 'H', 'B', 'X']:
     if difficulty == 0:
         return 'C'
     elif difficulty == 1:
