@@ -966,7 +966,7 @@ item_table = {
     item_names.BUNKER_EMERGENCY_PROVISIONS:
         ItemData(774 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 28, SC2Race.TERRAN,
                  parent=item_names.BUNKER),
-    item_names.EMPERORS_SHADOW_EMP_BLAST:
+    item_names.EMPERORS_SHADOW_PSYCHIC_ENHANCERS:
         ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
                  parent=item_names.EMPERORS_SHADOW),
     item_names.MARINE_MEDPACK:
@@ -984,6 +984,48 @@ item_table = {
     item_names.HELLION_MEDPACK:
         ItemData(780 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 9, SC2Race.TERRAN,
                  parent=parent_names.HELLION_OR_HELLBAT),
+    item_names.EMPERORS_SHADOW_KARESHI_PHASING_SUIT:
+        ItemData(781 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 10, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
+    item_names.EMPERORS_SHADOW_NEMESIS_ROUNDS:
+        ItemData(782 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 11, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
+    item_names.SON_OF_KORHAL_THE_PRODIGAL_SON:
+        ItemData(783 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 12, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_SHIELD_OF_THE_DOMINION:
+        ItemData(784 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 13, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_BUILD_A_BOOM:
+        ItemData(785 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 14, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_LOB_SPIDER_MINE:
+        ItemData(786 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 15, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.FIELD_RESPONSE_THETA_ROYAL_ACADEMY_DEGREE:
+        ItemData(787 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 16, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_HOSPICE_CARE:
+        ItemData(788 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 17, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_PHYSICAL_THERAPY:
+        ItemData(789 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 18, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_OPTICAL_RESTORATION:
+        ItemData(790 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 19, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.AEGIS_GUARD_INCAPACITATOR_SHELLS:
+        ItemData(791 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 20, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_ADDICTIVE_SUPPLEMENTS:
+        ItemData(792 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 21, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_REFRACTIVE_SHRAPNEL:
+        ItemData(793 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 22, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_SOVEREIGN_NEOSTEEL:
+        ItemData(794 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 23, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
