@@ -33,7 +33,7 @@ from .options import (
     MissionOrder, KerriganPrimalStatus, EnableMorphling, GameDifficulty,
     GameSpeed, GenericUpgradeItems, GenericUpgradeResearch, ColorChoice, GenericUpgradeMissions, MaxUpgradeLevel,
     LocationInclusion, ExtraLocations, MasteryLocations, SpeedrunLocations, PreventativeLocations, ChallengeLocations,
-    VanillaLocations, EnabledHeroes, HeroPresence,
+    VanillaLocations, BasebustLocations, EnabledHeroes, HeroPresence,
     GrantStoryTech, GrantStoryLevels, TakeOverAIAllies, RequiredTactics,
     SpearOfAdunPresence, SpearOfAdunPresentInNoBuild, SpearOfAdunPassiveAbilityPresence,
     SpearOfAdunPassivesPresentInNoBuild, EnableVoidTrade, VoidTradeAgeLimit, void_trade_age_limits_ms, VoidTradeWorkers,
