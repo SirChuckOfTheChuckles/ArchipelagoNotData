@@ -33,7 +33,7 @@ from .options import (
     MissionOrder, KerriganPrimalStatus, EnableMorphling, GameDifficulty,
     GameSpeed, GenericUpgradeItems, GenericUpgradeResearch, ColorChoice, GenericUpgradeMissions, MaxUpgradeLevel,
     LocationInclusion, ExtraLocations, MasteryLocations, SpeedrunLocations, PreventativeLocations, ChallengeLocations,
-    VanillaLocations, EnabledHeroes, HeroPresence,
+    VanillaLocations, BasebustLocations, EnabledHeroes, HeroPresence,
     GrantStoryTech, GrantStoryLevels, TakeOverAIAllies, RequiredTactics,
     SpearOfAdunPresence, SpearOfAdunPresentInNoBuild, SpearOfAdunPassiveAbilityPresence,
     SpearOfAdunPassivesPresentInNoBuild, EnableVoidTrade, VoidTradeAgeLimit, void_trade_age_limits_ms, VoidTradeWorkers,
@@ -1138,6 +1138,7 @@ class SC2Context(CommonContext):
                 LocationType.MASTERY: args["slot_data"].get("mastery_locations", MasteryLocations.default),
             }
             self.location_inclusions_by_flag = {
+                LocationFlag.BASEBUST: args["slot_data"].get("basebust_locations", BasebustLocations.default),
                 LocationFlag.SPEEDRUN: args["slot_data"].get("speedrun_locations", SpeedrunLocations.default),
                 LocationFlag.PREVENTATIVE: args["slot_data"].get("preventative_locations", PreventativeLocations.default),
             }
