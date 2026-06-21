@@ -221,17 +221,50 @@ Based off the co-op Swann building: Devastator Turret / Blaster Billy
 
 ### Hatchery Units
 #### Zergling
+* Adrenaline Overload - based off HotS evo-chamber choices
+* Hardened Carapace - based off HotS evo-chamber choices
+* Metalic Boost - based off HotS evo-chamber choices
+* Raptor Strain - based off HotS evolution strain
+* Swarmling Strain - based off HotS evolution strain
+
 #### Swarm Queen
 #### Hive Queen
 Based off the melee Queen
 
 #### Roach
+* Adaptive Plating - based off HotS evo-chamber choices
+* Tunneling Claws - based off HotS evo-chamber choices
+* Hydriodic Bile - based off HotS evo-chamber choices
+* Corpser Strain - based off HotS evolution strain
+* Vile Strain - based off HotS evolution strain
+
 #### Hydralisk
+* Ancillary Carapace - based off HotS evo-chamber choices
+* Frenzy - based off HotS evo-chamber choices
+* Grooved Spines - based off HotS evo-chamber choices
+* Muscular Augments - based off multiplayer upgrade
+
 #### Aberration
 #### Mutalisk
+* Vicious Glaive - based off HotS evo-chamber choices
+* Sundering Glaive - based off HotS evo-chamber choices
+* Rapid Regeneration - based off HotS evo-chamber choices
+
 #### Swarm Host
+* Burrow - based off HotS evo-chamber choices
+* Pressurized Glands - based off HotS evo-chamber choices
+* Rapid Incubation - based off HotS evo-chamber choices
+* Carrion Strain - based off HotS evolution strain
+* Creeper Strain - based off HotS evolution strain
+
 #### Infestor
 #### Ultralisk
+* Burrow Charge - based off HotS evo-chamber choices
+* Monarch Blades - based off HotS evo-chamber choices
+* Tissue Assimilation - based off HotS evo-chamber choices
+* Noxious Strain - based off HotS evolution strain
+* Torrasque Strain - based off HotS evolution strain
+
 #### Pygalisk
 Based off the enemy unit in Piercing the Shroud; largely original
 
@@ -249,6 +282,12 @@ Based off the brood war; also appears for the enemy in NCO 2
 
 ### Morphs
 #### Baneling
+* Centrifugal Hooks - based off HotS evo-chamber choices
+* Corrosive Acid - based off HotS evo-chamber choices
+* Rupture - based off HotS evo-chamber choices
+* Splitter Strain - based off HotS evolution strain
+* Hunter Strain - based off HotS evolution strain
+
 #### Impaler
 #### Lurker
 #### Brood Lord
@@ -273,18 +312,31 @@ Based off the co-op Stukov unit
 
 #### Infested Diamondback
 Based off the co-op Stukov unit
+* Frightful Fleshwelder - based off co-op Stukov P1
+* Caustic Mucus - based off co-op Stukov upgrades
+* Progressive Fungal Snare - based off co-op abilities
 
 #### Infested Siege Tank
 Based off the co-op Stukov unit
+* Frightful Fleshwelder - based off co-op Stukov P1
+* Deep Tunnel - based off co-op abilities
+* Acidic Enzymes - based off co-op Stukov upgrades
+* Progressive Automated Mitosis - based off co-op Stukov upgrades
 
 #### Bullfrog
 AP original unit
 
 #### Infested Banshee
 Based off the co-op Stukov unit
+* Frightful Fleshwelder - based off co-op Stukov P1
+* Rapid Hibernation - based off co-op Stukov upgrades
+* Braced Exoskeleton - based off co-op Stukov upgrades
 
 #### Infested Liberator
 Based off the co-op Stukov unit
+* Frightful Fleshwelder - based off co-op Stukov P1
+* Viral Contamination - based off co-op Stukov upgrades
+* Cloud Disperal - based off co-op Stukov upgrades
 
 ### Buildings
 #### Spine Crawler
