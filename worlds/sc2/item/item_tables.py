@@ -1020,7 +1020,7 @@ item_table = {
     item_names.AEGIS_GUARD_ADDICTIVE_SUPPLEMENTS:
         ItemData(792 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 21, SC2Race.TERRAN,
                  parent=item_names.AEGIS_GUARD),
-    item_names.AEGIS_GUARD_REFRACTIVE_SHRAPNEL:
+    item_names.AEGIS_GUARD_BOLSTERED_BARRIER:
         ItemData(793 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 22, SC2Race.TERRAN,
                  parent=item_names.AEGIS_GUARD),
     item_names.AEGIS_GUARD_SOVEREIGN_NEOSTEEL:
