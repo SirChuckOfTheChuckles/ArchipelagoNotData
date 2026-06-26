@@ -999,7 +999,7 @@ item_table = {
     item_names.SON_OF_KORHAL_BUILD_A_BOOM:
         ItemData(785 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 14, SC2Race.TERRAN,
                  parent=item_names.SON_OF_KORHAL),
-    item_names.SON_OF_KORHAL_LOB_SPIDER_MINE:
+    item_names.SON_OF_KORHAL_THROW_SPIDER_MINE:
         ItemData(786 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 15, SC2Race.TERRAN,
                  parent=item_names.SON_OF_KORHAL),
     item_names.FIELD_RESPONSE_THETA_ROYAL_ACADEMY_DEGREE:
