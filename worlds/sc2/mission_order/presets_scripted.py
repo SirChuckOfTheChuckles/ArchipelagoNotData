@@ -1,26 +1,34 @@
-from typing import Dict, Any, List
+from typing import Any, TYPE_CHECKING
 import copy
 
-def _required_option(option: str, options: Dict[str, Any]) -> Any:
+if TYPE_CHECKING:
+    from .types import CampaignDict, LayoutDict
+
+
+def _required_option(option: str, options: dict[str, Any]) -> Any:
     """Returns the option value, or raises an error if the option is not present."""
     if option not in options:
         raise KeyError(f"Campaign preset is missing required option \"{option}\".")
     return options.pop(option)
 
-def _validate_option(option: str, options: Dict[str, str], default: str, valid_values: List[str]) -> str:
+
+def _validate_option(option: str, options: dict[str, str], default: str, valid_values: list[str]) -> str:
     """Returns the option value if it is present and valid, the default if it is not present, or raises an error if it is present but not valid."""
     result = options.pop(option, default)
     if result not in valid_values:
         raise ValueError(f"Preset option \"{option}\" received unknown value \"{result}\".")
     return result
 
-def make_golden_path(options: Dict[str, Any]) -> Dict[str, Any]:
-    chain_name_options = ['Mar Sara', 'Agria', 'Redstone', 'Meinhoff', 'Haven', 'Tarsonis', 'Valhalla', 'Char',
-                          'Umoja', 'Kaldir', 'Zerus', 'Skygeirr Station', 'Dominion Space', 'Korhal',
-                          'Aiur', 'Glacius', 'Shakuras', 'Ulnar', 'Slayn',
-                          'Antiga', 'Braxis', 'Chau Sara', 'Moria', 'Tyrador', 'Xil', 'Zhakul',
-                          'Azeroth', 'Crouton', 'Draenor', 'Sanctuary']
-    
+
+def make_golden_path(options: dict[str, Any]) -> 'CampaignDict':
+    chain_name_options = [
+        'Mar Sara', 'Agria', 'Redstone', 'Meinhoff', 'Haven', 'Tarsonis', 'Valhalla', 'Char',
+        'Umoja', 'Kaldir', 'Zerus', 'Skygeirr Station', 'Dominion Space', 'Korhal',
+        'Aiur', 'Glacius', 'Shakuras', 'Ulnar', 'Slayn',
+        'Antiga', 'Braxis', 'Chau Sara', 'Moria', 'Tyrador', 'Xil', 'Zhakul',
+        'Azeroth', 'Crouton', 'Draenor', 'Sanctuary'
+    ]
+
     size = max(_required_option("size", options), 4)
     keys_option_values = ["none", "layouts", "missions", "progressive_layouts", "progressive_missions", "progressive_per_layout"]
     keys_option = _validate_option("keys", options, "none", keys_option_values)
@@ -39,11 +47,11 @@ def make_golden_path(options: Dict[str, Any]) -> Dict[str, Any]:
             self.padding = 0
             self.missions_remaining = missions_remaining
             self.mission_counter = 1
-        
+
         def add_mission(self, chain: int, required_missions: int = 0, *, is_final: bool = False):
             if self.missions_remaining == 0 and not is_final:
                 return
-            
+
             self.mission_counter += 1
             self.chain_lengths[chain] += 1
             self.missions_remaining -= 1
@@ -55,7 +63,7 @@ def make_golden_path(options: Dict[str, Any]) -> Dict[str, Any]:
         def add_chain(self):
             self.chain_lengths.append(0)
             self.chain_padding.append(self.padding)
-    
+
     campaign = Campaign(size - 2)
     current_required_missions = 0
     main_chain_length = 0
@@ -77,7 +85,7 @@ def make_golden_path(options: Dict[str, Any]) -> Dict[str, Any]:
     campaign.add_mission(0, current_required_missions, is_final = True)
 
     # Create mission order preset out of campaign
-    layout_base = {
+    layout_base: 'LayoutDict' = {
         "type": "column",
         "display_name": chain_name_options,
         "unique_name": True,
@@ -88,7 +96,7 @@ def make_golden_path(options: Dict[str, Any]) -> Dict[str, Any]:
         layout_base["entry_rules"] = [{ "items": { "Key": 1 }}]
     elif keys_option == "progressive_layouts":
         layout_base["entry_rules"] = [{ "items": { "Progressive Key": 0 }}]
-    preset = {
+    preset: 'CampaignDict' = {
         str(chain): copy.deepcopy(layout_base) for chain in range(len(campaign.chain_lengths))
     }
     preset["0"]["exit"] = True

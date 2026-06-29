@@ -1,10 +1,15 @@
-from typing import Dict, Any, Callable, List, Tuple
+from typing import Any, Callable, TYPE_CHECKING
 import copy
 
 from ..mission_groups import MissionGroupNames
 from ..mission_tables import SC2Mission, SC2Campaign
 
-preset_mini_wol_with_prophecy = {
+
+if TYPE_CHECKING:
+    from .types import CampaignDict, EntryRuleDict
+
+
+preset_mini_wol_with_prophecy: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -94,7 +99,7 @@ preset_mini_prophecy["Prophecy"]["type"] = "gauntlet"
 preset_mini_prophecy["Prophecy"]["display_name"] = ""
 preset_mini_prophecy["Prophecy"]["missions"].append({ "index": "entrances", "entry_rules": [] })
 
-preset_mini_hots = {
+preset_mini_hots: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -171,7 +176,7 @@ preset_mini_hots = {
     }
 }
 
-preset_mini_lotv_prologue = {
+preset_mini_lotv_prologue: 'CampaignDict' = {
     "min_difficulty": "easy",
     "Prologue": {
         "display_name": "",
@@ -187,7 +192,7 @@ preset_mini_lotv_prologue = {
     }
 }
 
-preset_mini_lotv = {
+preset_mini_lotv: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -266,7 +271,7 @@ preset_mini_lotv = {
     }
 }
 
-preset_mini_lotv_epilogue = {
+preset_mini_lotv_epilogue: 'CampaignDict' = {
     "min_difficulty": "very hard",
     "Epilogue": {
         "display_name": "",
@@ -282,7 +287,7 @@ preset_mini_lotv_epilogue = {
     }
 }
 
-preset_mini_nco = {
+preset_mini_nco: 'CampaignDict' = {
     "min_difficulty": "easy",
     "global": {
         "type": "column",
@@ -319,7 +324,7 @@ preset_mini_nco = {
     },
 }
 
-preset_wol_with_prophecy = {
+preset_wol_with_prophecy: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -448,7 +453,7 @@ preset_prophecy["Prophecy"]["type"] = "gauntlet"
 preset_prophecy["Prophecy"]["display_name"] = ""
 preset_prophecy["Prophecy"]["missions"].append({ "index": "entrances", "entry_rules": [] })
 
-preset_hots = {
+preset_hots: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -497,7 +502,7 @@ preset_hots = {
             {
                 "rules": [
                     { "scope": "../Kaldir" },
-                    { "scope": "../Char" }
+                    { "scope": "../Char" },
                 ],
                 "amount": 1
             },
@@ -550,7 +555,7 @@ preset_hots = {
     }
 }
 
-preset_lotv_prologue = {
+preset_lotv_prologue: 'CampaignDict' = {
     "min_difficulty": "easy",
     "Prologue": {
         "display_name": "",
@@ -569,7 +574,7 @@ preset_lotv_prologue = {
     }
 }
 
-preset_lotv = {
+preset_lotv: 'CampaignDict' = {
     "global": {
         "type": "column",
         "mission_pool": [
@@ -695,7 +700,7 @@ preset_lotv = {
     }
 }
 
-preset_lotv_epilogue = {
+preset_lotv_epilogue: 'CampaignDict' = {
     "min_difficulty": "very hard",
     "Epilogue": {
         "display_name": "",
@@ -714,7 +719,7 @@ preset_lotv_epilogue = {
     }
 }
 
-preset_nco = {
+preset_nco: 'CampaignDict' = {
     "min_difficulty": "easy",
     "global": {
         "type": "column",
@@ -760,7 +765,7 @@ preset_nco = {
     },
 }
 
-def _build_static_preset(preset: Dict[str, Any], options: Dict[str, Any]) -> Dict[str, Any]:
+def _build_static_preset(preset: 'CampaignDict', options: dict[str, Any]) -> dict[str, Any]:
     # Raceswap shuffling
     raceswaps = options.pop("shuffle_raceswaps", False)
     if not isinstance(raceswaps, bool):
@@ -774,14 +779,15 @@ def _build_static_preset(preset: Dict[str, Any], options: Dict[str, Any]) -> Dic
         for layout in preset.values():
             if type(layout) == dict:
                 # Currently mission pools in layouts are always ["X campaign missions", "~ raceswap missions"]
-                layout_mission_pool: List[str] = layout.get("mission_pool", None)
+                layout_mission_pool: list[str] | None = layout.get("mission_pool", None)
                 if layout_mission_pool is not None:
                     layout_mission_pool.pop()
                     layout["mission_pool"] = layout_mission_pool
                 if "missions" in layout:
                     for slot in layout["missions"]:
                         # Currently mission pools in slots are always strings
-                        slot_mission_pool: str = slot.get("mission_pool", None)
+                        slot_mission_pool = slot.get("mission_pool", None)
+                        assert not isinstance(slot_mission_pool, (list, set))
                         # Identify raceswappable missions by their race in brackets
                         if slot_mission_pool is not None and slot_mission_pool[-1] == ")":
                             mission_name = slot_mission_pool[:slot_mission_pool.rfind("(")]
@@ -812,7 +818,7 @@ def _build_static_preset(preset: Dict[str, Any], options: Dict[str, Any]) -> Dic
             f"Preset option \"missions\" received unknown value \"{missions}\".\n"
             "Valid values are: random, vanilla, vanilla_shuffled"
         )
-    
+
     # Key rule selection
     keys = options.pop("keys", "none")
     if keys == "layouts":
@@ -872,16 +878,16 @@ def _build_static_preset(preset: Dict[str, Any], options: Dict[str, Any]) -> Dic
             f"Preset option \"keys\" received unknown value \"{keys}\".\n"
             "Valid values are: none, missions, layouts, progressive_missions, progressive_layouts, progressive_per_layout"
         )
-    
+
     return preset
 
-def _remove_key_rules(entry_rules: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _remove_key_rules(entry_rules: list['EntryRuleDict']) -> list['EntryRuleDict']:
     return [rule for rule in entry_rules if not ("items" in rule and "Key" in rule["items"])]
 
-def _make_key_rules_progressive(entry_rules: List[Dict[str, Any]], track: int) -> List[Dict[str, Any]]:
+def _make_key_rules_progressive(entry_rules: list['EntryRuleDict'], track: int) -> list['EntryRuleDict']:
     for rule in entry_rules:
         if "items" in rule and "Key" in rule["items"]:
-            new_items: Dict[str, Any] = {}
+            new_items: dict[str, Any] = {}
             for (item, amount) in rule["items"].items():
                 if item == "Key":
                     new_items["Progressive Key"] = track
@@ -890,11 +896,11 @@ def _make_key_rules_progressive(entry_rules: List[Dict[str, Any]], track: int) -
             rule["items"] = new_items
     return entry_rules
 
-def static_preset(preset: Dict[str, Any]) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+def static_preset(preset: dict[str, Any]) -> Callable[[dict[str, Any]], 'CampaignDict']:
     return lambda options: _build_static_preset(copy.deepcopy(preset), options)
 
-def get_used_layout_names() -> Dict[SC2Campaign, Tuple[int, List[str]]]:
-    campaign_to_preset: Dict[SC2Campaign, Dict[str, Any]] = {
+def get_used_layout_names() -> dict[SC2Campaign, tuple[int, list[str]]]:
+    campaign_to_preset: dict[SC2Campaign, 'CampaignDict'] = {
         SC2Campaign.WOL: preset_wol_with_prophecy,
         SC2Campaign.PROPHECY: preset_prophecy,
         SC2Campaign.HOTS: preset_hots,
@@ -903,7 +909,7 @@ def get_used_layout_names() -> Dict[SC2Campaign, Tuple[int, List[str]]]:
         SC2Campaign.EPILOGUE: preset_lotv_epilogue,
         SC2Campaign.NCO: preset_nco
     }
-    campaign_to_layout_names: Dict[SC2Campaign, Tuple[int, List[str]]] = { SC2Campaign.GLOBAL: (0, []) }
+    campaign_to_layout_names: dict[SC2Campaign, tuple[int, list[str]]] = { SC2Campaign.GLOBAL: (0, []) }
     for campaign in SC2Campaign:
         if campaign == SC2Campaign.GLOBAL:
             continue
