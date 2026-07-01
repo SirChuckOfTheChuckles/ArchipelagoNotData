@@ -984,6 +984,18 @@ item_table = {
     item_names.HELLION_MEDPACK:
         ItemData(780 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 9, SC2Race.TERRAN,
                  parent=parent_names.HELLION_OR_HELLBAT),
+    item_names.NIGHT_WOLF_SHOCKWAVE_ARTILLERY:
+        ItemData(781 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 24, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_PREYSEEKER_MISSILES:
+        ItemData(782 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 25, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_ENERGIZED_BACKLASH:
+        ItemData(783 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 26, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_ELUSIVE_ROTORS:
+        ItemData(784 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 27, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
