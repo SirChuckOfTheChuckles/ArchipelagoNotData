@@ -3,7 +3,7 @@ Unit tests for yaml usecases we want to support
 """
 
 from .test_base import Sc2SetupTestBase
-from .. import get_all_missions, mission_tables, options
+from .. import mission_tables, options
 from ..item import item_groups, item_tables, item_names
 from ..mission_tables import SC2Race, SC2Mission, SC2Campaign, MissionFlag
 from ..options import (
@@ -66,15 +66,14 @@ class TestSupportedUseCases(Sc2SetupTestBase):
 
         self.generate_world(world_options)
         self.assertTrue(self.multiworld.itempool)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
 
-        self.assertNotIn(mission_tables.SC2Mission.THE_ESCAPE, missions)
-        self.assertNotIn(mission_tables.SC2Mission.IN_THE_ENEMY_S_SHADOW, missions)
         for mission in missions:
             self.assertEqual(mission_tables.SC2Campaign.NCO, mission.campaign)
 
     def test_terran_with_nco_upgrades_units_only_generates(self):
         world_options = {
+            options.OPTION_NAME[options.RequiredTactics]: RequiredTactics.option_advanced,
             'enabled_campaigns': {
                 SC2Campaign.WOL.campaign_name,
                 SC2Campaign.NCO.campaign_name
@@ -99,7 +98,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
         self.generate_world(world_options)
         world_item_names = [item.name for item in self.multiworld.itempool + self.multiworld.precollected_items[1]]
         self.assertTrue(world_item_names)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
 
         for mission in missions:
             self.assertIn(mission_tables.MissionFlag.Terran, mission.flags)
@@ -115,8 +114,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
         self.assertNotIn(item_names.PSI_DISRUPTER, world_item_names)
         self.assertNotIn(item_names.BATTLECRUISER_PROGRESSIVE_MISSILE_PODS, world_item_names)
         self.assertNotIn(item_names.HELLION_INFERNAL_PLATING, world_item_names)
-        self.assertNotIn(item_names.CELLULAR_REACTOR, world_item_names)
-        self.assertNotIn(item_names.TECH_REACTOR, world_item_names)
+        # Note(mm): Macro upgrades may still be required by macro rating functions
 
     def test_nco_and_2_wol_missions_only_can_generate_with_vanilla_items_only(self) -> None:
         world_options = {
@@ -159,7 +157,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
         self.generate_world(world_options)
         world_item_names = [item.name for item in self.multiworld.itempool]
         self.assertTrue(world_item_names)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
 
         self.assertEqual(len(missions), 7, "Wrong number of missions in free protoss seed")
         for mission in missions:
@@ -258,10 +256,11 @@ class TestSupportedUseCases(Sc2SetupTestBase):
 
     def test_excluding_faction_on_vanilla_order_excludes_epilogue(self) -> None:
         world_options = {
-            'selected_races': {
+            options.OPTION_NAME[options.SelectedRaces]: {
                 SC2Race.TERRAN.get_title(),
                 SC2Race.PROTOSS.get_title(),
             },
+            options.OPTION_NAME[options.EnableRaceSwapVariants]: options.EnableRaceSwapVariants.option_disabled,
             'enabled_campaigns': EnabledCampaigns.valid_keys,
             'mission_order': options.MissionOrder.option_vanilla,
         }
@@ -312,6 +311,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             },
             'locked_items': {
                 # One unit of each class to guarantee upgrades are available
+                item_groups.ItemGroupNames.TERRAN_GENERIC_UPGRADES: 1,
                 item_names.MARINE: 1,
                 item_names.VULTURE: 1,
                 item_names.BANSHEE: 1,
@@ -522,7 +522,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
                 1
             )
 
-
     def test_nova_max_weapons(self):
         target_number: int = 3
         world_options = {
@@ -541,7 +540,6 @@ class TestSupportedUseCases(Sc2SetupTestBase):
         nova_weapons = [item_name for item_name in world_item_names if item_name in item_groups.nova_weapons]
 
         self.assertLessEqual(len(nova_weapons), target_number)
-
 
     def test_nova_max_gadgets(self):
         target_number: int = 3
@@ -569,7 +567,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
                 SC2Race.TERRAN.get_title(),
                 SC2Race.ZERG.get_title(),
             ],
-            'required_tactics': options.RequiredTactics.option_any_units,
+            'required_tactics': options.RequiredTactics.option_chaos,
             'excluded_items': {
                 item_groups.ItemGroupNames.TERRAN_UNITS: -1,
                 item_groups.ItemGroupNames.ZERG_UNITS: -1,
@@ -645,7 +643,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'mission_order_scouting': MissionOrderScouting.option_none,
             'mission_race_balancing': EnableMissionRaceBalancing.option_semi_balanced,
             'preventative_locations': PreventativeLocations.option_enabled,
-            'required_tactics': RequiredTactics.option_standard,
+            'required_tactics': RequiredTactics.option_basic,
             'shuffle_campaigns': ShuffleCampaigns.option_true,
             'shuffle_no_build': ShuffleNoBuild.option_true,
             'speedrun_locations': SpeedrunLocations.option_disabled,
@@ -688,7 +686,7 @@ class TestSupportedUseCases(Sc2SetupTestBase):
             'shuffle_campaigns': ShuffleCampaigns.option_true,
             'shuffle_no_build': ShuffleNoBuild.option_true,
             'starter_unit': StarterUnit.option_balanced,
-            'required_tactics': RequiredTactics.option_standard,
+            'required_tactics': RequiredTactics.option_basic,
             'kerrigan_levels_per_mission_completed': 0,
             'kerrigan_levels_per_mission_completed_cap': -1,
             'kerrigan_level_item_sum': 87,

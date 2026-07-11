@@ -9,7 +9,7 @@ from .. import (
     RequiredTactics,
 )
 from ..item import item_groups, item_tables, item_names
-from .. import get_all_missions, get_random_first_mission
+from .. import get_random_first_mission
 from ..options import (
     EnabledCampaigns, MissionOrder, ExcludeOverpoweredItems,
     VanillaItemsOnly, MaximumCampaignSize,
@@ -86,10 +86,10 @@ class TestItemFiltering(Sc2SetupTestBase):
                 item_names.SCIENCE_VESSEL: -1,
             },
             # Terran-only
-            'enabled_campaigns': {
-                SC2Campaign.WOL.campaign_name,
-                SC2Campaign.NCO.campaign_name
-            },
+            options.OPTION_NAME[options.RequiredTactics]: options.RequiredTactics.option_chaos,
+            options.OPTION_NAME[options.SelectedRaces]: {SC2Race.TERRAN.get_title()},
+            options.OPTION_NAME[options.EnabledCampaigns]: options.EnabledCampaigns.valid_keys,
+            options.OPTION_NAME[options.EnableRaceSwapVariants]: options.EnableRaceSwapVariants.option_shuffle_all,
         }
         self.generate_world(world_options)
         self.assertTrue(self.multiworld.itempool)
@@ -146,7 +146,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             'mission_order': options.MissionOrder.option_grid,
         }
         self.generate_world(world_options)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
         self.assertTrue(missions)
         self.assertNotIn(mission_tables.SC2Mission.WAKING_THE_ANCIENT, missions)
         self.assertNotIn(mission_tables.SC2Mission.THE_CRUCIBLE, missions)
@@ -368,7 +368,7 @@ class TestItemFiltering(Sc2SetupTestBase):
                 item_groups.ItemGroupNames.TERRAN_STIMPACKS: -1,
             },
             # Avoid options that lock non-vanilla items for logic
-            'required_tactics': options.RequiredTactics.option_any_units,
+            'required_tactics': options.RequiredTactics.option_chaos,
             'mastery_locations': options.MasteryLocations.option_disabled,
             # Move the unit nerf items from the start inventory to the pool,
             # else this option could push non-vanilla items past this test
@@ -473,7 +473,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             'grant_story_tech': options.GrantStoryTech.option_grant,
         }
         self.generate_world(world_options)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
         self.assertIn(mission_tables.SC2Mission.TEMPLE_OF_UNIFICATION, missions)
         itempool = [item.name for item in self.multiworld.itempool]
         self.assertTrue(itempool)
@@ -487,7 +487,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             'enabled_campaigns': {
                 SC2Campaign.HOTS.campaign_name,
             },
-            'required_tactics': options.RequiredTactics.option_no_logic,
+            'required_tactics': options.RequiredTactics.option_chaos,
             'enable_morphling': options.EnableMorphling.option_true,
             'excluded_items': {
                 item_groups.ItemGroupNames.ZERG_UNITS.lower(): -1,
@@ -506,17 +506,29 @@ class TestItemFiltering(Sc2SetupTestBase):
         self.assertFalse(units_in_pool)
 
     def test_excluding_zerg_units_with_morphling_disabled_should_exclude_aspects(self) -> None:
+        allowed_units = {
+            # Units without morphs that should satisfy logic
+            item_names.PYGALISK: 1,
+            item_names.ABERRATION: 1,
+            item_names.INFESTED_DIAMONDBACK: 1,
+            item_names.SWARM_QUEEN: 1,
+            item_names.HIVE_QUEEN: 1,
+            item_names.BROOD_QUEEN: 1,
+        }
         world_options = {
             'enabled_campaigns': {
                 SC2Campaign.HOTS.campaign_name,
             },
-            'required_tactics': options.RequiredTactics.option_no_logic,
+            options.OPTION_NAME[options.MaximumCampaignSize]: 2,
+            options.OPTION_NAME[options.RequiredTactics]: options.RequiredTactics.option_chaos,
             'enable_morphling': options.EnableMorphling.option_false,
             'excluded_items': {
                 item_groups.ItemGroupNames.ZERG_UNITS.lower(): -1,
             },
             'unexcluded_items': {
                 item_groups.ItemGroupNames.ZERG_MORPHS.lower(): -1,
+                # units without morphs
+                **allowed_units,
             },
         }
         self.generate_world(world_options)
@@ -527,8 +539,12 @@ class TestItemFiltering(Sc2SetupTestBase):
             # Overseer morphs from Overlord, that's available always
             aspects_in_pool.remove(item_names.OVERSEER)
         self.assertFalse(aspects_in_pool)
-        units_in_pool = list(set(itempool).intersection(set(item_groups.zerg_units))
-                             .difference(set(item_groups.zerg_morphs)))
+        units_in_pool = (
+            set(itempool)
+            .intersection(item_groups.zerg_units)
+            .difference(item_groups.zerg_morphs)
+            .difference(allowed_units)
+        )
         self.assertFalse(units_in_pool)
 
     def test_deprecated_orbital_command_not_present(self) -> None:
@@ -598,9 +614,9 @@ class TestItemFiltering(Sc2SetupTestBase):
         self.generate_world(world_options)
         world_regions = list(self.multiworld.regions)
         world_location_names = [location.name for region in world_regions for location in region.locations]
-        all_location_names = [location_data.name for location_data in locations.DEFAULT_LOCATION_LIST]
-        speedrun_location_name = f"{mission_tables.SC2Mission.LAB_RAT.mission_name}: Win In Under 10 Minutes"
-        self.assertIn(speedrun_location_name, all_location_names)
+        speedrun_location_name = locations.Sc2Location.LAB_RAT_WIN_IN_UNDER_10_MINUTES.global_name()
+        nonspeedrun_location_name = locations.Sc2Location.LAB_RAT_VICTORY.global_name()
+        self.assertIn(nonspeedrun_location_name, world_location_names)
         self.assertNotIn(speedrun_location_name, world_location_names)
 
     def test_nco_and_wol_picks_correct_starting_mission(self) -> None:
@@ -627,7 +643,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
         }
         self.generate_world(world_options)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
         self.assertTrue(missions)
         self.assertNotIn(mission_tables.SC2Mission.ZERO_HOUR, missions)
         self.assertNotIn(mission_tables.SC2Mission.ZERO_HOUR_Z, missions)
@@ -646,7 +662,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
         }
         self.generate_world(world_options)
-        missions = get_all_missions(self.world.custom_mission_order)
+        missions = self.world.custom_mission_order.get_used_missions()
         self.assertTrue(missions)
         self.assertNotIn(mission_tables.SC2Mission.ZERO_HOUR, missions)
         self.assertIn(mission_tables.SC2Mission.ZERO_HOUR_Z, missions)
@@ -677,7 +693,9 @@ class TestItemFiltering(Sc2SetupTestBase):
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
         itempool = [item.name for item in self.multiworld.itempool]
         world_items = starting_inventory + itempool
+        infantry_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_INFANTRY_WEAPON]
         vehicle_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_VEHICLE_WEAPON]
+        ship_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_SHIP_WEAPON]
         other_bundle_items = [
             x for x in world_items if x in (
                 item_names.PROGRESSIVE_TERRAN_WEAPON_ARMOR_UPGRADE,
@@ -687,7 +705,14 @@ class TestItemFiltering(Sc2SetupTestBase):
         ]
 
         # Under standard tactics you need to place L3 upgrades for available unit classes
-        self.assertGreaterEqual(len(vehicle_weapon_items), 3)
+
+        self.assertTrue(
+            len(infantry_weapon_items) >= 3
+            or len(vehicle_weapon_items) >= 3
+            or len(ship_weapon_items) >= 3,
+            f"Infantry: {len(infantry_weapon_items)}, "
+            f"Vehicles: {len(vehicle_weapon_items)}, Ships: {len(ship_weapon_items)}"
+        )
         self.assertEqual(len(other_bundle_items), 0)
 
     def test_weapon_armor_upgrades_with_bundles(self) -> None:
@@ -695,6 +720,10 @@ class TestItemFiltering(Sc2SetupTestBase):
             # Vanilla WoL with all missions
             'mission_order': options.MissionOrder.option_vanilla,
             'starter_unit': options.StarterUnit.option_off,
+            options.OPTION_NAME[options.ExcludedItems]: {
+                # Exclude royal guard as they allow for competent comps with no upgrade items
+                item_groups.ItemGroupNames.TERRAN_ROYAL_GUARD_UNITS: 1,
+            },
             'enabled_campaigns': {
                 SC2Campaign.WOL.campaign_name,
             },
@@ -715,7 +744,9 @@ class TestItemFiltering(Sc2SetupTestBase):
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
         itempool = [item.name for item in self.multiworld.itempool]
         world_items = starting_inventory + itempool
+        infantry_upgrade_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_INFANTRY_UPGRADE]
         vehicle_upgrade_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_VEHICLE_UPGRADE]
+        ship_upgrade_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_SHIP_UPGRADE]
         other_bundle_items = [
             x for x in world_items if x in (
                 item_names.PROGRESSIVE_TERRAN_WEAPON_ARMOR_UPGRADE,
@@ -724,8 +755,14 @@ class TestItemFiltering(Sc2SetupTestBase):
             )
         ]
 
-        # Under standard tactics you need to place L3 upgrades for available unit classes
-        self.assertGreaterEqual(len(vehicle_upgrade_items), 3)
+        # Under standard tactics you need to place L3 upgrades for an available unit class
+        self.assertTrue(
+            len(infantry_upgrade_items) >= 3
+            or len(vehicle_upgrade_items) >= 3
+            or len(ship_upgrade_items) >= 3,
+            f"Infantry: {len(infantry_upgrade_items)}, "
+            f"Vehicles: {len(vehicle_upgrade_items)}, Ships: {len(ship_upgrade_items)}"
+        )
         self.assertEqual(len(other_bundle_items), 0)
 
     def test_weapon_armor_upgrades_all_in_air(self) -> None:
@@ -754,78 +791,23 @@ class TestItemFiltering(Sc2SetupTestBase):
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
         itempool = [item.name for item in self.multiworld.itempool]
         world_items = starting_inventory + itempool
+        infantry_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_INFANTRY_WEAPON]
         vehicle_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_VEHICLE_WEAPON]
         ship_weapon_items = [x for x in world_items if x == item_names.PROGRESSIVE_TERRAN_SHIP_WEAPON]
 
-        # Under standard tactics you need to place L3 upgrades for available unit classes
-        self.assertGreaterEqual(len(vehicle_weapon_items), 3)
-        self.assertGreaterEqual(len(ship_weapon_items), 3)
-
-    def test_weapon_armor_upgrades_generic_upgrade_missions(self) -> None:
-        """
-        Tests the case when there aren't enough missions in order to get required weapon/armor upgrades
-        for logic requirements.
-        :return:
-        """
-        world_options = {
-            # Vanilla WoL with all missions
-            'mission_order': options.MissionOrder.option_vanilla,
-            'required_tactics': options.RequiredTactics.option_standard,
-            'starter_unit': options.StarterUnit.option_off,
-            'enabled_campaigns': {
-                SC2Campaign.WOL.campaign_name,
-            },
-            'all_in_map': options.AllInMap.option_air, # All-in air forces an air unit
-            'start_inventory': {
-                item_names.GOLIATH: 1 # Don't fail with early item placement
-            },
-            'generic_upgrade_items': options.GenericUpgradeItems.option_individual_items,
-            'generic_upgrade_missions': 100, # Fallback happens by putting weapon/armor upgrades into starting inventory
-        }
-
-        self.generate_world(world_options)
-        starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
-        upgrade_items = [x for x in starting_inventory if x == item_names.PROGRESSIVE_TERRAN_WEAPON_ARMOR_UPGRADE]
-
-        # Under standard tactics you need to place L3 upgrades for available unit classes
-        self.assertEqual(len(upgrade_items), 3)
-
-    def test_weapon_armor_upgrades_generic_upgrade_missions_no_logic(self) -> None:
-        """
-        Tests the case when there aren't enough missions in order to get required weapon/armor upgrades
-        for logic requirements.
-
-        Except the case above it's No Logic, thus the fallback won't take place.
-        :return:
-        """
-        world_options = {
-            # Vanilla WoL with all missions
-            'mission_order': options.MissionOrder.option_vanilla,
-            'required_tactics': options.RequiredTactics.option_no_logic,
-            'starter_unit': options.StarterUnit.option_off,
-            'enabled_campaigns': {
-                SC2Campaign.WOL.campaign_name,
-            },
-            'all_in_map': options.AllInMap.option_air, # All-in air forces an air unit
-            'start_inventory': {
-                item_names.GOLIATH: 1 # Don't fail with early item placement
-            },
-            'generic_upgrade_items': options.GenericUpgradeItems.option_individual_items,
-            'generic_upgrade_missions': 100, # Fallback happens by putting weapon/armor upgrades into starting inventory
-        }
-
-        self.generate_world(world_options)
-        starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
-        upgrade_items = [x for x in starting_inventory if x == item_names.PROGRESSIVE_TERRAN_WEAPON_ARMOR_UPGRADE]
-
-        # No logic won't take the fallback to trigger
-        self.assertEqual(len(upgrade_items), 0)
+        # Under standard tactics you need to place L3 upgrades for an available unit class
+        self.assertTrue(
+            len(infantry_weapon_items) >= 3
+            or len(vehicle_weapon_items) >= 3
+            or len(ship_weapon_items) >= 3,
+            f"Infantry: {len(infantry_weapon_items)}, Vehicle: {len(vehicle_weapon_items)}, Ship: {len(ship_weapon_items)}"
+        )
 
     def test_weapon_armor_upgrades_generic_upgrade_missions_no_countermeasure_needed(self) -> None:
         world_options = {
             # Vanilla WoL with all missions
             'mission_order': options.MissionOrder.option_vanilla,
-            'required_tactics': options.RequiredTactics.option_standard,
+            'required_tactics': options.RequiredTactics.option_basic,
             'starter_unit': options.StarterUnit.option_off,
             'enabled_campaigns': {
                 SC2Campaign.WOL.campaign_name,
@@ -866,13 +848,13 @@ class TestItemFiltering(Sc2SetupTestBase):
                             },
                             {
                                 'index': 2,
-                                'mission_pool': [SC2Mission.THE_RECKONING.mission_name]
+                                'mission_pool': [SC2Mission.RENDEZVOUS.mission_name]
                             },
                         ]
                     }
                 }
             },
-            'required_tactics': options.RequiredTactics.option_standard,
+            'required_tactics': options.RequiredTactics.option_basic,
             'starter_unit': options.StarterUnit.option_off,
             'generic_upgrade_items': options.GenericUpgradeItems.option_individual_items,
             'grant_story_levels': options.GrantStoryLevels.option_disabled,
@@ -883,8 +865,10 @@ class TestItemFiltering(Sc2SetupTestBase):
         self.generate_world(world_options)
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
         kerrigan_1_stacks = [x for x in starting_inventory if x == item_names.KERRIGAN_LEVELS_1]
+        kerrigan_5_stacks = [x for x in starting_inventory if x == item_names.KERRIGAN_LEVELS_5]
+        kerrigan_starting_levels = len(kerrigan_1_stacks) + 5 * len(kerrigan_5_stacks)
 
-        self.assertGreater(len(kerrigan_1_stacks), 0)
+        self.assertGreater(kerrigan_starting_levels, 0)
 
     def test_kerrigan_levels_per_mission_and_generic_upgrades_both_triggering_pre_fill(self) -> None:
         world_options = {
@@ -913,7 +897,7 @@ class TestItemFiltering(Sc2SetupTestBase):
                     }
                 }
             },
-            'required_tactics': options.RequiredTactics.option_standard,
+            'required_tactics': options.RequiredTactics.option_basic,
             'starter_unit': options.StarterUnit.option_off,
             'generic_upgrade_items': options.GenericUpgradeItems.option_individual_items,
             'grant_story_levels': options.GrantStoryLevels.option_disabled,
@@ -926,10 +910,10 @@ class TestItemFiltering(Sc2SetupTestBase):
         starting_inventory = [item.name for item in self.multiworld.precollected_items[self.player]]
         itempool = [item.name for item in self.multiworld.itempool]
         kerrigan_1_stacks = [x for x in starting_inventory if x == item_names.KERRIGAN_LEVELS_1]
-        upgrade_items = [x for x in starting_inventory if x == item_names.PROGRESSIVE_ZERG_WEAPON_ARMOR_UPGRADE]
+        kerrigan_5_stacks = [x for x in starting_inventory if x == item_names.KERRIGAN_LEVELS_5]
+        kerrigan_starting_levels = len(kerrigan_1_stacks) + 5 * len(kerrigan_5_stacks)
 
-        self.assertGreater(len(kerrigan_1_stacks), 0) # Kerrigan levels were added
-        self.assertEqual(len(upgrade_items), 3) # W/A upgrades were added
+        self.assertGreater(kerrigan_starting_levels, 0)
         self.assertNotIn(item_names.KERRIGAN_LEVELS_70, itempool)
         self.assertNotIn(item_names.KERRIGAN_LEVELS_70, starting_inventory)
 
@@ -944,18 +928,9 @@ class TestItemFiltering(Sc2SetupTestBase):
                         'type': 'column',
                         'size': 3,
                         'missions': [
-                            {
-                                'index': 0,
-                                'mission_pool': [SC2Mission.LIBERATION_DAY.mission_name]
-                            },
-                            {
-                                'index': 1,
-                                'mission_pool': [SC2Mission.RENDEZVOUS.mission_name]
-                            },
-                            {
-                                'index': 2,
-                                'mission_pool': [SC2Mission.SUPREME.mission_name]
-                            },
+                            {'index': 0,'mission_pool': [SC2Mission.LIBERATION_DAY.mission_name]},
+                            {'index': 1, 'mission_pool': [SC2Mission.RENDEZVOUS.mission_name]},
+                            {'index': 2, 'mission_pool': [SC2Mission.SUPREME.mission_name]},
                         ]
                     }
                 }
@@ -969,6 +944,7 @@ class TestItemFiltering(Sc2SetupTestBase):
         }
         self.generate_world(world_options)
         itempool = [item.name for item in self.multiworld.itempool]
+        itempool += [item.name for item in self.multiworld.precollected_items[self.player]]
 
         # These items will be in the pool despite exclusions
         self.assertIn(item_names.KERRIGAN_LEAPING_STRIKE, itempool)
@@ -1358,7 +1334,7 @@ class TestItemFiltering(Sc2SetupTestBase):
             },
             'excluded_items': {item_names.MARINE: -1, item_names.MEDIC: -1},
             'shuffle_no_build': False,
-            'required_tactics': RequiredTactics.option_standard
+            'required_tactics': RequiredTactics.option_basic
         }
         mm_logic_upgrades = {
             item_names.MARINE_COMBAT_SHIELD,

@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, List, Dict, Any, Tuple, Optional
 
 from Options import OptionError
 from BaseClasses import Location
-from .locations import LocationData
 from .mission_tables import (
     SC2Mission, SC2Campaign, MissionFlag, SC2Race, get_campaign_goal_priority,
     campaign_final_mission_locations, campaign_alt_final_mission_locations
@@ -19,23 +18,13 @@ from .mission_order.options import CustomMissionOrder
 from .mission_order import SC2MissionOrder
 from .mission_order.nodes import SC2MOGenMissionOrder
 from .mission_order.mission_pools import SC2MOGenMissionPools, Difficulty
-from .mission_order.generation import (
-    resolve_unlocks,
-    fill_depths,
-    resolve_difficulties,
-    fill_missions,
-    make_connections,
-    resolve_generic_keys,
-)
+from .mission_order import generation
 
 if TYPE_CHECKING:
     from . import SC2World
 
 
-def create_mission_order(
-    world: 'SC2World', locations: Tuple[LocationData, ...], location_cache: List[Location]
-) -> SC2MissionOrder:
-    # 'locations' contains both actual game locations and beat event locations for all mission regions
+def create_mission_order(world: 'SC2World', location_cache: list[Location]) -> SC2MissionOrder:
     # When a region (mission) is accessible, all its locations are potentially accessible
     # Accessible in this context always means "its access rule evaluates to True"
     # This includes the beat events, which copy the access rules of the victory locations
@@ -66,18 +55,22 @@ def create_mission_order(
     mission_order = SC2MOGenMissionOrder(world, mission_order_dict)
 
     # Set up requirements for individual parts of the mission order
-    resolve_unlocks(mission_order)
+    generation.resolve_unlocks(mission_order)
 
     # Ensure total accessibilty and resolve relative difficulties
-    fill_depths(mission_order)
-    resolve_difficulties(mission_order)
+    generation.fill_depths(mission_order)
+    generation.resolve_difficulties(mission_order)
 
     # Build the mission order
-    fill_missions(mission_order, mission_pools, world, [], locations, location_cache)  # TODO set locked missions
-    make_connections(mission_order, world)
+    region_to_location_data = generation.get_locations_per_region(world)
+    # TODO set locked missions
+    generation.fill_missions(mission_order, mission_pools, world, [], location_cache, region_to_location_data)
+    generation.initialize_hero_presence(world, mission_order)
+    generation.set_rules(world, mission_order, region_to_location_data, location_cache)
+    generation.make_connections(mission_order, world)
 
     # Fill in Key requirements now that missions are placed
-    resolve_generic_keys(mission_order)
+    generation.resolve_generic_keys(mission_order)
 
     return SC2MissionOrder(mission_order, mission_pools)
 
@@ -90,10 +83,8 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
     grant_story_levels = world.options.grant_story_levels.value
     war_council_nerfs = world.options.war_council_nerfs.value == WarCouncilNerfs.option_true
     assert world.logic
-    kerrigan_items_granted = grant_story_tech  # TODO (Snarky): revisit when handling NCO-only generation
-    nova_items_granted = grant_story_tech
     # General changes for standard tactics
-    if world.options.required_tactics.value == RequiredTactics.option_standard:
+    if world.options.required_tactics.value == RequiredTactics.option_basic:
         pools.move_mission(SC2Mission.SMASH_AND_GRAB, Difficulty.STARTER, Difficulty.EASY)
 
         if world.options.shuffle_no_build.value == ShuffleNoBuild.option_false:
@@ -134,14 +125,26 @@ def adjust_mission_pools(world: 'SC2World', pools: SC2MOGenMissionPools) -> None
     if grant_story_tech == GrantStoryTech.option_grant:
         # Additional starter mission if player is granted story tech
         pools.move_mission(SC2Mission.ENEMY_WITHIN, Difficulty.EASY, Difficulty.STARTER)
+        pools.move_mission(SC2Mission.ENEMY_WITHIN_T, Difficulty.EASY, Difficulty.STARTER)
+        pools.move_mission(SC2Mission.ENEMY_WITHIN_P, Difficulty.EASY, Difficulty.STARTER)
         pools.move_mission(SC2Mission.TEMPLAR_S_RETURN, Difficulty.MEDIUM, Difficulty.STARTER)
-    if grant_story_tech == GrantStoryTech.option_grant or nova_items_granted:
+    if grant_story_tech == GrantStoryTech.option_grant:
         # Additional starter mission if player is granted story tech, or Nova only appears in no-builds
         pools.move_mission(SC2Mission.THE_ESCAPE, Difficulty.MEDIUM, Difficulty.STARTER)
         pools.move_mission(SC2Mission.IN_THE_ENEMY_S_SHADOW, Difficulty.MEDIUM, Difficulty.STARTER)
+    if (
+        world.options.required_tactics.value < RequiredTactics.option_chaos
+        and ((enabled_campaigns - {SC2Campaign.EPILOGUE}) == {SC2Campaign.NCO})
+    ):
+        # NCO-only will always start with a no-build
+        # Note(mm): Moving these to starter instead of easy breaks mini_campaign generation
+        # As the campaign is short enough it starts at easy, and if there are no eay missions it will
+        # fallback to Medium before Starter
+        pools.move_mission(SC2Mission.THE_ESCAPE, Difficulty.MEDIUM, Difficulty.EASY)
+        pools.move_mission(SC2Mission.IN_THE_ENEMY_S_SHADOW, Difficulty.MEDIUM, Difficulty.EASY)
     if not war_council_nerfs or grant_story_tech == GrantStoryTech.option_grant:
         pools.move_mission(SC2Mission.TEMPLAR_S_RETURN, Difficulty.MEDIUM, Difficulty.STARTER)
-    if (grant_story_tech == GrantStoryTech.option_grant and grant_story_levels) or kerrigan_items_granted:
+    if grant_story_tech == GrantStoryTech.option_grant and grant_story_levels:
         # The player has, all the stuff he needs, provided under these settings
         pools.move_mission(SC2Mission.SUPREME, Difficulty.MEDIUM, Difficulty.STARTER)
         pools.move_mission(SC2Mission.THE_INFINITE_CYCLE, Difficulty.HARD, Difficulty.STARTER)

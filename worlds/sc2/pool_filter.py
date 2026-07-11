@@ -1,18 +1,21 @@
 import logging
-from typing import Callable, Dict, List, Set, Tuple, TYPE_CHECKING, Iterable
+from typing import Callable, TYPE_CHECKING, Iterable
+from collections import Counter
 
+from Options import OptionError
 from BaseClasses import Location, ItemClassification
-from .item import StarcraftItem, ItemFilterFlags, item_names, item_parents, item_groups
+from .item import StarcraftItem, ItemFilterFlags, item_names, item_parents, item_groups, virtual_items
 from .item.item_tables import item_table, TerranItemType, ZergItemType, spear_of_adun_calldowns
-from .options import RequiredTactics
+from . import tables
 
 if TYPE_CHECKING:
     from . import SC2World
+    from BaseClasses import CollectionState
 
 
 # Items that can be placed before resources if not already in
 # General upgrades and Mercs
-second_pass_placeable_items: Tuple[str, ...] = (
+second_pass_placeable_items: tuple[str, ...] = (
     # Global weapon/armor upgrades
     item_names.PROGRESSIVE_TERRAN_ARMOR_UPGRADE,
     item_names.PROGRESSIVE_TERRAN_WEAPON_UPGRADE,
@@ -105,33 +108,33 @@ def copy_item(item: StarcraftItem) -> StarcraftItem:
 
 
 class ValidInventory:
-    def __init__(self, world: 'SC2World', item_pool: List[StarcraftItem]) -> None:
+    def __init__(self, world: 'SC2World', item_pool: list[StarcraftItem]) -> None:
         self.multiworld = world.multiworld
         self.player = world.player
         self.world: 'SC2World' = world
         # Track all Progression items and those with complex rules for filtering
-        self.logical_inventory: Dict[str, int] = {}
+        self.logical_inventory: Counter[str] = Counter()
         for item in item_pool:
             if not item_table[item.name].is_important_for_filtering():
                 continue
-            self.logical_inventory.setdefault(item.name, 0)
             self.logical_inventory[item.name] += 1
+            virtual_items.after_add_item(self.logical_inventory, item)
         self.item_pool = item_pool
-        self.item_name_to_item: Dict[str, List[StarcraftItem]] = {}
-        self.item_name_to_child_items: Dict[str, List[StarcraftItem]] = {}
+        self.item_name_to_item: dict[str, list[StarcraftItem]] = {}
+        self.item_name_to_child_items: dict[str, list[StarcraftItem]] = {}
         for item in item_pool:
             self.item_name_to_item.setdefault(item.name, []).append(item)
             for parent_item in item_parents.child_item_to_parent_items.get(item.name, []):
                 self.item_name_to_child_items.setdefault(parent_item, []).append(item)
 
     def has(self, item: str, player: int, count: int = 1) -> bool:
-        return self.logical_inventory.get(item, 0) >= count
+        return self.logical_inventory[item] >= count
 
-    def has_any(self, items: Set[str], player: int) -> bool:
-        return any(self.logical_inventory.get(item) for item in items)
+    def has_any(self, items: set[str], player: int) -> bool:
+        return any(self.logical_inventory[item] for item in items)
 
-    def has_all(self, items: Set[str], player: int) -> bool:
-        return all(self.logical_inventory.get(item) for item in items)
+    def has_all(self, items: set[str], player: int) -> bool:
+        return all(self.logical_inventory[item] for item in items)
 
     def has_group(self, item_group: str, player: int, count: int = 1) -> bool:
         return False  # Deliberately fails here, as item pooling is not aware about mission layout
@@ -140,17 +143,23 @@ class ValidInventory:
         return 0  # For item filtering assume no missions are beaten
 
     def count(self, item: str, player: int) -> int:
-        return self.logical_inventory.get(item, 0)
+        return self.logical_inventory[item]
 
     def count_from_list(self, items: Iterable[str], player: int) -> int:
-        return sum(self.logical_inventory.get(item, 0) for item in items)
+        return sum(self.logical_inventory[item] for item in items)
 
     def count_from_list_unique(self, items: Iterable[str], player: int) -> int:
-        return sum(item in self.logical_inventory for item in items)
+        result = 0
+        for item in items:
+            if self.logical_inventory[item] > 0:
+                result += 1
+        return result
 
-    def generate_reduced_inventory(self, inventory_size: int, filler_amount: int, mission_requirements: List[Tuple[str, Callable]]) -> List[StarcraftItem]:
+    def generate_reduced_inventory(
+        self, inventory_size: int, filler_amount: int, mission_requirements: list[tuple[Callable, list[str]]]
+    ) -> list[StarcraftItem]:
         """Attempts to generate a reduced inventory that can fulfill the mission requirements."""
-        inventory: List[StarcraftItem] = list(self.item_pool)
+        inventory: list[StarcraftItem] = list(self.item_pool)
         requirements = mission_requirements
         min_upgrades_per_unit = self.world.options.min_number_of_upgrades.value
         max_upgrades_per_unit = self.world.options.max_number_of_upgrades.value
@@ -170,14 +179,16 @@ class ValidInventory:
             else returns a string containing failed locations and applies ItemFilterFlags.LogicLocked
             """
             # Only run logic checks when removing logic items
-            if self.logical_inventory.get(item.name, 0) > 0:
+            if self.logical_inventory[item.name] > 0:
                 self.logical_inventory[item.name] -= 1
-                failed_rules = [name for name, requirement in mission_requirements if not requirement(self)]
+                virtual_items.after_remove_item(self.logical_inventory, item)
+                failed_rules = [(names, requirement) for requirement, names in mission_requirements if not requirement(self)]
                 if failed_rules:
                     # If item cannot be removed, lock and revert
                     self.logical_inventory[item.name] += 1
+                    virtual_items.after_add_item(self.logical_inventory, item)
                     item.filter_flags |= ItemFilterFlags.LogicLocked
-                    return f"{len(failed_rules)} rules starting with \"{failed_rules[0]}\""
+                    return f"{len(failed_rules)} rules starting with \"{failed_rules[0][0][0]}\""
                 if not self.logical_inventory[item.name]:
                     del self.logical_inventory[item.name]
             item.filter_flags |= remove_flag
@@ -198,7 +209,7 @@ class ValidInventory:
                 if not attempt_removal(child_item, remove_flag):
                     remove_child_items(child_item, remove_flag)
 
-        def cull_items_over_maximum(group: List[StarcraftItem], allowed_max: int) -> None:
+        def cull_items_over_maximum(group: list[StarcraftItem], allowed_max: int) -> None:
             for item in group:
                 if len([x for x in group if ItemFilterFlags.Culled not in x.filter_flags]) <= allowed_max:
                     break
@@ -208,7 +219,7 @@ class ValidInventory:
                     continue
                 attempt_removal(item, remove_flag=ItemFilterFlags.Culled)
 
-        def request_minimum_items(group: List[StarcraftItem], requested_minimum) -> None:
+        def request_minimum_items(group: list[StarcraftItem], requested_minimum: int) -> None:
             for item in group:
                 if len([x for x in group if ItemFilterFlags.RequestedOrBetter & x.filter_flags]) >= requested_minimum:
                     break
@@ -217,17 +228,27 @@ class ValidInventory:
                 item.filter_flags |= ItemFilterFlags.Requested
 
         # Process Excluded items, validate if the item can get actually excluded
-        excluded_items: List[StarcraftItem] = [starcraft_item for starcraft_item in inventory if ItemFilterFlags.Excluded & starcraft_item.filter_flags]
+        excluded_items: list[StarcraftItem] = [
+            starcraft_item
+            for starcraft_item in inventory
+            if ItemFilterFlags.Excluded & starcraft_item.filter_flags
+        ]
         self.world.random.shuffle(excluded_items)
+        item_unexclusion_enabled = (
+            tables.StabilityOptions.ITEM_RE_INCLUSION in self.world.options.stability_features.value
+        )
         for excluded_item in excluded_items:
             if ItemFilterFlags.Unexcludable & excluded_item.filter_flags:
                 continue
             removal_failed = attempt_removal(excluded_item, remove_flag=ItemFilterFlags.Removed)
             if removal_failed:
                 if ItemFilterFlags.UserExcluded in excluded_item.filter_flags:
-                    logging.getLogger("Starcraft 2").warning(
-                        f"Cannot exclude item {excluded_item.name} as it would break {removal_failed}"
-                    )
+                    if item_unexclusion_enabled:
+                        logging.getLogger("Starcraft 2").warning(
+                            f"Cannot exclude item {excluded_item.name} as it would break {removal_failed}"
+                        )
+                    else:
+                        raise OptionError(f"Cannot exclude item {excluded_item.name} as it would break {removal_failed}")
                 else:
                     assert False, f"Item filtering excluded an item which is logically required: {excluded_item.name}"
                 continue
@@ -239,7 +260,7 @@ class ValidInventory:
             item.filter_flags &= ~ItemFilterFlags.Excluded
 
         # Determine item groups to be constrained by min/max upgrades per unit
-        group_to_item: Dict[str, List[StarcraftItem]] = {}
+        group_to_item: dict[str, list[StarcraftItem]] = {}
         group: str = ""
         for group, group_member_names in item_parents.item_upgrade_groups.items():
             group_to_item[group] = []
@@ -326,17 +347,21 @@ class ValidInventory:
 
         # Determining if the full-size inventory can complete campaign
         # Note(mm): Now that user excludes are checked against logic, this can probably never fail unless there's a bug.
-        failed_locations: List[str] = [location for (location, requirement) in requirements if not requirement(self)]
+        failed_locations: list[str] = [
+            location
+            for (requirement, names) in requirements if not requirement(self)
+            for location in names
+        ]
         if len(failed_locations) > 0:
             raise Exception(f"Too many items excluded - couldn't satisfy access rules for the following locations:\n{failed_locations}")
 
         # Optionally locking generic items
-        generic_items: List[StarcraftItem] = [
+        generic_items: list[StarcraftItem] = [
             starcraft_item for starcraft_item in inventory
             if starcraft_item.name in second_pass_placeable_items
                and (
-                       not ItemFilterFlags.CulledOrBetter & starcraft_item.filter_flags
-                       or ItemFilterFlags.RequestedOrBetter & starcraft_item.filter_flags
+                    not ItemFilterFlags.CulledOrBetter & starcraft_item.filter_flags
+                    or ItemFilterFlags.RequestedOrBetter & starcraft_item.filter_flags
                )
         ]
         reserved_generic_percent = self.world.options.ensure_generic_items.value / 100
@@ -347,17 +372,19 @@ class ValidInventory:
 
         # Main cull process
         def remove_random_item(
-            removable: List[StarcraftItem],
+            removable: list[StarcraftItem],
             dont_remove_flags: ItemFilterFlags,
             remove_flag: ItemFilterFlags = ItemFilterFlags.Removed,
         ) -> bool:
             if len(removable) == 0:
                 return False
             item = self.world.random.choice(removable)
+            # Make it less likely to drop w/a items
+            item_info = item_table[item.name]
             # Do not remove item if it would drop upgrades below minimum
             if min_upgrades_per_unit > 0:
                 group_name = None
-                parent = item_table[item.name].parent
+                parent = item_info.parent
                 if parent is not None:
                     group_name = item_parents.parent_present[parent].constraint_group
                 if group_name is not None:
@@ -456,13 +483,13 @@ class ValidInventory:
                 inventory.remove(removable_transport_hooks[0])
 
         # Weapon/Armour upgrades
-        def exclude_wa(prefix: str) -> List[StarcraftItem]:
+        def exclude_wa(prefix: str) -> list[StarcraftItem]:
             return [
                 item for item in inventory
                 if (ItemFilterFlags.UnexcludableUpgrade & item.filter_flags)
                 or not item.name.startswith(prefix)
             ]
-        used_item_names: Set[str] = {item.name for item in inventory}
+        used_item_names: set[str] = {item.name for item in inventory}
         if used_item_names.isdisjoint(item_groups.barracks_wa_group):
             inventory = exclude_wa(item_names.TERRAN_INFANTRY_UPGRADE_PREFIX)
         if used_item_names.isdisjoint(item_groups.factory_wa_group):
@@ -502,7 +529,7 @@ class ValidInventory:
         return inventory
 
 
-def filter_items(world: 'SC2World', location_cache: List[Location], item_pool: List[StarcraftItem]) -> List[StarcraftItem]:
+def filter_items(world: 'SC2World', location_cache: list[Location], item_pool: list[StarcraftItem]) -> list[StarcraftItem]:
     """
     Returns a semi-randomly pruned set of items based on number of available locations.
     The returned inventory must be capable of logically accessing every location in the world.
@@ -517,10 +544,12 @@ def filter_items(world: 'SC2World', location_cache: List[Location], item_pool: L
     reserved_filler_count = len(excluded_locations)
     target_nonfiller_item_count = inventory_size - reserved_filler_count
     filler_amount = (inventory_size * world.options.filler_percentage) // 100
-    if world.options.required_tactics.value == RequiredTactics.option_no_logic:
-        mission_requirements = []
-    else:
-        mission_requirements = [(location.name, location.access_rule) for location in location_cache]
+    cached_mission_requirements: dict[int, tuple[Callable[['CollectionState'], bool], list[str]]] = {}
+    for location in location_cache:
+        if location.access_rule is not Location.access_rule:
+            cached_mission_requirements.setdefault(id(location.access_rule), (location.access_rule, []))[1].append(location.name)
+    mission_requirements = list(cached_mission_requirements.values())
+    del cached_mission_requirements
     valid_inventory = ValidInventory(world, item_pool)
 
     valid_items = valid_inventory.generate_reduced_inventory(target_nonfiller_item_count, filler_amount, mission_requirements)
