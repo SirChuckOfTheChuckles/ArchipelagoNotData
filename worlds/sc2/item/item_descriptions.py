@@ -1235,7 +1235,7 @@ item_descriptions = {
     item_names.SUPPLICANT_SACRIFICE: "Supplicant War Council ability.\nAllows Supplicants to sacrifice themselves to save nearby units from death.",
 
     item_names.ARTANIS_LIGHTNING_DASH: "Artanis dashes to a target location, dealing damage and stunning enemies on arrival.",
-    item_names.ARTANIS_PHASE_PRISM: "Artanis stuns a unit, swap places with them, and then pulls nearby enemies to himself. He then gains temporary shields",
+    item_names.ARTANIS_PHASE_PRISM: "Artanis stuns a unit, swap places with them, and then pulls nearby enemies to himself. He then gains temporary shields.",
     item_names.ARTANIS_VALOR_OF_THE_FIRSTBORN: "Artanis gains 20% attack speed and restores shields on attack.",
     item_names.ARTANIS_VOLTAIC_SHOCK: "Artanis deals damage to units in an area and grounds air units.",
     item_names.ARTANIS_ASTRAL_WIND: "Artanis heals himself and nearby friendly units. Cooldown is reduced whenever Artanis attacks enemies.",
