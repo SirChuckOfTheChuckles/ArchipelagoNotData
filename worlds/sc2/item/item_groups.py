@@ -1708,12 +1708,6 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
     # Protoss general
     item_names.QUATRO,
     item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER,
-
-    # Mindless Broodwar garbage
-    item_names.GHOST_BARGAIN_BIN_PRICES,
-    item_names.SPECTRE_BARGAIN_BIN_PRICES,
-    item_names.REAVER_BARGAIN_BIN_PRICES,
-    item_names.SCOUT_SUPPLY_EFFICIENCY,
 ]
 
 # Opt-In items that do not show up by default.
@@ -1727,7 +1721,11 @@ item_name_groups[ItemGroupNames.DISABLED_ITEMS] = disabled_items = [
 # Items not aimed to be officially released
 # These need further balancing, and they shouldn't generate normally unless explicitly locked
 item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
-    # Nothing here for now
+    # Mindless Broodwar garbage
+    item_names.GHOST_BARGAIN_BIN_PRICES,
+    item_names.SPECTRE_BARGAIN_BIN_PRICES,
+    item_names.REAVER_BARGAIN_BIN_PRICES,
+    item_names.SCOUT_SUPPLY_EFFICIENCY,
 ]
 
 # A place for traits that were released before but are to be taken down by default.
