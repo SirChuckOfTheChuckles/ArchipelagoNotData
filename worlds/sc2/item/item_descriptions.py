@@ -511,7 +511,7 @@ item_descriptions = {
     item_names.SON_OF_KORHAL_THE_PRODIGAL_SON: "Rank 3 Sons of Korhal gain extra stats, attack range, and the Heroic tag.",
     item_names.SON_OF_KORHAL_SHIELD_OF_THE_DOMINION: "Sons of Korhal gain 25 life.",
     item_names.SON_OF_KORHAL_BUILD_A_BOOM: "Sons of Korhal start with and gain twice as many Spider Mines.",
-    item_names.SON_OF_KORHAL_THROW_SPIDER_MINE: "Allows Rank 2 Sons of Korhal to throw Spider Mines at a target location.",
+    item_names.SON_OF_KORHAL_TOSS_SPIDER_MINE: "Allows Rank 2 Sons of Korhal to throw Spider Mines at a target location.",
     item_names.FIELD_RESPONSE_THETA_ROYAL_ACADEMY_DEGREE: "Field Response Thetas start at Rank 1.",
     item_names.FIELD_RESPONSE_THETA_HOSPICE_CARE: "Defensive Matrix restores life to affected units.",
     item_names.FIELD_RESPONSE_THETA_PHYSICAL_THERAPY: "Field Response Thetas grant armor to healed units and gain damage reduction while healing.",
