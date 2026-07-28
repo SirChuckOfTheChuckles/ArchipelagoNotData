@@ -33,7 +33,7 @@ from .options import (
     MissionOrder, KerriganPrimalStatus, EnableMorphling, GameDifficulty,
     GameSpeed, GenericUpgradeItems, GenericUpgradeResearch, ColorChoice, GenericUpgradeMissions, MaxUpgradeLevel,
     LocationInclusion, ExtraLocations, MasteryLocations, SpeedrunLocations, PreventativeLocations, ChallengeLocations,
-    VanillaLocations, BasebustLocations, EnabledHeroes, HeroPresence,
+    VanillaLocations, BasebustLocations, EnabledHeroes,
     GrantStoryTech, GrantStoryLevels, TakeOverAIAllies, RequiredTactics,
     SpearOfAdunPresence, SpearOfAdunPresentInNoBuild, SpearOfAdunPassiveAbilityPresence,
     SpearOfAdunPassivesPresentInNoBuild, EnableVoidTrade, VoidTradeAgeLimit, void_trade_age_limits_ms, VoidTradeWorkers,
@@ -52,7 +52,8 @@ from .settings import Starcraft2Settings
 import nest_asyncio
 from .item import item_tables
 from .locations import (
-    SC2WOL_LOC_ID_OFFSET, LocationType, LocationFlag, SC2HOTS_LOC_ID_OFFSET, get_location_id, VICTORY_MODULO
+    SC2WOL_LOC_ID_OFFSET, LocationType, LocationFlag, SC2HOTS_LOC_ID_OFFSET, get_location_id, VICTORY_MODULO,
+    location_id_to_type,
 )
 from .mission_tables import (
     lookup_id_to_mission, SC2Campaign, MissionInfo,
@@ -560,16 +561,16 @@ class StarcraftClientProcessor(ClientCommandProcessor):
             except (KeyError, coreoptions.OptionError) as ex:
                 self.output(f"Unknown option value '{option_value}'")
                 sc2_logger.exception(f"Option error message: {ex}", extra={"NoStream": True, "skip_gui": True})
-                return False
+                return
         elif option.option_type == ConfigurableOptionType.INTEGER:
             try:
                 self.ctx.__dict__[option.variable_name] = int(option_value, base=0)
             except:
                 self.output(f"{option_value} is not a valid integer")
-                return False
+                return
         else:
             self.output(f"Unknown option value '{option_value}'")
-            return False
+            return
         if isinstance(option, ConfigurableSettingInfo):
             presentable_value = str(SC2World.settings.__dict__.get(
                 option.setting_name,
@@ -821,9 +822,9 @@ class SC2Context(CommonContext):
         self.mission_id_to_location_ids: dict[int, list[int]] = {}
         self.mission_client: game_client.MissionClient | None = None
         self.slot_data_version = 2
-        self.required_tactics: int = RequiredTactics.default
         self.grant_story_tech: int = GrantStoryTech.default
         self.grant_story_levels: int = GrantStoryLevels.default
+        self.grant_hero_items: set[int] = set()
         self.take_over_ai_allies: int = TakeOverAIAllies.default
         self.spear_of_adun_presence = SpearOfAdunPresence.option_not_present
         self.spear_of_adun_present_in_no_build = SpearOfAdunPresentInNoBuild.option_false
@@ -1080,7 +1081,8 @@ class SC2Context(CommonContext):
             self.enable_morphling = args["slot_data"].get("enable_morphling", EnableMorphling.option_false)
             self.grant_story_tech = args["slot_data"].get("grant_story_tech", GrantStoryTech.option_no_grant)
             self.grant_story_levels = args["slot_data"].get("grant_story_levels", GrantStoryLevels.option_additive)
-            self.required_tactics = args["slot_data"].get("required_tactics", RequiredTactics.option_standard)
+            self.grant_hero_items = set(args["slot_data"].get("grant_hero_items", []))
+            required_tactics = args["slot_data"].get("required_tactics", RequiredTactics.option_basic)
             self.take_over_ai_allies = args["slot_data"].get("take_over_ai_allies", TakeOverAIAllies.option_false)
             self.spear_of_adun_presence = args["slot_data"].get("spear_of_adun_presence", SpearOfAdunPresence.option_not_present)
             self.spear_of_adun_present_in_no_build = args["slot_data"].get("spear_of_adun_present_in_no_build", SpearOfAdunPresentInNoBuild.option_false)
@@ -1097,7 +1099,6 @@ class SC2Context(CommonContext):
             self.maximum_supply_reduction_per_item = args["slot_data"].get("maximum_supply_reduction_per_item", options.MaximumSupplyReductionPerItem.default)
             self.lowest_maximum_supply = args["slot_data"].get("lowest_maximum_supply", options.LowestMaximumSupply.default)
             self.research_cost_reduction_per_item = args["slot_data"].get("research_cost_reduction_per_item", options.ResearchCostReductionPerItem.default)
-            self.nova_items_granted = args["slot_data"].get("nova_items_granted", False)
             hero_presence_args = args["slot_data"].get("hero_presence","0")
             if hero_presence_args != "0":
                 self.base_hero_presence = self.unpack_hero_presence(hero_presence_args)
@@ -1124,7 +1125,7 @@ class SC2Context(CommonContext):
             self.mission_order_scouting = args["slot_data"].get("mission_order_scouting", MissionOrderScouting.option_none)
             self.mission_item_classification = args["slot_data"].get("mission_item_classification")
 
-            if self.required_tactics == RequiredTactics.option_no_logic:
+            if self.slot_data_version < 5 and required_tactics > RequiredTactics.option_chaos:
                 # Locking Grant Story Tech/Levels if no logic
                 self.grant_story_tech = GrantStoryTech.option_grant
                 self.grant_story_levels = GrantStoryLevels.option_minimum
@@ -1132,6 +1133,7 @@ class SC2Context(CommonContext):
             self.location_inclusions = {
                 LocationType.VICTORY: LocationInclusion.option_enabled, # Victory checks are always enabled
                 LocationType.VICTORY_CACHE: LocationInclusion.option_enabled, # Victory checks are always enabled
+                LocationType.STARTER_CACHE: LocationInclusion.option_enabled, # Cache checks are always enabled
                 LocationType.VANILLA: args["slot_data"].get("vanilla_locations", VanillaLocations.default),
                 LocationType.EXTRA: args["slot_data"].get("extra_locations", ExtraLocations.default),
                 LocationType.CHALLENGE: args["slot_data"].get("challenge_locations", ChallengeLocations.default),
@@ -1286,6 +1288,14 @@ class SC2Context(CommonContext):
                 sc2_logger.error(mission_client.message)
                 return False
             self.mission_client = mission_client
+            starter_cache_locations: list[int] = []
+            for objective_id in self.mission_id_to_location_ids[mission_id]:
+                location_id = get_location_id(mission_id, objective_id)
+                location_type = location_id_to_type(location_id)
+                if location_type == LocationType.STARTER_CACHE:
+                    starter_cache_locations.append(location_id)
+            if starter_cache_locations:
+                async_start(self.send_msgs([{"cmd": "LocationChecks", "locations": starter_cache_locations}]))
             return True
         else:
             sc2_logger.info(f"{lookup_id_to_mission[mission_id].mission_name} is not currently unlocked.")

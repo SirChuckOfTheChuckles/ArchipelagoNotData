@@ -7,7 +7,7 @@ import random
 
 from Options import OptionDict, Visibility
 from schema import Schema, Optional, And, Or
-from typing import Any, Union
+from typing import Any, Iterable
 import copy
 
 from ..mission_tables import lookup_name_to_mission
@@ -36,12 +36,20 @@ HERO_OPTION_VALUES = {
 
 STR_OPTION_VALUES: dict[str, dict[str, Any]] = {
     "type": {
-        "column": Column.__name__, "grid": Grid.__name__, "hopscotch": Hopscotch.__name__, "gauntlet": Gauntlet.__name__, "blitz": Blitz.__name__,
+        "column": Column.__name__,
+        "grid": Grid.__name__,
+        "hopscotch": Hopscotch.__name__,
+        "gauntlet": Gauntlet.__name__,
+        "blitz": Blitz.__name__,
         "canvas": Canvas.__name__,
     },
     "difficulty": {
-        "relative": Difficulty.RELATIVE.value, "starter": Difficulty.STARTER.value, "easy": Difficulty.EASY.value,
-        "medium": Difficulty.MEDIUM.value, "hard": Difficulty.HARD.value, "very hard": Difficulty.VERY_HARD.value
+        "relative": Difficulty.RELATIVE.value,
+        "starter": Difficulty.STARTER.value,
+        "easy": Difficulty.EASY.value,
+        "medium": Difficulty.MEDIUM.value,
+        "hard": Difficulty.HARD.value,
+        "very hard": Difficulty.VERY_HARD.value
     },
     "preset": {
         "none": lambda _: {},
@@ -335,8 +343,8 @@ def _resolve_string_option_single(option: str, option_value: str) -> Any:
     return STR_OPTION_VALUES[option][formatted_value]
 
 
-def _resolve_string_option(option: str, option_value: Union[list[str], str]) -> Any:
-    if type(option_value) == list:
+def _resolve_string_option(option: str, option_value: list[str] | str) -> Any:
+    if isinstance(option_value, list):
         return [_resolve_string_option_single(option, val) for val in option_value]
     else:
         return _resolve_string_option_single(option, option_value)
@@ -390,9 +398,9 @@ def _resolve_entry_rule(option_value: dict[str, Any]) -> dict[str, Any]:
     return resolved
 
 
-def _resolve_potential_range(option_value: Union[Any, str]) -> Union[Any, int]:
+def _resolve_potential_range(option_value: Any | str) -> Any | int:
     # An option value may be a range
-    if type(option_value) == str and option_value.startswith("random-range-"):
+    if isinstance(option_value, str) and option_value.startswith("random-range-"):
         resolved = _custom_range(option_value)
         return resolved
     else:
@@ -402,11 +410,11 @@ def _resolve_potential_range(option_value: Union[Any, str]) -> Union[Any, int]:
         return option_value
 
 
-def _resolve_mission_pool(option_value: Union[str, list[str]]) -> set[int]:
-    if type(option_value) == str:
+def _resolve_mission_pool(option_value: str | list[str]) -> set[int]:
+    if isinstance(option_value, str):
         pool = _get_target_missions(option_value)
     else:
-        pool: set[int] = set()
+        pool = set()
         for line in option_value:
             if line.startswith("~"):
                 if len(pool) == 0:
@@ -444,7 +452,7 @@ def _get_target_missions(term: str) -> set[int]:
 
 
 def _resolve_heroes(option_value: str | list[str]) -> list[str]:
-    if type(option_value) == str:
+    if isinstance(option_value, str):
         heroes = [option_value]
     else:
         heroes = option_value
@@ -488,7 +496,7 @@ def _triangular(lower: int, end: int, tri: int | None = None) -> int:
 # Version of options.Sc2ItemDict.verify without World
 def _resolve_item_names(value: dict[str, int]) -> dict[str, int]:
     new_value: dict[str, int] = {}
-    case_insensitive_group_mapping = {
+    case_insensitive_group_mapping: dict[str, Iterable[str]] = {
         group_name.casefold(): group_value for group_name, group_value in item_name_groups.items()
     }
     case_insensitive_group_mapping.update({item.casefold(): {item} for item in item_table})

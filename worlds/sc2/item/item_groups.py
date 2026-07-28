@@ -1,3 +1,5 @@
+import enum
+from typing import Iterable
 from . import item_tables, item_names
 from .item_tables import key_item_table
 from ..mission_tables import campaign_mission_table, SC2Campaign, SC2Mission, SC2Race
@@ -19,7 +21,12 @@ For non-developers the following will be useful:
 * Hand-crafted item groups can be found at the bottom of this file
 """
 
-item_name_groups: dict[str, list[str]] = {}
+
+def _intersection(left: Iterable[str], right: Iterable[str]) -> tuple[str, ...]:
+    return tuple(x for x in left if x in right)
+
+
+item_name_groups: dict[str, list[str] | tuple[str, ...]] = {}
 
 # Groups for use in world logic
 item_name_groups["Missions"] = ["Beat " + mission.mission_name for mission in SC2Mission]
@@ -83,8 +90,15 @@ class ItemGroupNames:
     TERRAN_ITEMS = "Terran Items"
     """All Terran items"""
     TERRAN_UNITS = "Terran Units"
+    TERRAN_BASIC_CORE_UNITS = "Terran Basic Core Units"
+    TERRAN_BASIC_STARTER_UNITS = "Terran Basic Starter Units"
+    TERRAN_ADVANCED_CORE_UNITS = "Terran Advanced Core Units"
+    TERRAN_ADVANCED_STARTER_UNITS = "Terran Advanced Starter Units"
+    TERRAN_CHAOS_STARTER_UNITS = "Terran Chaos Starter Units"
     TERRAN_GENERIC_UPGRADES = "Terran Generic Upgrades"
     """+attack/armour upgrades"""
+    TERRAN_MOBILE_DETECTION = "Terran Mobile Detection"
+    TERRAN_DETECTION = "Terran Detection"
     BARRACKS_UNITS = "Barracks Units"
     FACTORY_UNITS = "Factory Units"
     STARPORT_UNITS = "Starport Units"
@@ -102,6 +116,7 @@ class ItemGroupNames:
     NOVA_EQUIPMENT = "Nova Equipment"
     NOVA_WEAPONS = "Nova Weapons"
     NOVA_GADGETS = "Nova Gadgets"
+    NOVA_SUITS = "Nova Suits"
     NCO_MAX_PROGRESSIVE_ITEMS = "NCO +Items"
     """NCO item groups that should be set to maximum progressive amounts"""
     NCO_MIN_PROGRESSIVE_ITEMS = "NCO -Items"
@@ -126,9 +141,16 @@ class ItemGroupNames:
 
     ZERG_ITEMS = "Zerg Items"
     ZERG_UNITS = "Zerg Units"
+    ZERG_BASIC_CORE_UNITS = "Zerg Basic Core Units"
+    ZERG_BASIC_STARTER_UNITS = "Zerg Basic Starter Units"
+    ZERG_ADVANCED_CORE_UNITS = "Zerg Advanced Core Units"
+    ZERG_ADVANCED_STARTER_UNITS = "Zerg Advanced Starter Units"
+    ZERG_CHAOS_STARTER_UNITS = "Zerg Chaos Starter Units"
     ZERG_NONMORPH_UNITS = "Zerg Non-morph Units"
     ZERG_GENERIC_UPGRADES = "Zerg Generic Upgrades"
     """+attack/armour upgrades"""
+    ZERG_MOBILE_DETECTION = "Zerg Mobile Detection"
+    ZERG_DETECTION = "Zerg Detection"
     HOTS_UNITS = "HotS Units"
     HOTS_BUILDINGS = "HotS Buildings"
     HOTS_STRAINS = "HotS Strains"
@@ -175,8 +197,15 @@ class ItemGroupNames:
 
     PROTOSS_ITEMS = "Protoss Items"
     PROTOSS_UNITS = "Protoss Units"
+    PROTOSS_BASIC_CORE_UNITS = "Protoss Basic Core Units"
+    PROTOSS_BASIC_STARTER_UNITS = "Protoss Basic Starter Units"
+    PROTOSS_ADVANCED_CORE_UNITS = "Protoss Advanced Core Units"
+    PROTOSS_ADVANCED_STARTER_UNITS = "Protoss Advanced Starter Units"
+    PROTOSS_CHAOS_STARTER_UNITS = "Protoss Chaos Starter Units"
     PROTOSS_GENERIC_UPGRADES = "Protoss Generic Upgrades"
     """+attack/armour upgrades"""
+    PROTOSS_MOBILE_DETECTION = "Protoss Mobile Detection"
+    PROTOSS_DETECTION = "Protoss Detection"
     GATEWAY_UNITS = "Gateway Units"
     ROBO_UNITS = "Robo Units"
     STARGATE_UNITS = "Stargate Units"
@@ -227,44 +256,168 @@ class ItemGroupNames:
         }
 
 
+class LogicRating(enum.IntFlag):
+    """"""
+    NONE = 0
+    BASIC_STARTER       = 0b00001
+    ADVANCED_STARTER    = 0b00010
+    BASIC_EXTRA         = 0b00100
+    ADVANCED_EXTRA      = 0b01000
+
+    is_basic_core = BASIC_STARTER | BASIC_EXTRA
+    is_advanced_core = BASIC_STARTER | ADVANCED_STARTER | BASIC_EXTRA | ADVANCED_EXTRA
+    is_advanced_starter = BASIC_STARTER | ADVANCED_STARTER
+    is_basic_starter = BASIC_STARTER
+
+
 # Terran
 item_name_groups[ItemGroupNames.TERRAN_ITEMS] = terran_items = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.race == SC2Race.TERRAN
 ]
+
 item_name_groups[ItemGroupNames.TERRAN_UNITS] = terran_units = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type in (
     item_tables.TerranItemType.Unit, item_tables.TerranItemType.Unit_2, item_tables.TerranItemType.Mercenary)
 ]
+_terran_core_units = {
+    item_names.MARINE: LogicRating.BASIC_STARTER,
+    item_names.MARAUDER: LogicRating.BASIC_STARTER,
+    item_names.REAPER: LogicRating.BASIC_STARTER,
+    item_names.DOMINION_TROOPER: LogicRating.BASIC_STARTER,
+    item_names.HELLION: LogicRating.BASIC_STARTER,
+    item_names.VULTURE: LogicRating.BASIC_STARTER,
+    item_names.GOLIATH: LogicRating.BASIC_STARTER,
+    item_names.DIAMONDBACK: LogicRating.BASIC_STARTER,
+    item_names.SIEGE_TANK: LogicRating.BASIC_STARTER,
+    item_names.WARHOUND: LogicRating.BASIC_STARTER,
+    item_names.VIKING: LogicRating.BASIC_STARTER,
+    # Note(mm): Iffy on this one, as it can't block zerglings on e.g. Evacuation, and has a 60s build time
+    item_names.BANSHEE: LogicRating.BASIC_STARTER,
+
+    item_names.MEDIC: LogicRating.BASIC_EXTRA,  # No attack
+    item_names.AEGIS_GUARD: LogicRating.BASIC_EXTRA,
+    item_names.FIELD_RESPONSE_THETA: LogicRating.BASIC_EXTRA,  # Healer
+    item_names.MEDIVAC: LogicRating.BASIC_EXTRA,  # Healer
+    item_names.BULWARK_COMPANY: LogicRating.BASIC_EXTRA,
+    item_names.SHOCK_DIVISION: LogicRating.BASIC_EXTRA,
+    item_names.NIGHT_HAWK: LogicRating.BASIC_EXTRA,
+    item_names.NIGHT_WOLF: LogicRating.BASIC_EXTRA,
+    item_names.PRIDE_OF_AUGUSTGRAD: LogicRating.BASIC_EXTRA,
+    item_names.SKY_FURY: LogicRating.BASIC_EXTRA,
+    item_names.THOR: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,            # Tech time
+    item_names.BATTLECRUISER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,   # Tech time
+    item_names.SON_OF_KORHAL: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+
+    item_names.FIREBAT: LogicRating.ADVANCED_STARTER,
+    item_names.HERC: LogicRating.ADVANCED_STARTER,
+    item_names.GHOST: LogicRating.ADVANCED_STARTER,
+    item_names.SPECTRE: LogicRating.ADVANCED_STARTER,
+    item_names.CYCLONE: LogicRating.ADVANCED_STARTER,
+
+    item_names.PREDATOR: LogicRating.ADVANCED_EXTRA,            # Weak, can't be healed if follow-up units are healers
+    item_names.WRAITH: LogicRating.ADVANCED_EXTRA,              # Weak, can't be healed if follow-up units are healers
+    item_names.WIDOW_MINE: LogicRating.ADVANCED_EXTRA,          # Weak, no building attack baseline
+    item_names.RAVEN: LogicRating.ADVANCED_EXTRA,               # Caster
+    item_names.SCIENCE_VESSEL: LogicRating.ADVANCED_EXTRA,      # Caster
+    item_names.LIBERATOR: LogicRating.ADVANCED_EXTRA,           # Technical, no building attack baseline
+    item_names.VALKYRIE: LogicRating.ADVANCED_EXTRA,            # Air-to-air
+    item_names.EMPERORS_SHADOW: LogicRating.ADVANCED_EXTRA,     # Caster, expensive
+    item_names.EMPERORS_GUARDIAN: LogicRating.ADVANCED_EXTRA,   # Technical, expensive
+    item_names.BLACKHAMMER: LogicRating.ADVANCED_EXTRA,         # Primarily anti-air, expensive
+
+    item_names.HERCULES: LogicRating.NONE,
+}
+item_name_groups[ItemGroupNames.TERRAN_BASIC_STARTER_UNITS] = terran_basic_starter_units = [
+    _item_name for _item_name, _rating in _terran_core_units.items() if _rating & LogicRating.is_basic_starter
+]
+item_name_groups[ItemGroupNames.TERRAN_BASIC_CORE_UNITS] = terran_basic_units = [
+    _item_name for _item_name, _rating in _terran_core_units.items() if _rating & LogicRating.is_basic_core
+]
+item_name_groups[ItemGroupNames.TERRAN_ADVANCED_STARTER_UNITS] = terran_advanced_starter_units = [
+    _item_name for _item_name, _rating in _terran_core_units.items() if _rating & LogicRating.is_advanced_starter
+]
+item_name_groups[ItemGroupNames.TERRAN_ADVANCED_CORE_UNITS] = terran_advanced_units = [
+    _item_name for _item_name, _rating in _terran_core_units.items() if _rating & LogicRating.is_advanced_core
+]
+item_name_groups[ItemGroupNames.TERRAN_CHAOS_STARTER_UNITS] = terran_chaos_starter_units = [
+    # Infantry
+    item_names.MARINE,
+    item_names.FIREBAT,
+    item_names.MARAUDER,
+    item_names.REAPER,
+    item_names.HERC,
+    item_names.DOMINION_TROOPER,
+    item_names.GHOST,
+    item_names.SPECTRE,
+    # Vehicles
+    item_names.HELLION,
+    item_names.VULTURE,
+    item_names.SIEGE_TANK,
+    item_names.WARHOUND,
+    item_names.GOLIATH,
+    item_names.DIAMONDBACK,
+    item_names.THOR,
+    item_names.PREDATOR,
+    item_names.CYCLONE,
+    # Ships
+    item_names.WRAITH,
+    item_names.VIKING,
+    item_names.BANSHEE,
+    item_names.RAVEN,
+    item_names.BATTLECRUISER,
+    # RG
+    item_names.SON_OF_KORHAL,
+    item_names.AEGIS_GUARD,
+    item_names.EMPERORS_SHADOW,
+    item_names.BULWARK_COMPANY,
+    item_names.SHOCK_DIVISION,
+    item_names.BLACKHAMMER,
+    item_names.SKY_FURY,
+    item_names.NIGHT_WOLF,
+    item_names.NIGHT_HAWK,
+    item_names.PRIDE_OF_AUGUSTGRAD,
+]
 item_name_groups[ItemGroupNames.TERRAN_GENERIC_UPGRADES] = terran_generic_upgrades = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type == item_tables.TerranItemType.Upgrade
 ]
-barracks_wa_group = [
+item_name_groups[ItemGroupNames.TERRAN_MOBILE_DETECTION] = terran_mobile_detection = (
+    item_names.RAVEN,
+    item_names.SCIENCE_VESSEL,
+    item_names.COMMAND_CENTER_SCANNER_SWEEP,
+)
+item_name_groups[ItemGroupNames.TERRAN_DETECTION] = terran_detection = (
+    *terran_mobile_detection,
+    item_names.MISSILE_TURRET,
+)
+barracks_wa_group = (
     item_names.MARINE, item_names.FIREBAT, item_names.MARAUDER,
     item_names.REAPER, item_names.GHOST, item_names.SPECTRE, item_names.HERC,
     item_names.DOMINION_TROOPER,
-]
-item_name_groups[ItemGroupNames.BARRACKS_UNITS] = barracks_units = (barracks_wa_group + [
+)
+item_name_groups[ItemGroupNames.BARRACKS_UNITS] = barracks_units = (
+    *barracks_wa_group,
     item_names.MEDIC,
     item_names.SON_OF_KORHAL,
     item_names.FIELD_RESPONSE_THETA,
     item_names.AEGIS_GUARD,
     item_names.EMPERORS_SHADOW,
-])
-factory_wa_group = [
+)
+factory_wa_group = (
     item_names.HELLION, item_names.VULTURE, item_names.GOLIATH, item_names.DIAMONDBACK,
     item_names.SIEGE_TANK, item_names.THOR, item_names.PREDATOR,
     item_names.CYCLONE, item_names.WARHOUND,
-]
-item_name_groups[ItemGroupNames.FACTORY_UNITS] = factory_units = (factory_wa_group + [
+)
+item_name_groups[ItemGroupNames.FACTORY_UNITS] = factory_units = (
+    *factory_wa_group,
     item_names.WIDOW_MINE,
     item_names.BULWARK_COMPANY,
     item_names.SHOCK_DIVISION,
     item_names.BLACKHAMMER,
-])
-starport_wa_group = [
+)
+starport_wa_group = (
     item_names.WRAITH,
     item_names.VIKING,
     item_names.BANSHEE,
@@ -272,17 +425,47 @@ starport_wa_group = [
     item_names.LIBERATOR,
     item_names.VALKYRIE,
     item_names.RAVEN_HUNTER_SEEKER_WEAPON,
-]
-item_name_groups[ItemGroupNames.STARPORT_UNITS] = starport_units = [
+)
+item_name_groups[ItemGroupNames.STARPORT_UNITS] = starport_units = (
     item_names.MEDIVAC, item_names.WRAITH, item_names.VIKING, item_names.BANSHEE,
     item_names.BATTLECRUISER, item_names.HERCULES, item_names.SCIENCE_VESSEL, item_names.RAVEN,
     item_names.LIBERATOR, item_names.VALKYRIE, item_names.PRIDE_OF_AUGUSTGRAD, item_names.SKY_FURY,
     item_names.EMPERORS_GUARDIAN, item_names.NIGHT_HAWK, item_names.NIGHT_WOLF,
-]
-item_name_groups[ItemGroupNames.TERRAN_MERCENARIES] = terran_mercenaries = [
+)
+terran_basic_barracks_units = _intersection(terran_basic_units, barracks_wa_group)
+terran_basic_factory_units = _intersection(terran_basic_units, factory_wa_group)
+terran_basic_starport_units = _intersection(terran_basic_units, starport_wa_group)
+terran_advanced_barracks_units = _intersection(terran_advanced_units, barracks_wa_group)
+terran_advanced_factory_units = _intersection(terran_advanced_units, factory_wa_group)
+terran_advanced_starport_units = _intersection(terran_advanced_units, starport_wa_group)
+terran_chaos_infantry_units = (
+    *barracks_wa_group,
+    item_names.WAR_PIGS,
+    item_names.HAMMER_SECURITIES,
+    item_names.DEVIL_DOGS,
+    item_names.DEATH_HEADS,
+)
+terran_chaos_vehicle_units = (
+    *factory_wa_group,
+    item_names.SPARTAN_COMPANY,
+    item_names.SIEGE_BREAKERS,
+    item_names.JOTUN,
+)
+terran_chaos_ship_units = (
+    *(_x for _x in starport_wa_group if _x != item_names.RAVEN_HUNTER_SEEKER_WEAPON),
+    item_names.SCIENCE_VESSEL,
+    item_names.RAVEN,
+    item_names.HELS_ANGELS,
+    item_names.DUSK_WINGS,
+    item_names.JACKSONS_REVENGE,
+    item_names.WINGED_NIGHTMARES,
+    item_names.MIDNIGHT_RIDERS,
+    item_names.BRYNHILDS,
+)
+item_name_groups[ItemGroupNames.TERRAN_MERCENARIES] = terran_mercenaries = tuple(
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type == item_tables.TerranItemType.Mercenary
-]
+)
 item_name_groups[ItemGroupNames.NCO_UNITS] = nco_units = [
     item_names.MARINE, item_names.MARAUDER, item_names.REAPER,
     item_names.HELLION, item_names.GOLIATH, item_names.SIEGE_TANK,
@@ -310,6 +493,12 @@ item_name_groups[ItemGroupNames.NOVA_GADGETS] = nova_gadgets = [
     item_names.NOVA_FLASHBANG_GRENADES,
     item_names.NOVA_IONIC_FORCE_FIELD,
     item_names.NOVA_HOLO_DECOY,
+]
+item_name_groups[ItemGroupNames.NOVA_SUITS] = nova_suits = [
+    item_names.NOVA_PROGRESSIVE_STEALTH_SUIT_MODULE,
+    item_names.NOVA_JUMP_SUIT_MODULE,
+    item_names.NOVA_ENERGY_SUIT_MODULE,
+    item_names.NOVA_ARMORED_SUIT_MODULE,
 ]
 item_name_groups[ItemGroupNames.WOL_UNITS] = wol_units = [
     item_names.MARINE, item_names.MEDIC, item_names.FIREBAT, item_names.MARAUDER, item_names.REAPER,
@@ -644,6 +833,72 @@ zerg_ground_units = [
     item_names.INFESTED_MARINE, item_names.INFESTED_BUNKER, item_names.INFESTED_DIAMONDBACK,
     item_names.INFESTED_SIEGE_TANK,
 ]
+_zerg_core_units = {
+    item_names.SWARM_QUEEN: LogicRating.BASIC_STARTER,
+    item_names.ROACH: LogicRating.BASIC_STARTER,
+    item_names.HYDRALISK: LogicRating.BASIC_STARTER,
+    item_names.ABERRATION: LogicRating.BASIC_STARTER,
+    item_names.PYGALISK: LogicRating.BASIC_STARTER,
+    item_names.INFESTED_DIAMONDBACK: LogicRating.BASIC_STARTER,
+
+    # item_names.BROOD_LORD: LogicRating.BASIC_EXTRA,
+    # item_names.GUARDIAN: LogicRating.BASIC_EXTRA,
+    # item_names.TYRANNOZOR: LogicRating.BASIC_EXTRA,
+    # item_names.PRIMAL_IGNITER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    # item_names.LURKER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    # item_names.IMPALER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.ZERGLING: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.MUTALISK: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.SWARM_HOST: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.ULTRALISK: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.INFESTED_MARINE: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.INFESTED_BANSHEE: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+
+    # item_names.RAVAGER: LogicRating.ADVANCED_STARTER,
+
+    item_names.INFESTOR: LogicRating.ADVANCED_EXTRA,  # Caster
+    item_names.HIVE_QUEEN: LogicRating.ADVANCED_EXTRA,  # Caster
+    item_names.BROOD_QUEEN: LogicRating.ADVANCED_EXTRA,  # Caster
+    item_names.DEFILER: LogicRating.ADVANCED_EXTRA,  # Caster
+    item_names.INFESTED_SIEGE_TANK: LogicRating.ADVANCED_EXTRA,
+    item_names.BULLFROG: LogicRating.ADVANCED_EXTRA,
+    item_names.CORRUPTOR: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    item_names.INFESTED_LIBERATOR: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    # item_names.VIPER: LogicRating.ADVANCED_EXTRA,
+    # item_names.DEVOURER: LogicRating.ADVANCED_EXTRA,
+
+    item_names.SCOURGE: LogicRating.NONE,  # Air-to-air, suicide
+    # item_names.BANELING: LogicRating.NONE,
+}
+item_name_groups[ItemGroupNames.ZERG_BASIC_STARTER_UNITS] = zerg_basic_starter_units = [
+    _item_name for _item_name, _rating in _zerg_core_units.items() if _rating & LogicRating.is_basic_starter
+]
+item_name_groups[ItemGroupNames.ZERG_BASIC_CORE_UNITS] = zerg_basic_units = [
+    _item_name for _item_name, _rating in _zerg_core_units.items() if _rating & LogicRating.is_basic_core
+]
+item_name_groups[ItemGroupNames.ZERG_ADVANCED_STARTER_UNITS] = zerg_advanced_starter_units = [
+    _item_name for _item_name, _rating in _zerg_core_units.items() if _rating & LogicRating.is_advanced_starter
+]
+item_name_groups[ItemGroupNames.ZERG_ADVANCED_CORE_UNITS] = zerg_advanced_units = [
+    _item_name for _item_name, _rating in _zerg_core_units.items() if _rating & LogicRating.is_advanced_core
+]
+item_name_groups[ItemGroupNames.ZERG_CHAOS_STARTER_UNITS] = zerg_chaos_starter_units = [
+    item_names.ZERGLING,
+    item_names.SWARM_QUEEN,
+    item_names.HIVE_QUEEN,
+    item_names.ROACH,
+    item_names.HYDRALISK,
+    item_names.ABERRATION,
+    item_names.SWARM_HOST,
+    item_names.MUTALISK,
+    item_names.ULTRALISK,
+    item_names.PYGALISK,
+    item_names.INFESTED_MARINE,
+    item_names.INFESTED_BUNKER,
+    item_names.INFESTED_DIAMONDBACK,
+    item_names.INFESTED_SIEGE_TANK,
+    item_names.INFESTED_BANSHEE,
+]
 zerg_melee_wa = [
     item_names.ZERGLING, item_names.ABERRATION, item_names.ULTRALISK, item_names.BANELING,
     item_names.TYRANNOZOR, item_names.INFESTED_BUNKER, item_names.PYGALISK,
@@ -661,10 +916,64 @@ zerg_air_units = [
     item_names.CORRUPTOR, item_names.BROOD_QUEEN, item_names.SCOURGE, item_names.GUARDIAN,
     item_names.DEVOURER, item_names.INFESTED_BANSHEE, item_names.INFESTED_LIBERATOR,
 ]
+zerg_basic_melee_units = _intersection(zerg_basic_units, zerg_melee_wa)
+zerg_basic_ranged_units = _intersection(zerg_basic_units, zerg_ranged_wa)
+zerg_basic_air_units = _intersection(zerg_basic_units, zerg_air_units)
+zerg_basic_melee_morphs = (
+    item_names.TYRANNOZOR,
+)
+zerg_basic_ranged_morphs = (
+    item_names.PRIMAL_IGNITER,
+    item_names.LURKER,
+    item_names.IMPALER,
+)
+zerg_basic_air_morphs = (
+    item_names.BROOD_LORD,
+    item_names.GUARDIAN,
+)
+zerg_advanced_melee_units = _intersection(zerg_advanced_units, zerg_melee_wa)
+zerg_advanced_ranged_units = _intersection(zerg_advanced_units, zerg_ranged_wa)
+zerg_advanced_air_units = _intersection(zerg_advanced_units, zerg_air_units)
+zerg_advanced_melee_morphs = zerg_basic_melee_morphs
+zerg_advanced_ranged_morphs = (
+    *zerg_basic_ranged_morphs,
+    item_names.RAVAGER,
+)
+zerg_advanced_air_morphs = (
+    *zerg_basic_air_morphs,
+    item_names.VIPER,
+    item_names.DEVOURER,
+)
+zerg_chaos_melee_units = (
+    *(_x for _x in zerg_melee_wa if _x not in zerg_morphs),
+    item_names.HUNTERLING,
+    item_names.DEVOURING_ONES,
+    item_names.WISE_OLD_TORRASQUE,
+)
+zerg_chaos_ranged_units = (
+    *(_x for _x in zerg_ranged_wa if _x not in zerg_morphs),
+    item_names.INFESTED_SIEGE_BREAKERS,
+    item_names.HUNTER_KILLERS,
+    item_names.CAUSTIC_HORRORS,
+)
+zerg_chaos_air_units = (
+    *(_x for _x in zerg_air_units if _x not in zerg_morphs),
+    item_names.INFESTED_DUSK_WINGS,
+)
+
 item_name_groups[ItemGroupNames.ZERG_GENERIC_UPGRADES] = zerg_generic_upgrades = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type == item_tables.ZergItemType.Upgrade
 ]
+item_name_groups[ItemGroupNames.ZERG_MOBILE_DETECTION] = zerg_mobile_detection = (
+    item_names.OVERSEER,
+    item_names.BROOD_QUEEN,
+)
+item_name_groups[ItemGroupNames.ZERG_DETECTION] = zerg_detection = (
+    *zerg_mobile_detection,
+    item_names.SPORE_CRAWLER,
+    item_names.INFESTED_MISSILE_TURRET,
+)
 item_name_groups[ItemGroupNames.HOTS_UNITS] = hots_units = [
     item_names.ZERGLING, item_names.SWARM_QUEEN, item_names.ROACH, item_names.HYDRALISK,
     item_names.ABERRATION, item_names.SWARM_HOST, item_names.MUTALISK,
@@ -942,7 +1251,124 @@ item_name_groups[ItemGroupNames.PROTOSS_UNITS] = protoss_units = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type in (item_tables.ProtossItemType.Unit, item_tables.ProtossItemType.Unit_2)
 ]
-protoss_ground_wa = [
+_protoss_core_units = {
+    item_names.ZEALOT: LogicRating.BASIC_STARTER,
+    item_names.CENTURION: LogicRating.BASIC_STARTER,
+    item_names.SENTINEL: LogicRating.BASIC_STARTER,
+    item_names.STALKER: LogicRating.BASIC_STARTER,
+    item_names.INSTIGATOR: LogicRating.BASIC_STARTER,
+    item_names.SLAYER: LogicRating.BASIC_STARTER,
+    item_names.DRAGOON: LogicRating.BASIC_STARTER,
+    item_names.ADEPT: LogicRating.BASIC_STARTER,
+    item_names.DARK_TEMPLAR: LogicRating.BASIC_STARTER,
+    item_names.AVENGER: LogicRating.BASIC_STARTER,
+    item_names.IMMORTAL: LogicRating.BASIC_STARTER,
+    item_names.VANGUARD: LogicRating.BASIC_STARTER,
+    item_names.STALWART: LogicRating.BASIC_STARTER,
+    item_names.VOID_RAY: LogicRating.BASIC_STARTER,
+
+    item_names.SUPPLICANT: LogicRating.BASIC_EXTRA,
+    item_names.SENTRY: LogicRating.BASIC_EXTRA,  # Healer
+    item_names.ENERGIZER: LogicRating.BASIC_EXTRA,  # Autocast caster
+    item_names.HAVOC: LogicRating.BASIC_EXTRA,  # Autocast caster
+    item_names.PULSAR: LogicRating.BASIC_EXTRA,  # Autocast caster
+    item_names.CARRIER: LogicRating.BASIC_EXTRA,  # Tech time
+    item_names.SKYLORD: LogicRating.BASIC_EXTRA,  # Tech time
+    item_names.TRIREME: LogicRating.BASIC_EXTRA,  # Tech time
+    item_names.TEMPEST: LogicRating.BASIC_EXTRA,  # Tech time
+    item_names.BLOOD_HUNTER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.ANNIHILATOR: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.COLOSSUS: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,  # Tech time
+    item_names.WRATHWALKER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,  # Tech time
+    item_names.REAVER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,  # Tech time
+    item_names.SKIRMISHER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.DESTROYER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.DAWNBRINGER: LogicRating.BASIC_EXTRA | LogicRating.ADVANCED_STARTER,
+    item_names.MOTHERSHIP_TALDARIM: LogicRating.BASIC_EXTRA,
+    item_names.MOTHERSHIP_PURIFIER: LogicRating.BASIC_EXTRA,
+    item_names.MOTHERSHIP_AIUR: LogicRating.BASIC_EXTRA,
+
+    item_names.ORACLE: LogicRating.ADVANCED_STARTER,
+    item_names.DARK_ARCHON: LogicRating.ADVANCED_STARTER,
+
+    item_names.HIGH_TEMPLAR: LogicRating.ADVANCED_EXTRA,  # Expensive Caster
+    item_names.ASCENDANT: LogicRating.ADVANCED_EXTRA,  # Expensive Caster, blood orb damages buildings
+    item_names.SIGNIFIER: LogicRating.ADVANCED_EXTRA,  # Expensive Caster
+    item_names.DISRUPTOR: LogicRating.ADVANCED_EXTRA,  # Technical
+    item_names.PHOENIX: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    item_names.MIRAGE: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    item_names.CORSAIR: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    item_names.SCOUT: LogicRating.ADVANCED_EXTRA,
+    item_names.OPPRESSOR: LogicRating.ADVANCED_EXTRA,
+    item_names.CALADRIUS: LogicRating.ADVANCED_EXTRA,  # Air-to-air
+    item_names.MISTWING: LogicRating.ADVANCED_EXTRA,
+    item_names.ARBITER: LogicRating.ADVANCED_EXTRA,  # Expensive Caster
+
+    item_names.WARP_PRISM: LogicRating.NONE,
+    item_names.OBSERVER: LogicRating.NONE,
+}
+item_name_groups[ItemGroupNames.PROTOSS_BASIC_STARTER_UNITS] = protoss_basic_starter_units = [
+    _item_name for _item_name, _rating in _protoss_core_units.items() if _rating & LogicRating.is_basic_starter
+]
+item_name_groups[ItemGroupNames.PROTOSS_BASIC_CORE_UNITS] = protoss_basic_units = [
+    _item_name for _item_name, _rating in _protoss_core_units.items() if _rating & LogicRating.is_basic_core
+]
+item_name_groups[ItemGroupNames.PROTOSS_ADVANCED_STARTER_UNITS] = protoss_advanced_starter_units = [
+    _item_name for _item_name, _rating in _protoss_core_units.items() if _rating & LogicRating.is_advanced_starter
+]
+item_name_groups[ItemGroupNames.PROTOSS_ADVANCED_CORE_UNITS] = protoss_advanced_units = [
+    _item_name for _item_name, _rating in _protoss_core_units.items() if _rating & LogicRating.is_advanced_core
+]
+item_name_groups[ItemGroupNames.PROTOSS_CHAOS_STARTER_UNITS] = protoss_chaos_starter_units = [
+    # Gateway
+    item_names.ZEALOT,
+    item_names.CENTURION,
+    item_names.SENTINEL,
+    item_names.SUPPLICANT,
+    item_names.STALKER,
+    item_names.INSTIGATOR,
+    item_names.SLAYER,
+    item_names.DRAGOON,
+    item_names.ADEPT,
+    item_names.SENTRY,
+    item_names.ENERGIZER,
+    item_names.AVENGER,
+    item_names.DARK_TEMPLAR,
+    item_names.BLOOD_HUNTER,
+    item_names.HIGH_TEMPLAR,
+    item_names.SIGNIFIER,
+    item_names.ASCENDANT,
+    item_names.DARK_ARCHON,
+    # Robo
+    item_names.IMMORTAL,
+    item_names.ANNIHILATOR,
+    item_names.VANGUARD,
+    item_names.STALWART,
+    item_names.COLOSSUS,
+    item_names.WRATHWALKER,
+    item_names.REAVER,
+    item_names.DISRUPTOR,
+    # Stargate
+    item_names.SKIRMISHER,
+    item_names.SCOUT,
+    item_names.MISTWING,
+    item_names.OPPRESSOR,
+    item_names.PULSAR,
+    item_names.VOID_RAY,
+    item_names.DESTROYER,
+    item_names.DAWNBRINGER,
+    item_names.ARBITER,
+    item_names.ORACLE,
+    item_names.CARRIER,
+    item_names.TRIREME,
+    item_names.SKYLORD,
+    item_names.TEMPEST,
+    item_names.MOTHERSHIP_TALDARIM,
+    # Nexus
+    item_names.MOTHERSHIP_AIUR,
+    item_names.MOTHERSHIP_PURIFIER,
+]
+protoss_ground_wa = (
     item_names.ZEALOT, item_names.CENTURION, item_names.SENTINEL, item_names.SUPPLICANT,
     item_names.SENTRY, item_names.ENERGIZER,
     item_names.STALKER, item_names.INSTIGATOR, item_names.SLAYER, item_names.DRAGOON, item_names.ADEPT,
@@ -952,8 +1378,8 @@ protoss_ground_wa = [
     item_names.IMMORTAL, item_names.ANNIHILATOR, item_names.VANGUARD, item_names.STALWART,
     item_names.COLOSSUS, item_names.WRATHWALKER,
     item_names.REAVER,
-]
-protoss_air_wa = [
+)
+protoss_air_wa = (
     item_names.WARP_PRISM_PHASE_BLASTER,
     item_names.PHOENIX, item_names.MIRAGE, item_names.CORSAIR, item_names.SKIRMISHER,
     item_names.VOID_RAY, item_names.DESTROYER, item_names.PULSAR, item_names.DAWNBRINGER,
@@ -962,11 +1388,25 @@ protoss_air_wa = [
     item_names.MOTHERSHIP_AIUR, item_names.MOTHERSHIP_PURIFIER,
     item_names.ARBITER, item_names.ORACLE, item_names.OPPRESSOR,
     item_names.CALADRIUS, item_names.MISTWING,
-]
+)
+protoss_basic_ground_units = _intersection(protoss_basic_units, protoss_ground_wa)
+protoss_basic_air_units = _intersection(protoss_basic_units, protoss_air_wa)
+protoss_advanced_ground_units = _intersection(protoss_advanced_units, protoss_ground_wa)
+protoss_advanced_air_units = _intersection(protoss_advanced_units, protoss_air_wa)
+protoss_chaos_ground_units = protoss_ground_wa
+protoss_chaos_air_units = protoss_air_wa
 item_name_groups[ItemGroupNames.PROTOSS_GENERIC_UPGRADES] = protoss_generic_upgrades = [
     item_name for item_name, item_data in item_tables.item_table.items()
     if item_data.type == item_tables.ProtossItemType.Upgrade
 ]
+item_name_groups[ItemGroupNames.PROTOSS_MOBILE_DETECTION] = protoss_mobile_detection = (
+    item_names.OBSERVER,
+    item_names.ORACLE,
+)
+item_name_groups[ItemGroupNames.PROTOSS_DETECTION] = protoss_detection = (
+    *protoss_mobile_detection,
+    item_names.PHOTON_CANNON,
+)
 item_name_groups[ItemGroupNames.LOTV_UNITS] = lotv_units = [
     item_names.ZEALOT, item_names.CENTURION, item_names.SENTINEL,
     item_names.STALKER, item_names.DRAGOON, item_names.ADEPT,
@@ -981,7 +1421,8 @@ item_name_groups[ItemGroupNames.LOTV_UNITS] = lotv_units = [
 ]
 item_name_groups[ItemGroupNames.PROPHECY_UNITS] = prophecy_units = [
     item_names.ZEALOT, item_names.STALKER, item_names.HIGH_TEMPLAR, item_names.DARK_TEMPLAR,
-    item_names.OBSERVER, item_names.COLOSSUS,
+    # Note(mm): Technically, LotV immortal is different from Prophecy immortal
+    item_names.OBSERVER, item_names.IMMORTAL, item_names.COLOSSUS,
     item_names.PHOENIX, item_names.VOID_RAY, item_names.CARRIER,
 ]
 item_name_groups[ItemGroupNames.PROPHECY_BUILDINGS] = prophecy_buildings = [
@@ -1267,12 +1708,6 @@ item_name_groups[ItemGroupNames.OVERPOWERED_ITEMS] = overpowered_items = [
     # Protoss general
     item_names.QUATRO,
     item_names.MOTHERSHIP_TALDARIM_INTEGRATED_POWER,
-
-    # Mindless Broodwar garbage
-    item_names.GHOST_BARGAIN_BIN_PRICES,
-    item_names.SPECTRE_BARGAIN_BIN_PRICES,
-    item_names.REAVER_BARGAIN_BIN_PRICES,
-    item_names.SCOUT_SUPPLY_EFFICIENCY,
 ]
 
 # Opt-In items that do not show up by default.
@@ -1286,7 +1721,11 @@ item_name_groups[ItemGroupNames.DISABLED_ITEMS] = disabled_items = [
 # Items not aimed to be officially released
 # These need further balancing, and they shouldn't generate normally unless explicitly locked
 item_name_groups[ItemGroupNames.UNRELEASED_ITEMS] = unreleased_items = [
-    # Nothing here for now
+    # Mindless Broodwar garbage
+    item_names.GHOST_BARGAIN_BIN_PRICES,
+    item_names.SPECTRE_BARGAIN_BIN_PRICES,
+    item_names.REAVER_BARGAIN_BIN_PRICES,
+    item_names.SCOUT_SUPPLY_EFFICIENCY,
 ]
 
 # A place for traits that were released before but are to be taken down by default.

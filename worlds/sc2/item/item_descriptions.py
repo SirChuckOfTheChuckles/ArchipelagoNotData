@@ -77,6 +77,7 @@ resource_efficiency_cost_reduction = {
     DISPLAY_NAME_WORMS:       (25, 25, 0),
     item_names.ANNIHILATOR:   (25, 0, 1),
     item_names.DRAGOON:       (0, 50, 0),
+    item_names.SKIRMISHER:    (25, 25, 0),
 
     # Frightful Fleshwelder
     item_names.INFESTED_SIEGE_TANK:   (0, 25, 0),
@@ -144,8 +145,7 @@ item_descriptions = {
     """),
     item_names.BANSHEE: "Tactical-strike aircraft.",
     item_names.BATTLECRUISER: "Powerful warship.",
-    item_names.GHOST:
-        "Infiltration unit. Can use Snipe and Cloak abilities. Can also call down Tactical Nukes.",
+    item_names.GHOST: "Infiltration unit. Can use Snipe and Cloak abilities. Can also call down Tactical Nukes.",
     item_names.SPECTRE: inspect.cleandoc("""
         Infiltration unit. Can use Ultrasonic Pulse, Psionic Lash, and Cloak.
         Can also call down Tactical Nukes.
@@ -250,7 +250,7 @@ item_descriptions = {
     item_names.MARAUDER_STIMPACK: STIMPACK_LARGE_DESCRIPTION,
     item_names.MARAUDER_MEDPACK: MEDPACK_LARGE_DESCRIPTION,
     item_names.MARAUDER_LASER_TARGETING_SYSTEM: LASER_TARGETING_SYSTEMS_DESCRIPTION,
-    item_names.MARAUDER_MAGRAIL_MUNITIONS: "Deals 20 damage to target unit. Autocast on attack with a cooldown.",
+    item_names.MARAUDER_MAGRAIL_MUNITIONS: "Deals 50 damage to target unit. Autocast on attack with a cooldown.",
     item_names.MARAUDER_INTERNAL_TECH_MODULE: INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE.format("Marauders", "Barracks"),
     item_names.SCV_HOSTILE_ENVIRONMENT_ADAPTATION: "Increases SCV life by 15 and attack speed slightly.",
     item_names.MEDIC_ADAPTIVE_MEDPACKS: "Allows Medics to heal mechanical and air units.",
@@ -303,10 +303,7 @@ item_descriptions = {
         Repositions Siege Tank to a target location.
         Can be used in either mode and to jump up and down cliffs.
     """),
-    item_names.SIEGE_TANK_SPIDER_MINES: inspect.cleandoc("""
-        Allows Siege Tanks to lay Spider Mines.
-        Lays 3 Spider Mines at once. 3 charges.
-    """),
+    item_names.SIEGE_TANK_SPIDER_MINES: "Allows Siege Tanks to lay Spider Mines. Lays 3 Spider Mines at once. 3 charges.",
     item_names.SIEGE_TANK_SMART_SERVOS: SMART_SERVOS_DESCRIPTION,
     item_names.SIEGE_TANK_GRADUATING_RANGE: inspect.cleandoc("""
         Increases the Siege Tank's attack range by 1 every 3 seconds while in Siege Mode,
@@ -332,7 +329,6 @@ item_descriptions = {
         Allows Warhounds to enter Brawler mode.
         Grants damage reduction and a stronger melee attack.
         Deactivates the Railgun.
-
     """),
     item_names.WARHOUND_JUMP_JETS:inspect.cleandoc("""
         Allows Warhounds to jump towards enemies.
@@ -348,10 +344,7 @@ item_descriptions = {
         Level 2: Siege Tanks in Siege Mode can attack air units while transported by a Medivac.
     """),
     item_names.SIEGE_TANK_ALLTERRAIN_TREADS: "Increases movement speed of Siege Tanks in Tank Mode.",
-    item_names.MEDIVAC_RAPID_REIGNITION_SYSTEMS: inspect.cleandoc("""
-        Slightly increases Medivac movement speed.
-        Reduces Medivac's Afterburners ability cooldown.
-    """),
+    item_names.MEDIVAC_RAPID_REIGNITION_SYSTEMS: "Slightly increases Medivac movement speed. Reduces Medivac's Afterburners ability cooldown.",
     item_names.BATTLECRUISER_BEHEMOTH_REACTOR: "All Battlecruiser spells require 25 less energy to cast.",
     item_names.THOR_RAPID_RELOAD: "Increases Thor's ground attack speed.",
     item_names.LIBERATOR_GUERILLA_MISSILES: "Liberators in Fighter Mode apply an attack and movement debuff to enemies they attack.",
@@ -415,7 +408,7 @@ item_descriptions = {
     item_names.LIBERATOR_ADVANCED_BALLISTICS: "Increases Liberator range by 3 in Defender Mode.",
     item_names.LIBERATOR_RAID_ARTILLERY: "Allows Liberators to attack structures while in Defender Mode.",
     item_names.WIDOW_MINE_DRILLING_CLAWS: "Allows Widow Mines to burrow and unburrow faster.",
-    item_names.WIDOW_MINE_CONCEALMENT: "Burrowed Widow Mines are no longer revealed when the Sentinel Missile is on cooldown.",
+    item_names.WIDOW_MINE_LINGERING_CONCEALMENT: "Widow Mines stay cloaked for 10s after unburrowing.",
     item_names.WIDOW_MINE_DEMOLITION_PAYLOAD: "Allows Widow Mines to attack and damage structures.",
     item_names.MEDIVAC_ADVANCED_CLOAKING_FIELD: "Medivacs are permanently cloaked.",
     item_names.WRAITH_TRIGGER_OVERRIDE: "Wraith attack speed increases by 10% with each attack, up to a maximum of 100%.",
@@ -442,9 +435,7 @@ item_descriptions = {
     item_names.BANSHEE_HYPERFLIGHT_ROTORS: "Increases Banshee movement speed.",
     item_names.BANSHEE_LASER_TARGETING_SYSTEM: LASER_TARGETING_SYSTEMS_DESCRIPTION,
     item_names.BANSHEE_INTERNAL_TECH_MODULE: INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE.format("Banshees", "Starport"),
-    item_names.BATTLECRUISER_TACTICAL_JUMP: inspect.cleandoc("""
-        Allows Battlecruisers to warp to a target location anywhere on the map.
-    """),
+    item_names.BATTLECRUISER_TACTICAL_JUMP: "Allows Battlecruisers to warp to a target location anywhere on the map.",
     item_names.BATTLECRUISER_CLOAK: CLOAK_DESCRIPTION_TEMPLATE.format("Battlecruisers"),
     item_names.BATTLECRUISER_ATX_LASER_BATTERY: inspect.cleandoc("""
         Battlecruisers can attack while moving,
@@ -464,19 +455,13 @@ item_descriptions = {
     """),
     item_names.RAVEN_BIO_MECHANICAL_REPAIR_DRONE: "Spell. Deploys a drone that can heal biological or mechanical units.",
     item_names.RAVEN_SPIDER_MINES: "Spell. Deploys 3 Spider Mines to a target location.",
-    item_names.RAVEN_RAILGUN_TURRET: inspect.cleandoc("""
-        Spell. Allows Ravens to deploy an advanced Auto-Turret, that can attack enemy ground units in a straight line.
-    """),
+    item_names.RAVEN_RAILGUN_TURRET: "Spell. Allows Ravens to deploy an advanced Auto-Turret, that can attack enemy ground units in a straight line.",
     item_names.RAVEN_HUNTER_SEEKER_WEAPON: "Allows Ravens to attack with a Hunter-Seeker weapon.",
-    item_names.RAVEN_INTERFERENCE_MATRIX: inspect.cleandoc("""
-        Spell. Target enemy Mechanical or Psionic unit can't attack or use abilities for a short duration.
-    """),
+    item_names.RAVEN_INTERFERENCE_MATRIX: "Spell. Target enemy Mechanical or Psionic unit can't attack or use abilities for a short duration.",
     item_names.RAVEN_ANTI_ARMOR_MISSILE: "Spell. Decreases target and nearby enemy units armor by 2.",
     item_names.RAVEN_INTERNAL_TECH_MODULE: INTERNAL_TECH_MODULE_DESCRIPTION_TEMPLATE.format("Ravens", "Starport"),
     item_names.SCIENCE_VESSEL_EMP_SHOCKWAVE: "Spell. Depletes all energy and shields of all units in a target area.",
-    item_names.SCIENCE_VESSEL_DEFENSIVE_MATRIX: inspect.cleandoc("""
-        Spell. Provides a target unit with a defensive barrier that can absorb up to 250 damage.
-    """),
+    item_names.SCIENCE_VESSEL_DEFENSIVE_MATRIX: "Spell. Provides a target unit with a defensive barrier that can absorb up to 250 damage.",
     item_names.CYCLONE_TARGETING_OPTICS: "Increases Cyclone Lock On casting range and the range while Locked On.",
     item_names.CYCLONE_RAPID_FIRE_LAUNCHERS: "The first 12 shots of Lock On are fired more quickly.",
     item_names.LIBERATOR_CLOAK: CLOAK_DESCRIPTION_TEMPLATE.format("Liberators"),
@@ -495,9 +480,7 @@ item_descriptions = {
     item_names.LIBERATOR_SMART_SERVOS: SMART_SERVOS_DESCRIPTION,
     item_names.LIBERATOR_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.LIBERATOR),
     item_names.HERCULES_INTERNAL_FUSION_MODULE: "Hercules can be trained from a Starport without having a Fusion Core.",
-    item_names.HERCULES_TACTICAL_JUMP: inspect.cleandoc("""
-        Allows Hercules to warp to a target location anywhere on the map.
-    """),
+    item_names.HERCULES_TACTICAL_JUMP: "Allows Hercules to warp to a target location anywhere on the map.",
     item_names.PLANETARY_FORTRESS_PROGRESSIVE_AUGMENTED_THRUSTERS: inspect.cleandoc("""
         Level 1: Lift Off - Planetary Fortress can lift off.
         Level 2: Armament Stabilizers - Planetary Fortress can attack while lifted off.
@@ -509,9 +492,7 @@ item_descriptions = {
     item_names.PREDATOR_ADAPTIVE_DEFENSES: "Predators gain a shield that halves incoming ranged and splash damage while active.",
     item_names.BATTLECRUISER_BEHEMOTH_PLATING: "Increases Battlecruiser armor by 2.",
     item_names.BATTLECRUISER_MOIRAI_IMPULSE_DRIVE: "Increases Battlecruiser movement speed.",
-    item_names.PLANETARY_FORTRESS_ORBITAL_MODULE: inspect.cleandoc("""
-        Allows Planetary Fortresses to use Scanner Sweep, MULE, and Extra Supplies if those abilities are owned.
-    """),
+    item_names.PLANETARY_FORTRESS_ORBITAL_MODULE: "Allows Planetary Fortresses to use Scanner Sweep, MULE, and Extra Supplies if those abilities are owned.",
     item_names.DEVASTATOR_TURRET_CONCUSSIVE_GRENADES: "Devastator Turrets slow enemies they hit. Does not stack with Marauder Concussive Shells.",
     item_names.DEVASTATOR_TURRET_ANTI_ARMOR_MUNITIONS: "Increases Devastator Turret damage to armored targets by 10.",
     item_names.DEVASTATOR_TURRET_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.DEVASTATOR_TURRET),
@@ -814,7 +795,7 @@ item_descriptions = {
     item_names.CORRUPTOR_CONSTRUCT_REGENERATION: "Corruptors gain increased life regeneration.",
     item_names.CORRUPTOR_SCOURGE_INCUBATION: "Corruptors spawn 2 Scourge upon death (3 with Swarm Scourge).",
     item_names.CORRUPTOR_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.CORRUPTOR),
-    item_names.CORRUPTOR_ACID_SPLASH: "Corruptors attacking air units cause splash damage to enemy ground units below the target.",
+    item_names.CORRUPTOR_SPOREFALL: "Corruptors attacking air units cause splash damage to enemy ground units below the target.",
     item_names.PRIMAL_IGNITER_CONCENTRATED_FIRE: "Primal Igniters deal +15 damage vs light armor.",
     item_names.PRIMAL_IGNITER_PRIMAL_TENACITY: "Primal Igniters gain +100 health and +1 armor.",
     item_names.INFESTED_SCV_BUILD_CHARGES: "Starting Infested SCV charges increased to 3. Maximum charges increased to 5.",
@@ -875,7 +856,7 @@ item_descriptions = {
     item_names.SPIRE_MATURATION: "Spires are replaced with Greater Spires, and Drones can now build Greater Spires directly.",
     item_names.MACROSCOPIC_RECUPERATION: "Zerg structures regenerate health rapidly while on creep and out of combat.\nDoes not apply to uprooted structures, or structures with the Mechanical tag.",
     item_names.BIOMECHANICAL_STOCKPILING: "Infested Factories and Starports can store 3 additional unit charges.",
-    item_names.BROODLING_SPORE_SATURATION: "Zerg buildings release twice as many broodlings on death. Zerg defensive structures release 4 broodlings on death.",
+    item_names.BROODLING_PACKING: "Zerg buildings release twice as many broodlings on death. Zerg defensive structures release 4 broodlings on death.",
     item_names.SPAWN_SPLITTERLINGS: "Zerg buildings release splitterlings alongside broodlings on death.",
     item_names.UNRESTRICTED_MUTATION: "Zerg Mercenary units are no longer limited by charges.",
     item_names.CELL_DIVISION: "Adds additional units to Zerg Mercenary calldowns.",
@@ -1044,8 +1025,21 @@ item_descriptions = {
     item_names.TEMPEST_GRAVITY_SLING: "Tempests gain +8 range against air targets and +8 cast range.",
     item_names.TEMPEST_INTERPLANETARY_RANGE: "Tempests gain +8 weapon range against all targets.",
     item_names.TEMPEST_DISTRIBUTED_ATTACK: "Allows Tempests to distribute their attacks across multiple targets.",
-    item_names.PHOENIX_CLASS_IONIC_WAVELENGTH_FLUX: "Increases Phoenix, Mirage, and Skirmisher weapon damage by +2.",
-    item_names.PHOENIX_CLASS_ANION_PULSE_CRYSTALS: "Increases Phoenix, Mirage, and Skirmisher range by +2.",
+    item_names.PHOENIX_IONIC_WAVELENGTH_FLUX: "Increases Phoenix weapon damage by +2.",
+    item_names.PHOENIX_ANION_PULSE_CRYSTALS: "Increases Phoenix range by +2.",
+    item_names.PHOENIX_SHIELD_CAPACITY: "Increases Phoenix shields by 80 and shield armor by 1.",
+    item_names.PHOENIX_LEVITATION_BOOSTER: "Allows Graviton Beam to lift massive units and small structures.",
+    item_names.PHOENIX_GRAVIMETRIC_DISCHARGE: "Ion Cannon missiles will chain to one nearby target affected by Graviton Beam.",
+    item_names.PHOENIX_ACCELERATED_WARP: "Phoenix gain increased training and warp-in speed.",
+    item_names.MIRAGE_AFTERIMAGE: "Allows Mirages to create a hallucination when taking damage.",
+    item_names.MIRAGE_ETERNAL_DUTY: "Stargates and Fleet Beacons warp in one free Mirage each.\nThese Mirages are limited to 3 per mission and do not use supply.",
+    item_names.MIRAGE_OBSERVER_MODULE: "Mirages gain +1 weapon range, +3 sight range and detection.",
+    item_names.MIRAGE_PHASE_ALIGNMENT: "Reduces the cooldown of Phasing Armor by 1 second.",
+    item_names.SKIRMISHER_BLOODSHARD_COATING: "Increases the Skirmishers life by 80 and armor by 1.",
+    item_names.SKIRMISHER_ESSENCE_DRAIN: "Skirmisher attacks restore up to 10 life over 1 second.",
+    item_names.SKIRMISHER_TERRAZINE_INJECTORS: _ability_desc("Skirmishers", "Terrazine Injectors", "massively increases attack speed at the cost of losing health over time. Attack speed bonus decays over the duration"),
+    item_names.SKIRMISHER_ULTIMATE_SACRIFICE: "Upon death, the Skirmisher crashes into a nearby enemy ground unit,\ndealing damage in a small area.",
+    item_names.SKIRMISHER_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.SKIRMISHER),
     item_names.CORSAIR_STEALTH_DRIVE: "Corsairs become permanently cloaked.",
     item_names.CORSAIR_ARGUS_JEWEL: "Corsairs can store 2 charges of disruption web.",
     item_names.CORSAIR_SUSTAINING_DISRUPTION: "Corsair disruption webs last longer.",
