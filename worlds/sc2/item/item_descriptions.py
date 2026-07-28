@@ -505,11 +505,21 @@ item_descriptions = {
     item_names.VIKING_AESIR_TURBINES: "Increases Viking movement speed by 55%.",
     item_names.MEDIVAC_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.MEDIVAC),
     item_names.EMPERORS_SHADOW_SOVEREIGN_TACTICAL_MISSILES: "Tactical Missile Strikes no longer need to be channeled.",
-    item_names.EMPERORS_SHADOW_EMP_BLAST: inspect.cleandoc("""
-        Emperor's Shadows gain the EMP Blast spell.
-        Does 100 damage to shields and drains all energy from enemy units in the targeted area.
-        Cloaked units hit are revealed for a short time. Mechanic units hit are stunned.
-    """),
+    item_names.EMPERORS_SHADOW_PSYCHIC_ENHANCERS: "Reduces the energy cost and cooldown of EMP Blast and Pyrokinetic Immolation.",
+    item_names.EMPERORS_SHADOW_KARESHI_PHASING_SUIT: "Labyrinth Cloak increases movement speed and lets Emperor's Shadows phase through units.",
+    item_names.EMPERORS_SHADOW_NEMESIS_ROUNDS: "EMP Blast and Pyrokinetic Immolation briefly boost Emperor's Shadow weapon damage.",
+    item_names.SON_OF_KORHAL_THE_PRODIGAL_SON: "Rank 3 Sons of Korhal gain extra stats, attack range, and the Heroic tag.",
+    item_names.SON_OF_KORHAL_SHIELD_OF_THE_DOMINION: "Sons of Korhal gain 25 life.",
+    item_names.SON_OF_KORHAL_BUILD_A_BOOM: "Sons of Korhal start with and gain twice as many Spider Mines.",
+    item_names.SON_OF_KORHAL_TOSS_SPIDER_MINE: "Allows Rank 2 Sons of Korhal to throw Spider Mines at a target location.",
+    item_names.FIELD_RESPONSE_THETA_ROYAL_ACADEMY_DEGREE: "Field Response Thetas start at Rank 1.",
+    item_names.FIELD_RESPONSE_THETA_HOSPICE_CARE: "Defensive Matrix restores life to affected units.",
+    item_names.FIELD_RESPONSE_THETA_PHYSICAL_THERAPY: "Field Response Thetas grant armor to healed units and gain damage reduction while healing.",
+    item_names.FIELD_RESPONSE_THETA_OPTICAL_RESTORATION: "Allows Field Response Thetas to cleanse nearby allies and temporarily boost their own vision.",
+    item_names.AEGIS_GUARD_INCAPACITATOR_SHELLS: "Aegis Guard attacks slow enemy units.",
+    item_names.AEGIS_GUARD_ADDICTIVE_SUPPLEMENTS: "Aegis Guards gain limited early uses of High-Grade Stimpacks when reaching Ranks 1 and 2.",
+    item_names.AEGIS_GUARD_BOLSTERED_BARRIER: "Aegis Guards' Aegis Barrier prevents 50 more damage and recharges 10 seconds faster.",
+    item_names.AEGIS_GUARD_SOVEREIGN_NEOSTEEL: "Aegis Guards gain 60 life and an additional 15 life per rank.",
     item_names.DOMINION_TROOPER_B2_HIGH_CAL_LMG: "Equipping the B-2 High-Cal LMG increases life by 10 and damage by an additional 2.",
     item_names.DOMINION_TROOPER_HAILSTORM_LAUNCHER: "Allows the Troopers to arm with a more powerful weapon, especially effective against armored air units.",
     item_names.DOMINION_TROOPER_CPO7_SALAMANDER_FLAMETHROWER: "Allows the Troopers to arm with a more powerful weapon, especially effective against light ground units.",
