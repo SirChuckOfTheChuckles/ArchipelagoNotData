@@ -104,6 +104,7 @@ class SC2World(World):
     game = "Starcraft 2"
     web = Starcraft2WebWorld()
     settings: ClassVar[settings.Starcraft2Settings]
+    disable_ut = True
 
     item_name_to_id = {name: data.code for name, data in item_tables.item_table.items()}
     location_name_to_id = LOCATION_NAME_TO_ID
