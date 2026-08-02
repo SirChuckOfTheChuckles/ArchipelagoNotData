@@ -535,7 +535,7 @@ item_table = {
     item_names.WIDOW_MINE_DRILLING_CLAWS:
         ItemData(328 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_4, 9, SC2Race.TERRAN,
                  parent=item_names.WIDOW_MINE),
-    item_names.WIDOW_MINE_CONCEALMENT:
+    item_names.WIDOW_MINE_LINGERING_CONCEALMENT:
         ItemData(329 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_4, 10, SC2Race.TERRAN,
                  classification=ItemClassification.progression, parent=item_names.WIDOW_MINE),
     item_names.MEDIVAC_ADVANCED_CLOAKING_FIELD:
@@ -939,7 +939,7 @@ item_table = {
     item_names.SENSOR_TOWER_ASSISTIVE_TARGETING:
         ItemData(764 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 18, SC2Race.TERRAN,
                  parent=item_names.SENSOR_TOWER),
-    item_names.SENSOR_TOWER_MUILTISPECTRUM_DOPPLER:
+    item_names.SENSOR_TOWER_MULTISPECTRUM_DOPPLER:
         ItemData(765 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 19, SC2Race.TERRAN,
                  parent=item_names.SENSOR_TOWER),
     item_names.WARHOUND_DEPLOY_TURRET:
@@ -966,7 +966,7 @@ item_table = {
     item_names.BUNKER_EMERGENCY_PROVISIONS:
         ItemData(774 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 28, SC2Race.TERRAN,
                  parent=item_names.BUNKER),
-    item_names.EMPERORS_SHADOW_EMP_BLAST:
+    item_names.EMPERORS_SHADOW_PSYCHIC_ENHANCERS:
         ItemData(775 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_7, 29, SC2Race.TERRAN,
                  parent=item_names.EMPERORS_SHADOW),
     item_names.MARINE_MEDPACK:
@@ -984,6 +984,48 @@ item_table = {
     item_names.HELLION_MEDPACK:
         ItemData(780 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 9, SC2Race.TERRAN,
                  parent=parent_names.HELLION_OR_HELLBAT),
+    item_names.EMPERORS_SHADOW_KARESHI_PHASING_SUIT:
+        ItemData(781 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 10, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
+    item_names.EMPERORS_SHADOW_NEMESIS_ROUNDS:
+        ItemData(782 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 11, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
+    item_names.SON_OF_KORHAL_THE_PRODIGAL_SON:
+        ItemData(783 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 12, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_SHIELD_OF_THE_DOMINION:
+        ItemData(784 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 13, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_BUILD_A_BOOM:
+        ItemData(785 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 14, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.SON_OF_KORHAL_TOSS_SPIDER_MINE:
+        ItemData(786 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 15, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.FIELD_RESPONSE_THETA_ROYAL_ACADEMY_DEGREE:
+        ItemData(787 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 16, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_HOSPICE_CARE:
+        ItemData(788 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 17, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_PHYSICAL_THERAPY:
+        ItemData(789 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 18, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.FIELD_RESPONSE_THETA_OPTICAL_RESTORATION:
+        ItemData(790 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 19, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.AEGIS_GUARD_INCAPACITATOR_SHELLS:
+        ItemData(791 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 20, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_ADDICTIVE_SUPPLEMENTS:
+        ItemData(792 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 21, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_BOLSTERED_BARRIER:
+        ItemData(793 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 22, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.AEGIS_GUARD_SOVEREIGN_NEOSTEEL:
+        ItemData(794 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 23, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
@@ -1022,6 +1064,9 @@ item_table = {
 
     item_names.TRAP_GHOST_SPAWN:
         ItemData(851 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.GhostSpawnTrap, 0, SC2Race.ANY, quantity=5,
+                 classification=ItemClassification.trap),
+    item_names.TRAP_VOID_DUPLICATE:
+        ItemData(852 + SC2WOL_ITEM_ID_OFFSET, FactionlessItemType.VoidDuplicateTrap, 0, SC2Race.ANY, quantity=5,
                  classification=ItemClassification.trap),
 
     # Nova gear
@@ -1535,7 +1580,7 @@ item_table = {
         ItemData(390 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_5, 17, SC2Race.ZERG, parent=item_names.BULLFROG),
     item_names.SPORE_CRAWLER_BIO_BONUS:
         ItemData(391 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_5, 18, SC2Race.ZERG, parent=item_names.SPORE_CRAWLER),
-    item_names.CORRUPTOR_ACID_SPLASH:
+    item_names.CORRUPTOR_SPOREFALL:
         ItemData(392 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_5, 19, SC2Race.ZERG, parent=item_names.CORRUPTOR),
     item_names.IMPALER_DISTRIBUTED_ATTACK:
         ItemData(393 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Mutation_5, 20, SC2Race.ZERG, parent=item_names.IMPALER),
@@ -1640,7 +1685,7 @@ item_table = {
     item_names.HIVE_CLUSTER_MATURATION: ItemData(706 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 12, SC2Race.ZERG),
     item_names.MACROSCOPIC_RECUPERATION: ItemData(707 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 13, SC2Race.ZERG),
     item_names.BIOMECHANICAL_STOCKPILING: ItemData(708 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 14, SC2Race.ZERG, parent=parent_names.INFESTED_FACTORY_OR_STARPORT),
-    item_names.BROODLING_SPORE_SATURATION: ItemData(709 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 15, SC2Race.ZERG),
+    item_names.BROODLING_PACKING: ItemData(709 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 15, SC2Race.ZERG),
     item_names.CELL_DIVISION: ItemData(710 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 16, SC2Race.ZERG, classification=ItemClassification.progression, parent=parent_names.ZERG_MERCENARIES),
     item_names.SELF_SUFFICIENT: ItemData(711 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 17, SC2Race.ZERG, classification=ItemClassification.progression, parent=parent_names.ZERG_MERCENARIES),
     item_names.UNRESTRICTED_MUTATION: ItemData(712 + SC2HOTS_ITEM_ID_OFFSET, ZergItemType.Evolution_Pit, 18, SC2Race.ZERG, classification=ItemClassification.progression, parent=parent_names.ZERG_MERCENARIES),

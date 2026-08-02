@@ -104,6 +104,7 @@ class SC2World(World):
     game = "Starcraft 2"
     web = Starcraft2WebWorld()
     settings: ClassVar[settings.Starcraft2Settings]
+    disable_ut = True
 
     item_name_to_id = {name: data.code for name, data in item_tables.item_table.items()}
     location_name_to_id = LOCATION_NAME_TO_ID
@@ -598,7 +599,9 @@ def flag_excludes_by_faction_presence(world: SC2World, item_list: list[FilterIte
                 item.flags |= ItemFilterFlags.FilterExcluded
                 continue
         if not protoss_missions and item.data.race == SC2Race.PROTOSS:
-            if item.name not in item_groups.soa_items:
+            if (item.name not in item_groups.soa_items
+                and item.data.type != ProtossItemType.Artanis_Items
+            ):
                 item.flags |= ItemFilterFlags.FilterExcluded
             continue
 
