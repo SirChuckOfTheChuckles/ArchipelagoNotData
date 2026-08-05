@@ -1509,7 +1509,7 @@ class SC2Logic:
         )
 
     def zerg_basic_transport_or_air_comp(self, state: CollectionState) -> bool:
-        return self.zerg_basic_transport(state) or self.zerg_basic_transport(state)
+        return self.zerg_basic_transport(state) or self.zerg_basic_air_comp(state)
 
     def zerg_can_collect_pickup_across_gap(self, state: CollectionState) -> bool:
         """Any way for zerg to get any ground unit across gaps longer than viper yoink range to collect a pickup."""
@@ -2906,6 +2906,33 @@ class SC2Logic:
                 or state.has_all((item_names.SCOUT, item_names.SCOUT_RESOURCE_EFFICIENCY), self.player)
             )
 
+    def terran_echoes_of_the_future_islands_requirement(self, state: CollectionState) -> bool:
+        """
+        Strong air to ground capabilities or drops, deal with Broodlords
+        """
+        return (self.terran_competent_comp(state, 2)
+            and self.terran_basic_transport_or_air_comp(state)
+            and self.terran_competent_anti_air(state)
+        )
+
+    def zerg_echoes_of_the_future_islands_requirement(self, state: CollectionState) -> bool:
+        """
+        Strong air to ground capabilities or drops, deal with Broodlords
+        """
+        return (self.zerg_competent_comp(state, 2)
+            and self.zerg_basic_transport_or_air_comp(state)
+            and self.zerg_competent_anti_air(state)
+        )
+
+    def protoss_echoes_of_the_future_islands_requirement(self, state: CollectionState) -> bool:
+        """
+        Strong air to ground capabilities or drops, deal with Broodlords
+        """
+        return (self.protoss_competent_comp(state, 2)
+            and self.protoss_basic_transport_or_air_comp(state)
+            and self.protoss_competent_anti_air(state)
+        )
+
     # endregion WoL Missions
 
     # ###################################################################################################### #
@@ -4165,4 +4192,3 @@ def get_required_kerrigan_levels(missions: list[SC2Mission]) -> int:
     if SC2Mission.THE_INFINITE_CYCLE in missions:
         result = 70
     return result
-
