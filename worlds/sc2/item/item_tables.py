@@ -1026,6 +1026,18 @@ item_table = {
     item_names.AEGIS_GUARD_SOVEREIGN_NEOSTEEL:
         ItemData(794 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 23, SC2Race.TERRAN,
                  parent=item_names.AEGIS_GUARD),
+    item_names.NIGHT_WOLF_SHOCKWAVE_ARTILLERY:
+        ItemData(795 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 24, SC2Race.TERRAN,
+                 classification=ItemClassification.progression, parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_PREYSEEKER_MISSILES:
+        ItemData(796 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 25, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_ENERGIZED_BACKLASH:
+        ItemData(797 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 26, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
+    item_names.NIGHT_WOLF_ELUSIVE_ROTORS:
+        ItemData(798 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_8, 27, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
 
     # Filler items to fill remaining spots
     item_names.STARTING_MINERALS:
