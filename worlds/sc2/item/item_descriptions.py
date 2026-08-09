@@ -1072,7 +1072,7 @@ item_descriptions = {
     item_names.MOTHERSHIP_AIUR_ASTRAL_RESTORATION: "Allows Aiur Motherships to temporarily increase the radius\nof Cloaking Field and heal allies within it. Costs resources to install.",
     item_names.MOTHERSHIP_TALDARIM_BLOOD_FUSED_PARTICLES: "Taldarim Mothership's primary weapon gains massively increased attacked speed,\nbut has reduced attack damage. Costs resources to research.",
     item_names.MOTHERSHIP_TALDARIM_SHADOW_OF_DEATH: "Taldarim Motherships slow the attack and movement speed of nearby enemy ground units. Costs resources to research.",
-    item_names.MOTHERSHIP_TALDARIM_SOUL_FORGED_CONDUITS: "Tal'darim Motherships restore shields and life when nearby friendly units die. Tal'darim units provide a stronger heal. Costs resources to research.",
+    item_names.MOTHERSHIP_TALDARIM_SOUL_FORGED_CONDUITS: "Tal'darim Motherships restore shields and life whenever nearby friendly units die. Tal'darim units provide a stronger heal. Costs resources to research.",
     item_names.MOTHERSHIP_PURIFIER_PURIFIED_EMBERS: "Purifier Motherships reduce the armor and deal damage over time to targets they attack. Costs resources to research.",
     item_names.MOTHERSHIP_PURIFIER_CYBROS_SHIELDING: "Purifier Motherships gain damage reduction while using their offensive abilities. Costs resources to research.",
     item_names.MOTHERSHIP_PURIFIER_ENERGIZED_NETWORK: "Purifier Motherships provide attack speed to nearby friendly units,\nincreased for Purifier units. Costs resources to research.",
