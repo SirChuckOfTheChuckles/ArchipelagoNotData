@@ -51,6 +51,8 @@ class MissionClient:
         'last_trade_cargo',
         'update_period_seconds',
         'start_time',
+        'warned_identity_mismatches',
+        'load_refresh_in_progress',
     ]
 
     def __init__(self, ctx: 'SC2Context', mission_id: int, process: subprocess.Popen) -> None:
@@ -68,6 +70,8 @@ class MissionClient:
         self.last_trade_cargo: set = set()
         self.update_period_seconds = 0.5
         self.start_time = time.time_ns()
+        self.warned_identity_mismatches: set[tuple[str, str, str]] = set()
+        self.load_refresh_in_progress = False
 
     def check_game_running(self) -> bool:
         if not self.running:
@@ -152,12 +156,157 @@ class MissionClient:
             self.get_resources(start_items),
             self.get_colors(),
             objectives,
-            "1"
+            "1",
+            self.get_slot_name(),
+            self.ctx.world_id,
         )
         if isinstance(error, Error):
             logger.error(error.message)
             return
         self.last_received_update = len(self.ctx.items_received)
+
+    def reset_mission_state(self) -> None:
+        self.mission_completed = self.ctx.is_mission_completed(self.mission_id)
+        self.bonuses = [
+            locations.get_location_id(self.mission_id, bonus_id + 1) in self.ctx.checked_locations
+            for bonus_id in range(MAX_BONUS)
+        ]
+
+    def resolve_mission_id_from_map_file(self, map_file: str, mission_race: str) -> int | None:
+        candidate_mission_ids = [
+            mission_id
+            for mission_id in self.ctx.mission_id_to_location_ids
+            if mission_id in lookup_id_to_mission
+            and lookup_id_to_mission[mission_id].map_file == map_file
+        ]
+        if not candidate_mission_ids:
+            return None
+        if mission_race:
+            race_matching_mission_ids = [
+                mission_id
+                for mission_id in candidate_mission_ids
+                if get_mission_race_name(mission_id) == mission_race
+            ]
+            if len(race_matching_mission_ids) == 1:
+                return race_matching_mission_ids[0]
+            if self.mission_id in race_matching_mission_ids:
+                return self.mission_id
+        if self.mission_id in candidate_mission_ids:
+            return self.mission_id
+        if len(candidate_mission_ids) == 1:
+            return candidate_mission_ids[0]
+        return None
+
+    def sync_active_mission(self, map_file: str, mission_race: str) -> bool:
+        """Switch client accounting to the mission restored by SC2, returning whether setup ran."""
+        current_mission = lookup_id_to_mission[self.mission_id]
+        current_mission_race = get_mission_race_name(self.mission_id)
+        if map_file == current_mission.map_file and (
+            not mission_race or mission_race == current_mission_race
+        ):
+            return False
+
+        resolved_mission_id = self.resolve_mission_id_from_map_file(map_file, mission_race)
+        if resolved_mission_id is None:
+            logger.warning(
+                "Loaded save reports map %s (%s), but no unique mission mapping was found from %s (%s).",
+                map_file,
+                mission_race or "unknown race",
+                current_mission.map_file,
+                current_mission_race or "unknown race",
+            )
+            return False
+        if resolved_mission_id == self.mission_id:
+            return False
+
+        next_mission = lookup_id_to_mission[resolved_mission_id]
+        logger.info(
+            "Detected mission switch from %s to %s via loaded save.",
+            current_mission.mission_name,
+            next_mission.mission_name,
+        )
+        self.mission_id = resolved_mission_id
+        self.reset_mission_state()
+        self.do_setup()
+        return True
+
+    def get_slot_name(self) -> str:
+        if self.ctx.slot is not None and self.ctx.slot in self.ctx.slot_info:
+            return self.ctx.slot_info[self.ctx.slot].name
+        return self.ctx.auth or ""
+
+    def check_save_identity(
+        self,
+        saved_slot_value: str,
+        saved_world_id_value: str,
+        save_loaded_value: str,
+    ) -> None:
+        """Warn about save identity mismatches without changing gameplay or AP synchronization."""
+        if save_loaded_value.strip() != "1":
+            return
+
+        saved_slot_name = banks.decode_bank_identity(saved_slot_value) if saved_slot_value else ""
+        saved_world_id = banks.decode_bank_identity(saved_world_id_value) if saved_world_id_value else ""
+        current_slot_name = self.get_slot_name()
+        current_world_id = self.ctx.world_id
+        warnings: list[str] = []
+
+        if saved_slot_name and current_slot_name and saved_slot_name != current_slot_name:
+            warning_key = ("slot", saved_slot_name, current_slot_name)
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                warnings.append(
+                    "WARNING: This save was created with a different slot. "
+                    f'Saved slot: "{saved_slot_name}"; connected slot: "{current_slot_name}". '
+                    "Checks and items will continue to be processed."
+                )
+
+        if not saved_world_id:
+            warning_key = ("world-legacy-save", "", current_world_id)
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                warnings.append(
+                    "WARNING: This save was made on an older version and has no World ID, so its "
+                    "multiworld cannot be verified. Checks and items will continue to be processed."
+                )
+        elif not current_world_id:
+            warning_key = ("world-legacy-connected", saved_world_id, "")
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                warnings.append(
+                    "WARNING: The connected multiworld was made on an older version and has no "
+                    "World ID, so this save cannot be verified. "
+                    "Checks and items will continue to be processed."
+                )
+        elif saved_world_id != current_world_id:
+            warning_key = ("world", saved_world_id, current_world_id)
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                warnings.append(
+                    "WARNING: This save was created in a different multiworld. "
+                    f'Saved World ID: "{saved_world_id}"; connected World ID: "{current_world_id}". '
+                    "Checks and items will continue to be processed."
+                )
+
+        for warning in warnings:
+            logger.warning(warning)
+        if warnings:
+            error = banks.send_ap_message(warnings)
+            if isinstance(error, Error):
+                logger.error(error.message)
+
+    def refresh_after_save_load(self, save_loaded_value: str, mission_switched: bool) -> None:
+        refresh_requested = save_loaded_value.strip() == "1"
+        if not refresh_requested:
+            self.load_refresh_in_progress = False
+            return
+        if self.load_refresh_in_progress:
+            return
+
+        self.load_refresh_in_progress = True
+        logger.info("Loaded save detected; refreshing all current Archipelago items and options.")
+        if not mission_switched:
+            self.do_setup()
 
     async def client_loop(self) -> None:
         while self.running:
@@ -295,11 +444,17 @@ class MissionClient:
                 self.trade_reply_cooldown = 60
 
     def get_locations(self) -> int:
-        result = banks.read_locations()
+        result = banks.read_location_info()
         if isinstance(result, Error):
             return 0
-        if (result.strip()):  # may be "" or " "
-            return int(result)
+        game_state, mission_map, mission_race, saved_slot_name, saved_world_id, save_loaded = result
+        mission_switched = False
+        if mission_map:
+            mission_switched = self.sync_active_mission(mission_map, mission_race)
+        self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
+        self.refresh_after_save_load(save_loaded, mission_switched)
+        if (game_state.strip()):  # may be "" or " "
+            return int(game_state)
         return 0
 
     def get_trade_units_sent(self) -> str:
@@ -403,7 +558,9 @@ class MissionClient:
     def update_core_options(self, current_items: dict[SC2Race, list[int]]) -> None | Error[str]:
         return banks.send_core_options(
             self.get_resources(current_items),
-            self.get_colors()
+            self.get_colors(),
+            slot_name=self.get_slot_name(),
+            world_id=self.ctx.world_id,
         )
 
 
@@ -1070,6 +1227,17 @@ def get_mission_variant(mission_id: int) -> int:
     elif MissionFlag.Protoss in mission_flags:
         return 3
     return 0
+
+
+def get_mission_race_name(mission_id: int) -> str:
+    mission_flags = lookup_id_to_mission[mission_id].flags
+    if MissionFlag.Terran in mission_flags:
+        return "Terran"
+    if MissionFlag.Zerg in mission_flags:
+        return "Zerg"
+    if MissionFlag.Protoss in mission_flags:
+        return "Protoss"
+    return ""
 
 
 def get_item_flag_word(item_name: str) -> int:
