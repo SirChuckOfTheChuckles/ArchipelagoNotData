@@ -1148,7 +1148,7 @@ item_table = {
         ItemData(951 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_9, 0, SC2Race.TERRAN,
                  parent=item_names.SHOCK_DIVISION),
     item_names.SHOCK_DIVISION_ARMAMENT_STABILIZERS:
-        ItemData(952 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_9, 1, SC2Race.TERRAN,
+        ItemData(952 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_9, 1, SC2Race.TERRAN, classification=ItemClassification.progression,
                  parent=item_names.SHOCK_DIVISION),
     item_names.BULWARK_COMPANY_MOEBIUS_SHIELDING:
         ItemData(953 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_9, 2, SC2Race.TERRAN,
