@@ -339,10 +339,7 @@ item_descriptions = {
     item_names.HERC_KINETIC_FOAM: "Increases HERC life by 50.",
     item_names.REAPER_RESOURCE_EFFICIENCY: _get_resource_efficiency_desc(item_names.REAPER),
     item_names.REAPER_BALLISTIC_FLIGHTSUIT: "Increases Reaper life by 10.",
-    item_names.SIEGE_TANK_PROGRESSIVE_TRANSPORT_HOOK: inspect.cleandoc("""
-        Level 1: Allows Siege Tanks to be transported in Siege Mode.
-        Level 2: Siege Tanks in Siege Mode can attack air units while transported by a Medivac.
-    """),
+    item_names.SIEGE_TANK_TRANSPORT_HOOK: "Allows Siege Tanks to be transported in Siege Mode.",
     item_names.SIEGE_TANK_ALLTERRAIN_TREADS: "Increases movement speed of Siege Tanks in Tank Mode.",
     item_names.MEDIVAC_RAPID_REIGNITION_SYSTEMS: "Slightly increases Medivac movement speed. Reduces Medivac's Afterburners ability cooldown.",
     item_names.BATTLECRUISER_BEHEMOTH_REACTOR: "All Battlecruiser spells require 25 less energy to cast.",

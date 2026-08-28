@@ -415,9 +415,9 @@ item_table = {
     item_names.REAPER_BALLISTIC_FLIGHTSUIT:
         ItemData(288 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_6, 19, SC2Race.TERRAN,
                  parent=item_names.REAPER),
-    item_names.SIEGE_TANK_PROGRESSIVE_TRANSPORT_HOOK:
+    item_names.SIEGE_TANK_TRANSPORT_HOOK:
         ItemData(289 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Progressive_2, 6, SC2Race.TERRAN,
-                 classification=ItemClassification.progression, parent=parent_names.SIEGE_TANK_AND_TRANSPORT, quantity=2),
+                 classification=ItemClassification.progression, parent=parent_names.SIEGE_TANK_AND_TRANSPORT),
     item_names.SIEGE_TANK_ALLTERRAIN_TREADS :
         ItemData(290 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Armory_6, 20, SC2Race.TERRAN,
                  parent=item_names.SIEGE_TANK),
