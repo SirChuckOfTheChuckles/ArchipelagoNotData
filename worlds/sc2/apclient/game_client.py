@@ -777,7 +777,7 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
                 stimpack_count[name] = stimpack_count.get(name, 0) + 1
             elif name in item_groups.nova_weapons:
                 nova_weapon_count += 1
-        if ctx.slot_data_version < 6 and name == item_names.SIEGE_TANK_PROGRESSIVE_TRANSPORT_HOOK:
+        if ctx.slot_data_version < 5 and name == item_names.SIEGE_TANK_PROGRESSIVE_TRANSPORT_HOOK:
             transport_hook_count += 1
 
         # exists exactly once
