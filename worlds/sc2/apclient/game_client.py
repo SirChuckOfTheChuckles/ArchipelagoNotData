@@ -872,18 +872,16 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
                 accumulators[medpack_item_data.race][medpack_item_data.type.flag_word] |= (
                     1 << medpack_item_data.number
                 )
-
-    # Progressive Transport Hook handling (Backwards compatibility):
-    if ctx.slot_data_version < 6 and transport_hook_count >= 2:
-        transport_hook_replacement_items = (
-            item_names.SHOCK_DIVISION,
-            item_names.SHOCK_DIVISION_ARMAMENT_STABILIZERS,
-        )
-        for replacement_item_name in transport_hook_replacement_items:
-            replacement_item_data = item_list[replacement_item_name]
-            accumulators[replacement_item_data.race][replacement_item_data.type.flag_word] |= (
-                1 << replacement_item_data.number
+        if transport_hook_count >= 2:
+            transport_hook_replacement_items = (
+                item_names.SHOCK_DIVISION,
+                item_names.SHOCK_DIVISION_ARMAMENT_STABILIZERS,
             )
+            for replacement_item_name in transport_hook_replacement_items:
+                replacement_item_data = item_list[replacement_item_name]
+                accumulators[replacement_item_data.race][replacement_item_data.type.flag_word] |= (
+                    1 << replacement_item_data.number
+                )
 
 
     # Upgrades from completed missions
