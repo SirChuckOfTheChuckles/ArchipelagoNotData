@@ -872,6 +872,7 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
                 accumulators[medpack_item_data.race][medpack_item_data.type.flag_word] |= (
                     1 << medpack_item_data.number
                 )
+    # Progressive Transport Hook handling (Backwards compatibility):
         if transport_hook_count >= 2:
             transport_hook_replacement_items = (
                 item_names.SHOCK_DIVISION,
