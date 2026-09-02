@@ -53,6 +53,9 @@ class MissionClient:
         'start_time',
         'warned_identity_mismatches',
         'load_refresh_in_progress',
+        'mission_checks_blocked',
+        'mission_checks_override',
+        'save_warning_code',
     ]
 
     def __init__(self, ctx: 'SC2Context', mission_id: int, process: subprocess.Popen) -> None:
@@ -72,6 +75,9 @@ class MissionClient:
         self.start_time = time.time_ns()
         self.warned_identity_mismatches: set[tuple[str, str, str]] = set()
         self.load_refresh_in_progress = False
+        self.mission_checks_blocked = False
+        self.mission_checks_override = False
+        self.save_warning_code = ""
 
     def check_game_running(self) -> bool:
         if not self.running:
@@ -159,6 +165,7 @@ class MissionClient:
             "1",
             self.get_slot_name(),
             self.ctx.world_id,
+            self.save_warning_code,
         )
         if isinstance(error, Error):
             logger.error(error.message)
@@ -241,24 +248,51 @@ class MissionClient:
         saved_world_id_value: str,
         save_loaded_value: str,
     ) -> None:
-        """Warn about save identity mismatches without changing gameplay or AP synchronization."""
+        """Warn about loaded-save identity problems and block checks on definite mismatches."""
         if save_loaded_value.strip() != "1":
             return
+
+        # New save load gets  fresh safety decision
+        if not self.load_refresh_in_progress:
+            self.mission_checks_override = False
 
         saved_slot_name = banks.decode_bank_identity(saved_slot_value) if saved_slot_value else ""
         saved_world_id = banks.decode_bank_identity(saved_world_id_value) if saved_world_id_value else ""
         current_slot_name = self.get_slot_name()
         current_world_id = self.ctx.world_id
         warnings: list[str] = []
+        slot_mismatch = bool(
+            saved_slot_name and current_slot_name and saved_slot_name != current_slot_name
+        )
+        world_mismatch = bool(
+            saved_world_id and current_world_id and saved_world_id != current_world_id
+        )
 
-        if saved_slot_name and current_slot_name and saved_slot_name != current_slot_name:
+        self.mission_checks_blocked = (
+            (slot_mismatch or world_mismatch) and not self.mission_checks_override
+        )
+        if slot_mismatch and world_mismatch:
+            self.save_warning_code = "SlotAndWorldMismatch"
+        elif slot_mismatch:
+            self.save_warning_code = "SlotMismatch"
+        elif world_mismatch:
+            self.save_warning_code = "WorldMismatch"
+        elif not saved_world_id:
+            self.save_warning_code = "LegacySave"
+        elif not current_world_id:
+            self.save_warning_code = "LegacyConnectedWorld"
+        else:
+            self.save_warning_code = ""
+
+        if slot_mismatch:
             warning_key = ("slot", saved_slot_name, current_slot_name)
             if warning_key not in self.warned_identity_mismatches:
                 self.warned_identity_mismatches.add(warning_key)
                 warnings.append(
                     "WARNING: This save was created with a different slot. "
                     f'Saved slot: "{saved_slot_name}"; connected slot: "{current_slot_name}". '
-                    "Checks and items will continue to be processed."
+                    "Checks from this loaded mission will not be sent. "
+                    "Items will continue to be processed."
                 )
 
         if not saved_world_id:
@@ -267,7 +301,8 @@ class MissionClient:
                 self.warned_identity_mismatches.add(warning_key)
                 warnings.append(
                     "WARNING: This save was made on an older version and has no World ID, so its "
-                    "multiworld cannot be verified. Checks and items will continue to be processed."
+                    "multiworld cannot be verified. The missing World ID alone does not block "
+                    "checks or items."
                 )
         elif not current_world_id:
             warning_key = ("world-legacy-connected", saved_world_id, "")
@@ -276,16 +311,17 @@ class MissionClient:
                 warnings.append(
                     "WARNING: The connected multiworld was made on an older version and has no "
                     "World ID, so this save cannot be verified. "
-                    "Checks and items will continue to be processed."
+                    "The missing World ID alone does not block checks or items."
                 )
-        elif saved_world_id != current_world_id:
+        elif world_mismatch:
             warning_key = ("world", saved_world_id, current_world_id)
             if warning_key not in self.warned_identity_mismatches:
                 self.warned_identity_mismatches.add(warning_key)
                 warnings.append(
                     "WARNING: This save was created in a different multiworld. "
                     f'Saved World ID: "{saved_world_id}"; connected World ID: "{current_world_id}". '
-                    "Checks and items will continue to be processed."
+                    "Checks from this loaded mission will not be sent. "
+                    "Items will continue to be processed."
                 )
 
         for warning in warnings:
@@ -294,6 +330,22 @@ class MissionClient:
             error = banks.send_ap_message(warnings)
             if isinstance(error, Error):
                 logger.error(error.message)
+
+    def apply_mission_check_override(self, checks_override_value: str) -> None:
+        """Apply the current game's in-game -enablechecks request."""
+        if checks_override_value.strip() != "1" or not self.mission_checks_blocked:
+            return
+
+        self.mission_checks_override = True
+        self.mission_checks_blocked = False
+        warning = (
+            "WARNING OVERRIDE: Mission checks were re-enabled from the running SC2 mission despite "
+            "the loaded-save identity mismatch. The saved slot and World ID were not changed."
+        )
+        logger.warning(warning)
+        error = banks.send_ap_message([warning])
+        if isinstance(error, Error):
+            logger.error(error.message)
 
     def refresh_after_save_load(self, save_loaded_value: str, mission_switched: bool) -> None:
         refresh_requested = save_loaded_value.strip() == "1"
@@ -393,7 +445,7 @@ class MissionClient:
             self.last_received_update = len(self.ctx.items_received)
 
         if game_state & 1:
-            if game_state & (1 << 1) and not self.mission_completed:
+            if not self.mission_checks_blocked and game_state & (1 << 1) and not self.mission_completed:
                 victory_locations = [locations.get_location_id(self.mission_id, 0)]
                 send_victory = (
                     self.mission_id in self.ctx.final_mission_ids
@@ -427,12 +479,13 @@ class MissionClient:
                     self.mission_completed = True
                     self.ctx.finished_game = True
 
-            for x, completed in enumerate(self.bonuses):
-                if not completed and game_state & (1 << (x + 2)):
-                    await self.ctx.send_msgs(
-                        [{"cmd": 'LocationChecks',
-                            "locations": [locations.get_location_id(self.mission_id, x + 1)]}])
-                    self.bonuses[x] = True
+            if not self.mission_checks_blocked:
+                for x, completed in enumerate(self.bonuses):
+                    if not completed and game_state & (1 << (x + 2)):
+                        await self.ctx.send_msgs(
+                            [{"cmd": 'LocationChecks',
+                                "locations": [locations.get_location_id(self.mission_id, x + 1)]}])
+                        self.bonuses[x] = True
 
             # Send Void Trade results
             if self.ctx.trade_response is not None and self.trade_reply_cooldown == 0:
@@ -447,11 +500,20 @@ class MissionClient:
         result = banks.read_location_info()
         if isinstance(result, Error):
             return 0
-        game_state, mission_map, mission_race, saved_slot_name, saved_world_id, save_loaded = result
+        (
+            game_state,
+            mission_map,
+            mission_race,
+            saved_slot_name,
+            saved_world_id,
+            save_loaded,
+            checks_override,
+        ) = result
+        self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
+        self.apply_mission_check_override(checks_override)
         mission_switched = False
         if mission_map:
             mission_switched = self.sync_active_mission(mission_map, mission_race)
-        self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
         self.refresh_after_save_load(save_loaded, mission_switched)
         if (game_state.strip()):  # may be "" or " "
             return int(game_state)

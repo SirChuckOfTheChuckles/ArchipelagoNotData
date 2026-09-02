@@ -21,6 +21,7 @@ BANK_CORE_OPTIONS_KEY_UNCOLLECTED_LOCATIONS = "UncollectedLocations"
 BANK_CORE_OPTIONS_KEY_LOAD_FINISHED = "LoadFinished"
 BANK_CORE_OPTIONS_KEY_SLOT_NAME = "SlotName"
 BANK_CORE_OPTIONS_KEY_WORLD_ID = "WorldID"
+BANK_CORE_OPTIONS_KEY_SAVE_WARNING = "SaveWarning"
 
 # Options
 # 2 types of options because they are handled in different mod files by SC2
@@ -58,6 +59,7 @@ BANK_LOCATIONS_KEY_MISSION_RACE = "MissionRace"
 BANK_LOCATIONS_KEY_SLOT_NAME = "SlotName"
 BANK_LOCATIONS_KEY_WORLD_ID = "WorldID"
 BANK_LOCATIONS_KEY_SAVE_LOADED = "SaveLoaded"
+BANK_LOCATIONS_KEY_CHECKS_OVERRIDE = "ChecksOverride"
 
 # Update
 # Doesn't need sections or keys. The existence of the file is used as an update prompt for now
@@ -267,6 +269,7 @@ def send_core_options(
     finished_loading: str | None = None,
     slot_name: str | None = None,
     world_id: str | None = None,
+    save_warning: str | None = None,
 ) -> None | Error[str]:
     bank = SC2Bank(BANK_CORE_OPTIONS_FILE_NAME)
     bank.add_entry(
@@ -302,6 +305,12 @@ def send_core_options(
             BANK_CORE_OPTIONS_SECTION_CORE_OPTIONS,
             BANK_CORE_OPTIONS_KEY_WORLD_ID,
             encode_bank_identity(world_id),
+        )
+    if save_warning:
+        bank.add_entry(
+            BANK_CORE_OPTIONS_SECTION_CORE_OPTIONS,
+            BANK_CORE_OPTIONS_KEY_SAVE_WARNING,
+            save_warning,
         )
     return bank.write_file()
 
@@ -403,7 +412,7 @@ def read_locations() -> str | Error[str]:
     return result
 
 
-def read_location_info() -> tuple[str, str, str, str, str, str] | Error[str]:
+def read_location_info() -> tuple[str, str, str, str, str, str, str] | Error[str]:
     bank = SC2Bank(BANK_LOCATIONS_FILE_NAME)
     if error := bank.read_file():
         return error
@@ -414,6 +423,7 @@ def read_location_info() -> tuple[str, str, str, str, str, str] | Error[str]:
         bank.get_value(BANK_LOCATIONS_SECTION_LOCATIONS, BANK_LOCATIONS_KEY_SLOT_NAME),
         bank.get_value(BANK_LOCATIONS_SECTION_LOCATIONS, BANK_LOCATIONS_KEY_WORLD_ID),
         bank.get_value(BANK_LOCATIONS_SECTION_LOCATIONS, BANK_LOCATIONS_KEY_SAVE_LOADED),
+        bank.get_value(BANK_LOCATIONS_SECTION_LOCATIONS, BANK_LOCATIONS_KEY_CHECKS_OVERRIDE),
     )
 
 
