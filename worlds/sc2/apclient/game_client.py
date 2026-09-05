@@ -274,7 +274,6 @@ class MissionClient:
         saved_world_id = banks.decode_bank_identity(saved_world_id_value) if saved_world_id_value else ""
         current_slot_name = self.get_slot_name()
         current_world_id = self.ctx.world_id
-        warnings: list[str] = []
         slot_mismatch = bool(
             saved_slot_name and current_slot_name and saved_slot_name != current_slot_name
         )
@@ -298,46 +297,41 @@ class MissionClient:
         else:
             self.save_warning_code = ""
 
+        candidate_warnings: dict[tuple[str, str, str], str] = {}
+        mismatch_suffix = (
+            "Checks from this loaded mission will not be sent. Items will continue to be processed."
+        )
         if slot_mismatch:
-            warning_key = ("slot", saved_slot_name, current_slot_name)
-            if warning_key not in self.warned_identity_mismatches:
-                self.warned_identity_mismatches.add(warning_key)
-                warnings.append(
-                    "WARNING: This save was created with a different slot. "
-                    f'Saved slot: "{saved_slot_name}"; connected slot: "{current_slot_name}". '
-                    "Checks from this loaded mission will not be sent. "
-                    "Items will continue to be processed."
-                )
+            candidate_warnings[("slot", saved_slot_name, current_slot_name)] = (
+                "WARNING: This save was created with a different slot. "
+                f'Saved slot: "{saved_slot_name}"; connected slot: "{current_slot_name}". '
+                + mismatch_suffix
+            )
 
         if not saved_world_id:
-            warning_key = ("world-legacy-save", "", current_world_id)
-            if warning_key not in self.warned_identity_mismatches:
-                self.warned_identity_mismatches.add(warning_key)
-                warnings.append(
-                    "WARNING: This save was made on an older version and has no World ID, so its "
-                    "multiworld cannot be verified. The missing World ID alone does not block "
-                    "checks or items."
-                )
+            candidate_warnings[("world-legacy-save", "", current_world_id)] = (
+                "WARNING: This save was made on an older version and has no World ID, so its "
+                "multiworld cannot be verified. The missing World ID alone does not block "
+                "checks or items."
+            )
         elif not current_world_id:
-            warning_key = ("world-legacy-connected", saved_world_id, "")
-            if warning_key not in self.warned_identity_mismatches:
-                self.warned_identity_mismatches.add(warning_key)
-                warnings.append(
-                    "WARNING: The connected multiworld was made on an older version and has no "
-                    "World ID, so this save cannot be verified. "
-                    "The missing World ID alone does not block checks or items."
-                )
+            candidate_warnings[("world-legacy-connected", saved_world_id, "")] = (
+                "WARNING: The connected multiworld was made on an older version and has no "
+                "World ID, so this save cannot be verified. "
+                "The missing World ID alone does not block checks or items."
+            )
         elif world_mismatch:
-            warning_key = ("world", saved_world_id, current_world_id)
-            if warning_key not in self.warned_identity_mismatches:
-                self.warned_identity_mismatches.add(warning_key)
-                warnings.append(
-                    "WARNING: This save was created in a different multiworld. "
-                    f'Saved World ID: "{saved_world_id}"; connected World ID: "{current_world_id}". '
-                    "Checks from this loaded mission will not be sent. "
-                    "Items will continue to be processed."
-                )
+            candidate_warnings[("world", saved_world_id, current_world_id)] = (
+                "WARNING: This save was created in a different multiworld. "
+                f'Saved World ID: "{saved_world_id}"; connected World ID: "{current_world_id}". '
+                + mismatch_suffix
+            )
 
+        warnings = [
+            message for key, message in candidate_warnings.items()
+            if key not in self.warned_identity_mismatches
+        ]
+        self.warned_identity_mismatches.update(candidate_warnings)
         for warning in warnings:
             logger.warning(warning)
         if warnings:
