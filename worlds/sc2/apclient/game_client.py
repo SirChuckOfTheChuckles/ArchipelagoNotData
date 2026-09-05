@@ -56,6 +56,8 @@ class MissionClient:
         'mission_checks_blocked',
         'mission_checks_override',
         'save_warning_code',
+        'mission_mapping_valid',
+        'setup_pending',
     ]
 
     def __init__(self, ctx: 'SC2Context', mission_id: int, process: subprocess.Popen) -> None:
@@ -78,6 +80,8 @@ class MissionClient:
         self.mission_checks_blocked = False
         self.mission_checks_override = False
         self.save_warning_code = ""
+        self.mission_mapping_valid = True
+        self.setup_pending = True
 
     def check_game_running(self) -> bool:
         if not self.running:
@@ -104,7 +108,22 @@ class MissionClient:
             kill_pid(self.sc2_pid)
         self.running = False
 
-    def do_setup(self) -> None:
+    def do_setup(self) -> bool:
+        """Queue a complete setup, retaining a retry request if any bank write fails."""
+        self.setup_pending = True
+        try:
+            error = self.write_setup_banks()
+        except OSError as error:
+            logger.error("Could not refresh mission banks: %s", error)
+            return False
+        if isinstance(error, Error):
+            logger.error(error.message)
+            return False
+        self.last_received_update = len(self.ctx.items_received)
+        self.setup_pending = False
+        return True
+
+    def write_setup_banks(self) -> None | Error[str]:
         mission = lookup_id_to_mission[self.mission_id]
         start_items = calculate_items(self.ctx, self.mission_id)
         missions_beaten = self.missions_beaten_count()
@@ -152,13 +171,14 @@ class MissionClient:
             f" {hero_presence}"
         )
         if isinstance(error, Error):
-            logger.error(error.message)
-            return
-        self.update_tech(start_items, kerrigan_level)
+            return error
+        error = self.update_tech(start_items, kerrigan_level)
+        if isinstance(error, Error):
+            return error
         objectives = ""
         if uncollected_objectives:
             objectives = " ".join(f"{str(objective)}" for objective in uncollected_objectives)
-        error = banks.send_core_options(
+        return banks.send_core_options(
             self.get_resources(start_items),
             self.get_colors(),
             objectives,
@@ -167,10 +187,6 @@ class MissionClient:
             self.ctx.world_id,
             self.save_warning_code,
         )
-        if isinstance(error, Error):
-            logger.error(error.message)
-            return
-        self.last_received_update = len(self.ctx.items_received)
 
     def reset_mission_state(self) -> None:
         self.mission_completed = self.ctx.is_mission_completed(self.mission_id)
@@ -189,15 +205,11 @@ class MissionClient:
         if not candidate_mission_ids:
             return None
         if mission_race:
-            race_matching_mission_ids = [
+            candidate_mission_ids = [
                 mission_id
                 for mission_id in candidate_mission_ids
                 if get_mission_race_name(mission_id) == mission_race
             ]
-            if len(race_matching_mission_ids) == 1:
-                return race_matching_mission_ids[0]
-            if self.mission_id in race_matching_mission_ids:
-                return self.mission_id
         if self.mission_id in candidate_mission_ids:
             return self.mission_id
         if len(candidate_mission_ids) == 1:
@@ -205,23 +217,23 @@ class MissionClient:
         return None
 
     def sync_active_mission(self, map_file: str, mission_race: str) -> bool:
-        """Switch client accounting to the mission restored by SC2, returning whether setup ran."""
+        """Validate the reported mission and queue setup if client accounting changes."""
         current_mission = lookup_id_to_mission[self.mission_id]
         current_mission_race = get_mission_race_name(self.mission_id)
-        if map_file == current_mission.map_file and (
-            not mission_race or mission_race == current_mission_race
-        ):
-            return False
-
         resolved_mission_id = self.resolve_mission_id_from_map_file(map_file, mission_race)
+        self.mission_mapping_valid = resolved_mission_id is not None
         if resolved_mission_id is None:
-            logger.warning(
-                "Loaded save reports map %s (%s), but no unique mission mapping was found from %s (%s).",
-                map_file,
-                mission_race or "unknown race",
-                current_mission.map_file,
-                current_mission_race or "unknown race",
-            )
+            warning_key = ("mission", map_file, mission_race)
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                logger.warning(
+                    "Loaded save reports map %s (%s), but no valid mission mapping was found "
+                    "from %s (%s). Mission checks and setup are paused until the map is identified.",
+                    map_file or "unknown map",
+                    mission_race or "unknown race",
+                    current_mission.map_file,
+                    current_mission_race or "unknown race",
+                )
             return False
         if resolved_mission_id == self.mission_id:
             return False
@@ -234,7 +246,7 @@ class MissionClient:
         )
         self.mission_id = resolved_mission_id
         self.reset_mission_state()
-        self.do_setup()
+        self.setup_pending = True
         return True
 
     def get_slot_name(self) -> str:
@@ -250,9 +262,11 @@ class MissionClient:
     ) -> None:
         """Warn about loaded-save identity problems and block checks on definite mismatches."""
         if save_loaded_value.strip() != "1":
+            self.load_refresh_in_progress = False
             return
 
-        # New save load gets  fresh safety decision
+        if self.ctx.slot is None:
+            return
         if not self.load_refresh_in_progress:
             self.mission_checks_override = False
 
@@ -351,14 +365,14 @@ class MissionClient:
         refresh_requested = save_loaded_value.strip() == "1"
         if not refresh_requested:
             self.load_refresh_in_progress = False
-            return
-        if self.load_refresh_in_progress:
-            return
+        elif not self.load_refresh_in_progress:
+            self.setup_pending = True
 
-        self.load_refresh_in_progress = True
-        logger.info("Loaded save detected; refreshing all current Archipelago items and options.")
-        if not mission_switched:
-            self.do_setup()
+        if mission_switched:
+            self.setup_pending = True
+        if self.setup_pending and self.do_setup():
+            self.load_refresh_in_progress = refresh_requested
+            logger.info("Refreshed current Archipelago items and options for the active mission.")
 
     async def client_loop(self) -> None:
         while self.running:
@@ -420,6 +434,8 @@ class MissionClient:
                 async_start(self.ctx.trade_receive(5))
 
         game_state = self.get_locations()
+        if not self.mission_mapping_valid or self.setup_pending or self.ctx.slot is None:
+            return
 
         if game_state & 1:
             self.update_number += 1
@@ -511,10 +527,16 @@ class MissionClient:
         ) = result
         self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
         self.apply_mission_check_override(checks_override)
+        if self.ctx.slot is None:
+            return 0
         mission_switched = False
-        if mission_map:
+        if mission_map or save_loaded.strip() == "1":
             mission_switched = self.sync_active_mission(mission_map, mission_race)
+        if not self.mission_mapping_valid:
+            return 0
         self.refresh_after_save_load(save_loaded, mission_switched)
+        if self.setup_pending:
+            return 0
         if (game_state.strip()):  # may be "" or " "
             return int(game_state)
         return 0

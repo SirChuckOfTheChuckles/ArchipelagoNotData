@@ -131,7 +131,7 @@ class SC2Bank:
             path = f"{bank_folder}/{self.file_name}.SC2Bank"
         if not os.path.isfile(path):
             return None
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             SECTION_PATTERN = re.compile(r'<Section name="(\w+)">')
             KEY_PATTERN = re.compile(r'<Key name="(\w+)">')
             VALUE_PATTERN = re.compile(r'<Value string="([^"]+)"/>')
@@ -193,13 +193,12 @@ class SC2Bank:
             # start at 1, makes handling in SC2 easier
             path = f"{dir}/{self.file_name}_backup_{i}.SC2Bank"
             if not os.path.isfile(path):
-                with open(path, "w") as f:
+                with open(path, "w", encoding="utf-8") as f:
                     f.write('\n'.join(lines))
                 return None
         # only the messages bank has any chance to hit this
         # at current limits, this would be attempting to send 5000 messages in a single iteration
-        logger.info(f"Too many bank backups, cannot write:\n{self}")
-        return None
+        return Error(f"Too many bank backups, cannot write {self.file_name}; will retry.")
 
     def remove_entry_from_file(self, key: str) -> None | Error[str]:
         """Remove one Key/Value pair from a bank file"""
@@ -208,9 +207,9 @@ class SC2Bank:
         if isinstance(bank_folder, Error):
             return bank_folder
         path = f"{bank_folder}/{self.file_name}.SC2Bank"
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             deleting = False
             for line in lines:
                 line_content = line.strip()
@@ -398,17 +397,6 @@ def update_prompt() -> bool:
         # if bank exists, we want an update prompt. No need to check the values
         os.remove(path)
         result = True
-    return result
-
-
-def read_locations() -> str | Error[str]:
-    bank = SC2Bank(BANK_LOCATIONS_FILE_NAME)
-    if error := bank.read_file():
-        return error
-    result = bank.get_value(
-        BANK_LOCATIONS_SECTION_LOCATIONS,
-        BANK_LOCATIONS_KEY_GAME_STATE
-    )
     return result
 
 
