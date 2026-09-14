@@ -45,6 +45,7 @@ class MissionClient:
         'mission_id',
         'switcher_process',
         'sc2_pid',
+        'next_process_check',
         'bonuses',
         'trade_reply_cooldown',
         'last_received_update',
@@ -70,6 +71,7 @@ class MissionClient:
         self.mission_id = mission_id
         self.switcher_process = process
         self.sc2_pid: int | None = None
+        self.next_process_check = 0.0
         self.bonuses = [False for _ in range(MAX_BONUS)]
         self.trade_reply_cooldown: int = 0
         self.last_received_update: int = 0
@@ -273,7 +275,6 @@ class MissionClient:
         if not self.warning_load_active:
             self.warned_identity_mismatches.clear()
             self.warning_load_active = True
-        if not self.load_refresh_in_progress:
             self.mission_checks_override = False
 
         saved_slot_name = banks.decode_bank_identity(saved_slot_value) if saved_slot_value else ""
@@ -381,6 +382,8 @@ class MissionClient:
 
     async def on_step(self) -> None:
         # @assume setup is done
+        if not self.running:
+            return
         if self.sc2_pid is None:
             if not self.is_switcher_process_closed():
                 # Still starting up
@@ -388,9 +391,11 @@ class MissionClient:
             self.sc2_pid = get_sc2_pid()
             logger.debug(f"sc2 process ID is {self.sc2_pid}")
             return
-        elif self.update_number % 10 == 0:
+        elif time.monotonic() >= self.next_process_check:
+            self.next_process_check = time.monotonic() + 5.0
             if not self.check_game_running():
                 logger.debug("sc2 process exited")
+                return
         game_state = 0
         error = banks.send_ap_messages_from_queue(self.ctx.announcements)
         if isinstance(error, Error):
