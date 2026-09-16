@@ -160,7 +160,7 @@ parent_present[parent_names.ZERG_UPROOTABLE_BUILDINGS] = AnyOf(
 )
 parent_present[parent_names.ZERG_MELEE_ATTACKER] = AnyOf(item_groups.zerg_melee_wa, display_string='Zerg Ground')
 parent_present[parent_names.ZERG_MISSILE_ATTACKER] = AnyOf(item_groups.zerg_ranged_wa, display_string='Zerg Ground')
-parent_present[parent_names.ZERG_CARAPACE_UNIT] = AnyOf(item_groups.zerg_ground_units, display_string='Zerg Flyers')
+parent_present[parent_names.ZERG_CARAPACE_UNIT] = AnyOf(item_groups.zerg_ground_units, display_string='Zerg Ground')
 parent_present[parent_names.ZERG_FLYING_UNIT] = AnyOf(item_groups.zerg_air_units, display_string='Zerg Flyers')
 parent_present[parent_names.ZERG_MERCENARIES] = AnyOf(item_groups.zerg_mercenaries, display_string='Zerg Mercenaries')
 parent_present[parent_names.ZERG_OUROBOUROS_CONDITION] = AnyOfGroupAndOneOtherItem(

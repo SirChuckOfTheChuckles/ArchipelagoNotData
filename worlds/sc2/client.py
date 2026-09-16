@@ -19,7 +19,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TYPE_CHECKING, NamedTuple, Type, Sequence, Iterable
+from typing import Any, NamedTuple, Type, Sequence, Iterable
 
 # CommonClient import first to trigger ModuleUpdater
 from CommonClient import CommonContext, server_loop, ClientCommandProcessor, gui_enabled, get_base_parser, handle_url_arg
@@ -41,7 +41,7 @@ from .options import (
 )
 from .mission_order.slot_data import CampaignSlotData, LayoutSlotData, MissionSlotData, MissionOrderObjectSlotData
 from .mission_order.entry_rules import SubRuleRuleData, CountMissionsRuleData, MissionEntryRules
-from .tables import HeroOptions, HeroFlag
+from .tables import HeroFlag
 from .apclient.transfer_data import worker_units
 from . import SC2World
 from .apclient import banks, user_paths, game_client
@@ -119,7 +119,7 @@ class ConfigurableOptionInfo(NamedTuple):
     can_break_logic: bool = False
 
 
-@dataclass
+@dataclass(slots=True)
 class ConfigurableSettingInfo:
     setting_name: str
     option_class: Type[coresettings.Bool] | Type[str] | Type[int]
@@ -1018,17 +1018,17 @@ class SC2Context(CommonContext):
             if self.slot_data_version >= 4:
                 self.custom_mission_order = [
                     CampaignSlotData(
-                        **{field:value for field, value in campaign_data.items() if field not in ["layouts", "entry_rule"]},
-                        entry_rule = SubRuleRuleData.parse_from_dict(campaign_data["entry_rule"]),
+                        **{field: value for field, value in campaign_data.items() if field not in ["layouts", "entry_rule"]},
+                        entry_rule=SubRuleRuleData.parse_from_dict(campaign_data["entry_rule"]),
                         layouts = [
                             LayoutSlotData(
-                                **{field:value for field, value in layout_data.items() if field not in ["missions", "entry_rule"]},
-                                entry_rule = SubRuleRuleData.parse_from_dict(layout_data["entry_rule"]),
+                                **{field: value for field, value in layout_data.items() if field not in ["missions", "entry_rule"]},
+                                entry_rule=SubRuleRuleData.parse_from_dict(layout_data["entry_rule"]),
                                 missions = [
                                     [
                                         MissionSlotData(
-                                            **{field:value for field, value in mission_data.items() if field != "entry_rule"},
-                                            entry_rule = SubRuleRuleData.parse_from_dict(mission_data["entry_rule"])
+                                            **{field: value for field, value in mission_data.items() if field != "entry_rule"},
+                                            entry_rule=SubRuleRuleData.parse_from_dict(mission_data.get("entry_rule", {}))
                                         ) for mission_data in column
                                     ] for column in layout_data["missions"]
                                 ]

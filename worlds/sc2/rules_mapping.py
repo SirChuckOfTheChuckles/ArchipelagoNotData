@@ -156,7 +156,8 @@ class RuleSignature(NamedTuple):
         fields = [
             f'{f}={self[index]}'
             for index, f in enumerate(self._fields[:-1])
-            if self[index] and (f != "power_comp" or self[index] > COMP_UPGRADEABLE)]
+            if self[index] and (f != "power_comp" or self.power_comp > COMP_UPGRADEABLE)
+        ]
         if self.rule:
             fields.append(f'rule={self.rule.__name__}')
         return f"RuleSignature({', '.join(fields)})"
@@ -291,7 +292,7 @@ class ProtoRule:
             if not (FLAG_NO_LOGIC_TRACKS & self.flags):
                 required_hero_rating = self.rating_from_progress(depth, hero_depths)
             required_hero_rating = max(self.hero_min, required_hero_rating)
-            if mission in world.logic.grant_hero_items:
+            if mission in world.logic.grant_hero_items:  # type: ignore [union-attr]
                 required_hero_rating = 0
         if MissionFlag.HeroSystemUnsupported & mission.flags:
             # Hero requirements assumed captured by manual rules; grant story tech usually applies

@@ -7,8 +7,10 @@ from .. import MissionFlag
 from ..item import item_tables, item_names
 from BaseClasses import ItemClassification
 from .. import options
-from ..mission_tables import SC2Mission
+from ..mission_tables import SC2Mission, SC2Race
 from ..tables import HeroFlag
+from ..mission_order import entry_rules
+
 
 class TestCustomMissionOrders(Sc2SetupTestBase):
     def test_custom_mission_order_can_assign_exact_heroes_to_slots(self):
@@ -172,6 +174,79 @@ class TestCustomMissionOrders(Sc2SetupTestBase):
         self.assertEqual(flags.get(MissionFlag.Zerg, 0), 0)
         sc2_regions = set(self.multiworld.regions.region_cache[self.player]) - {"Menu"}
         self.assertEqual(len(self.world.custom_mission_order.get_used_missions()), len(sc2_regions))
+
+    def test_entry_rule_indexing(self) -> None:
+        world_options = {
+            options.OPTION_NAME[options.MissionOrder]: 'custom',
+            options.OPTION_NAME[options.SelectedRaces]: [SC2Race.TERRAN.get_title()],
+            options.OPTION_NAME[options.CustomMissionOrder]: {
+                'campaign': {
+                    'layout': {
+                        'type': 'grid',
+                        'size': 9,
+                        'missions': [
+                            {'index': 'all', 'entrance': True},
+                            {'index': 'point(1, 1)', 'empty': True},
+                            {'index': 1, 'entry_rules': {'scope': '../0'}},
+                            {'index': 2, 'entry_rules': {'scope': './-8+1-1'}},
+                            {'index': 6, 'entry_rules': {'scope': './rect(x, y-1, 5, 1)'}},
+                            {'index': [3, 7], 'entry_rules': {'scope': './point(x+1, y-1)'}},
+                            {'index': -1, 'entry_rules': {'scope': './(1+2)*2 + 1'}},  # == 7
+                        ],
+                    }
+                },
+                'campaign2': {
+                    'goal': True,
+                    'layout2': {
+                        'type': 'canvas',
+                        'canvas': ['ab', 'cd'],
+                        'missions': [
+                            {'index': 'rect(0, 0, 2, 1)', 'entrance': True},
+                            {'index': 'group(a)', 'entry_rules': {'scope': '../../../campaign/layout/-1'}},
+                            {'index': 'group(b)', 'entry_rules': {'scope': '../../../campaign/layout/point(y, x)'}},
+                        ]
+                    }
+                }
+            },
+        }
+        self.generate_world(world_options)
+        missions = self.world.custom_mission_order.mission_order_node.campaigns[0].layouts[0].missions
+        final_missions = self.world.custom_mission_order.mission_order_node.campaigns[1].layouts[0].missions
+        # check mission scope ./0 == first mission
+        self.assertEqual(len(missions[1].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[1].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(missions[1].entry_rule.rules_to_check[0].missions_to_count[0], missions[0])
+        # check mission scope ./-8 == second mission
+        self.assertEqual(len(missions[2].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[2].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(missions[2].entry_rule.rules_to_check[0].missions_to_count[0], missions[1])
+        # check mission scope ./(1+2)*2+1 == 7
+        self.assertEqual(len(missions[-1].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[-1].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(missions[-1].entry_rule.rules_to_check[0].missions_to_count[0], missions[7])
+        # check middle mission, point(1, 1) is empty
+        self.assertTrue(missions[4].option_empty)
+        # check mission scope ./rect(x, y-1, 5, 1) from mission 6=(0, 2) is the middle row (indices 3,-,5)
+        self.assertEqual(len(missions[6].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[6].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertIn(missions[3], missions[6].entry_rule.rules_to_check[0].missions_to_count)
+        self.assertIn(missions[5], missions[6].entry_rule.rules_to_check[0].missions_to_count)
+        # check mission scope ./point(x+1, y-1) from mission 3=(0, 1) is mission 1=(1, 0)
+        self.assertEqual(len(missions[3].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[3].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(missions[3].entry_rule.rules_to_check[0].missions_to_count[0], missions[1])
+        # check mission scope ./point(x+1, y-1) from mission 7=(1, 2) is mission 5=(2, 1)
+        self.assertEqual(len(missions[7].entry_rule.rules_to_check), 1)
+        assert isinstance(missions[7].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(missions[7].entry_rule.rules_to_check[0].missions_to_count[0], missions[5])
+        # check mission scope ../../../campaign/layout/-1 points to missions[-1]
+        self.assertEqual(len(final_missions[0].entry_rule.rules_to_check), 1)
+        assert isinstance(final_missions[0].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(final_missions[0].entry_rule.rules_to_check[0].missions_to_count[0], missions[-1])
+        # check mission scope ../../../campaign/layout/point(y, x) from final missions (1, 0) points to missions[3]
+        self.assertEqual(len(final_missions[1].entry_rule.rules_to_check), 1)
+        assert isinstance(final_missions[1].entry_rule.rules_to_check[0], entry_rules.CountMissionsEntryRule)
+        self.assertEqual(final_missions[1].entry_rule.rules_to_check[0].missions_to_count[0], missions[3])
 
     def test_locked_and_necessary_item_appears_once(self):
         # This is a filler upgrade with a parent

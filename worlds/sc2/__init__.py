@@ -50,7 +50,7 @@ from .pool_filter import filter_items
 from .mission_tables import SC2Campaign, SC2Mission, SC2Race, MissionFlag
 from .tables import HeroFlag
 from .regions import create_mission_order
-from .mission_order import SC2MissionOrder
+from .mission_order.mission_order import SC2MissionOrder
 from worlds.LauncherComponents import components, Component, launch as launch_component
 from .presets import sc2_options_presets
 
@@ -264,9 +264,10 @@ class SC2World(World):
         setup_events(self.player, self.locked_locations, self.location_cache)
         set_up_filler_items_distribution(self)
         item_list: list[FilterItem] = create_and_flag_explicit_item_locks_and_excludes(self)
+        indexed_item_list: dict[str, FilterItem] = {filter_item.name: filter_item for filter_item in item_list}
         flag_excludes_by_faction_presence(self, item_list)
         flag_mission_based_item_excludes(self, item_list)
-        flag_allowed_orphan_items(self, item_list)
+        flag_allowed_orphan_items(self, indexed_item_list)
         flag_start_inventory(self, item_list)
         flag_unused_upgrade_types(self, item_list)
         flag_unreleased_items(item_list)
@@ -599,50 +600,49 @@ def flag_excludes_by_faction_presence(world: SC2World, item_list: list[FilterIte
     for item in item_list:
         # Catch-all for all of a faction's items
         # Unit upgrades required for no-builds will get the FilterExcluded lifted when flagging AllowedOrphan
-        if not terran_missions and item.data.race == SC2Race.TERRAN:
-            if item.name not in item_groups.nova_equipment:
-                item.flags |= ItemFilterFlags.FilterExcluded
-                continue
-        if not zerg_missions and item.data.race == SC2Race.ZERG:
-            if (item.data.type != ZergItemType.Ability
-                and item.data.type != ZergItemType.Level
-            ):
-                item.flags |= ItemFilterFlags.FilterExcluded
-                continue
-        if not protoss_missions and item.data.race == SC2Race.PROTOSS:
-            if (item.name not in item_groups.soa_items
-                and item.data.type != ProtossItemType.Artanis_Items
-            ):
-                item.flags |= ItemFilterFlags.FilterExcluded
+        if (not terran_missions
+            and item.data.race == SC2Race.TERRAN
+            and item.name not in item_groups.nova_equipment
+        ):
+            item.flags |= ItemFilterFlags.FilterExcluded
+            continue
+        if (not zerg_missions
+            and item.data.race == SC2Race.ZERG
+            and item.name not in item_groups.kerrigan_abilities
+        ):
+            item.flags |= ItemFilterFlags.FilterExcluded
+            continue
+        if (not protoss_missions
+            and (item.data.race == SC2Race.PROTOSS
+                or item.name == item_names.SHIELD_REGENERATION)
+            and item.name not in item_groups.artanis_abilities
+            and item.name not in item_groups.soa_items
+        ):
+            item.flags |= ItemFilterFlags.FilterExcluded
             continue
 
         # Faction units
         if (not terran_build_missions
             and item.data.race == SC2Race.TERRAN
             and item.data.type != item_tables.TerranItemType.Upgrade
-            and item.name not in item_groups.nova_equipment
             and item.name not in allowed_remaining_terran_units
+            and item.name not in item_groups.nova_equipment
         ):
             item.flags |= ItemFilterFlags.FilterExcluded
         if (not zerg_build_missions
-            and item.data.type in (
-                ZergItemType.Unit,
-                ZergItemType.Mercenary,
-                ZergItemType.Evolution_Pit,
-            )
+            and item.data.type == ZergItemType.Unit
             and item.name not in allowed_remaining_zerg_units
+            and item.name not in item_groups.kerrigan_abilities
         ):
             item.flags |= ItemFilterFlags.FilterExcluded
         if (not protoss_build_missions
             # Note(mm): This doesn't handle categories containing e.g. automated assimilators
             # or warp gate improvements because that item type is mixed in with
             # e.g. Reconstruction Beam and Overwatch
-            and item.data.type in (
-                ProtossItemType.Unit,
-                ProtossItemType.Unit_2,
-                ProtossItemType.Building,
-            )
+            and item.data.type == ProtossItemType.Unit
             and item.name not in allowed_remaining_protoss_units
+            and item.name not in item_groups.artanis_abilities
+            and item.name not in item_groups.soa_items
         ):
             # Note(mm): This doesn't exclude things like automated assimilators or warp gate improvements
             # because that item type is mixed in with e.g. Reconstruction Beam and Overwatch
@@ -761,25 +761,21 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
 
         # Todo(mm): How should no-build only / grant_story_tech affect excluding Kerrigan items?
         # Exclude Primal form based on Kerrigan presence or primal form option
-        if (item.data.type == ZergItemType.Primal_Form
+        if (item.name == item_names.KERRIGAN_PRIMAL_FORM
             and (remove_kerrigan_items or world.options.kerrigan_primal_status != KerriganPrimalStatus.option_item)
         ):
             item.flags |= ItemFilterFlags.FilterExcluded
 
         # Remove Kerrigan abilities if there's no Kerrigan
-        if item.data.type == ZergItemType.Ability and remove_kerrigan_items:
-            item.flags |= ItemFilterFlags.FilterExcluded
-
-        # Remove Nova items if there's no Nova
-        if item.data.type == item_tables.nova_equipment and remove_nova_items:
+        if item.name in item_groups.kerrigan_abilities and remove_kerrigan_items:
             item.flags |= ItemFilterFlags.FilterExcluded
 
         # Remove Artanis items if there's no Artanis
-        if item.data.type == ProtossItemType.Artanis_Items and remove_artanis_items:
+        if item.name in item_groups.artanis_abilities and remove_artanis_items:
             item.flags |= ItemFilterFlags.FilterExcluded
 
         # Remove Spear of Adun if it's off
-        if item.name in item_tables.spear_of_adun_calldowns and not soa_presence:
+        if item.name in item_groups.spear_of_adun_actives and not soa_presence:
             item.flags |= ItemFilterFlags.FilterExcluded
 
         # Remove Spear of Adun passives
@@ -802,42 +798,58 @@ def flag_mission_based_item_excludes(world: SC2World, item_list: list[FilterItem
     return
 
 
-def flag_allowed_orphan_items(world: SC2World, item_list: list[FilterItem]) -> None:
+def flag_allowed_orphan_items(world: SC2World, item_list: dict[str, FilterItem]) -> None:
     """Adds the `Allowed_Orphan` flag to items that shouldn't be filtered with their parents, like combat shield"""
     missions = world.custom_mission_order.get_used_missions()
+    MAX_ORPHAN_TERRAN_ITEMS = 4
+    terran_candidate_items: set[str] = set()
     if SC2Mission.PIERCING_OF_THE_SHROUD in missions:
-        for item in item_list:
-            if item.name in (
-                    item_names.MARINE_COMBAT_SHIELD,
-                    item_names.MARINE_STIMPACK,
-                    item_names.MARINE_MEDPACK,
-                    item_names.MARINE_MAGRAIL_MUNITIONS,
-                    item_names.MEDIC_STABILIZER_MEDPACKS,
-                    item_names.MARINE_LASER_TARGETING_SYSTEM,
-            ):
-                item.flags |= ItemFilterFlags.AllowedOrphan
-                item.flags &= ~ItemFilterFlags.FilterExcluded
+        for item_name in (
+            item_names.MARINE_COMBAT_SHIELD,
+            item_names.MARINE_STIMPACK,
+            item_names.MARINE_MEDPACK,
+            item_names.MARINE_MAGRAIL_MUNITIONS,
+            item_names.MEDIC_STABILIZER_MEDPACKS,
+            item_names.MARINE_LASER_TARGETING_SYSTEM,
+        ):
+            item = item_list.get(item_name)
+            if item is not None and ItemFilterFlags.UserExcluded not in item.flags:
+                terran_candidate_items.add(item_name)
     # These rules only trigger on Standard tactics
     if SC2Mission.BELLY_OF_THE_BEAST in missions and world.options.required_tactics == RequiredTactics.option_basic:
-        for item in item_list:
-            if item.name in (
-                    item_names.MARINE_COMBAT_SHIELD,
-                    item_names.MARINE_STIMPACK,
-                    item_names.MARINE_MEDPACK,
-                    item_names.MARINE_MAGRAIL_MUNITIONS,
-                    item_names.MEDIC_STABILIZER_MEDPACKS,
-                    item_names.MARINE_LASER_TARGETING_SYSTEM,
-                    item_names.FIREBAT_NANO_PROJECTORS,
-                    item_names.FIREBAT_JUGGERNAUT_PLATING,
-                    item_names.FIREBAT_STIMPACK,
-                    item_names.FIREBAT_MEDPACK,
-            ):
-                item.flags |= ItemFilterFlags.AllowedOrphan
-                item.flags &= ~ItemFilterFlags.FilterExcluded
+        for item_name in (
+            item_names.MARINE_COMBAT_SHIELD,
+            item_names.MARINE_STIMPACK,
+            item_names.MARINE_MEDPACK,
+            item_names.MARINE_MAGRAIL_MUNITIONS,
+            item_names.MEDIC_STABILIZER_MEDPACKS,
+            item_names.MARINE_LASER_TARGETING_SYSTEM,
+            item_names.FIREBAT_NANO_PROJECTORS,
+            item_names.FIREBAT_JUGGERNAUT_PLATING,
+            item_names.FIREBAT_STIMPACK,
+            item_names.FIREBAT_MEDPACK,
+        ):
+            item = item_list.get(item_name)
+            if item is not None and ItemFilterFlags.UserExcluded not in item.flags:
+                terran_candidate_items.add(item_name)
+    if terran_candidate_items:
+        sorted_items = sorted(terran_candidate_items)
+        world.random.shuffle(sorted_items)
+        for item_name in sorted_items[:MAX_ORPHAN_TERRAN_ITEMS]:
+            item = item_list[item_name]
+            item.flags |= ItemFilterFlags.AllowedOrphan
+            item.flags &= ~ItemFilterFlags.FilterExcluded
     if SC2Mission.EVIL_AWOKEN in missions and world.options.required_tactics == RequiredTactics.option_basic:
-        for item in item_list:
-            if item.name in (item_names.STALKER_PHASE_REACTOR, item_names.STALKER_DISINTEGRATING_PARTICLES, item_names.STALKER_PARTICLE_REFLECTION):
-                item.flags |= ItemFilterFlags.AllowedOrphan
+        for item_name in (
+            item_names.STALKER_PHASE_REACTOR,
+            item_names.STALKER_DISINTEGRATING_PARTICLES,
+            item_names.STALKER_PARTICLE_REFLECTION,
+        ):
+            item = item_list.get(item_name)
+            if item is None:
+                continue
+            item.flags |= ItemFilterFlags.AllowedOrphan
+            item.flags &= ~ItemFilterFlags.FilterExcluded
 
 
 def flag_start_inventory(world: SC2World, item_list: list[FilterItem]) -> None:

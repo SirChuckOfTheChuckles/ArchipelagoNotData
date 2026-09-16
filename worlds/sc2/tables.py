@@ -6,6 +6,12 @@ class HeroOptions:
     NOVA = "Nova"
     ARTANIS = "Artanis"
 
+    ALL_HERO_OPTIONS = (
+        KERRIGAN,
+        NOVA,
+        ARTANIS,
+    )
+
 
 class HeroFlag(IntFlag):
     """Hero presence bitflag. Must match the SC2Data implementation."""

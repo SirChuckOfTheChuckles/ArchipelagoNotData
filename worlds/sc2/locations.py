@@ -2338,6 +2338,11 @@ LOCATION_NAME_TO_ID = {
     _location.global_name(): _location.id
     for _location in Sc2Location
 }
+MISSION_TO_VICTORY_LOCATION = {
+    _location.mission: _location
+    for _location in Sc2Location
+    if _location.type == LocationType.VICTORY
+}
 
 
 def _init_tables(

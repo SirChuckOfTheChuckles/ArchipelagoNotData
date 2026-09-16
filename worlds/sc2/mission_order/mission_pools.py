@@ -6,7 +6,7 @@ from ..mission_tables import SC2Mission, lookup_id_to_mission, MissionFlag, SC2C
 from worlds.AutoWorld import World
 
 if TYPE_CHECKING:
-    from .nodes import SC2MOGenMission
+    from .nodes import SC2MOGenMission, MissionOrderNode
 
 
 class Difficulty(IntEnum):
@@ -230,7 +230,12 @@ class SC2MOGenMissionPools:
         self._used_missions.append(mission)
 
     def pull_random_mission(
-        self, world: World, slot: 'SC2MOGenMission', *, prefer_close_difficulty: bool = False
+        self,
+        world: World,
+        slot: 'SC2MOGenMission',
+        id_to_node: dict[tuple[int, ...], 'MissionOrderNode'],
+        *,
+        prefer_close_difficulty: bool = False
     ) -> SC2Mission:
         """
         Picks a random mission from the mission pool of the given slot
@@ -247,7 +252,7 @@ class SC2MOGenMissionPools:
         }
 
         if len(pool) == 0:
-            raise OptionError(f"No available mission to be picked for slot {slot.get_address_to_node()}.")
+            raise OptionError(f"No available mission to be picked for slot {slot.get_address_to_node(id_to_node)}.")
 
         desired_difficulty = slot.option_difficulty
         if prefer_close_difficulty:

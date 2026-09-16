@@ -4,7 +4,7 @@ Incoming data is validated to match specifications in .options.py.
 The functions here are called from ..regions.py.
 """
 
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING, cast
 import logging
 from dataclasses import dataclass, field
 from collections import Counter
@@ -21,8 +21,15 @@ from ..mission_tables import (
 from ..item.item_tables import named_layout_key_item_table, named_campaign_key_item_table
 from ..item import item_names
 from ..tables import HeroFlag, HeroOptions, StabilityOptions
-from .nodes import MissionOrderNode, SC2MOGenMissionOrder, SC2MOGenCampaign, SC2MOGenLayout, SC2MOGenMission
-from .entry_rules import EntryRule, SubRuleEntryRule, ItemEntryRule, CountMissionsEntryRule, BeatMissionsEntryRule
+from .nodes import (
+    MissionOrderNode,
+    SC2MOGenMissionOrder,
+    SC2MOGenCampaign,
+    SC2MOGenLayout,
+    SC2MOGenMission,
+    parent_id,
+)
+from .entry_rules import EntryRule, SubRuleEntryRule, ItemEntryRule, CountMissionsEntryRule
 from .mission_pools import (
     SC2MOGenMissionPools, Difficulty, modified_difficulty_thresholds, STANDARD_DIFFICULTY_FILL_ORDER
 )
@@ -36,6 +43,7 @@ from ..rule_helpers import and_2_rules, and_3_rules
 if TYPE_CHECKING:
     from .. import SC2World
     from BaseClasses import CollectionState
+    from .types import EntryRuleDict
 
 
 logger = logging.getLogger("Starcraft 2")
@@ -96,29 +104,38 @@ class LocationData:
             return self.info.id
 
 
-def resolve_unlocks(mission_order: SC2MOGenMissionOrder):
+def resolve_unlocks(mission_order: SC2MOGenMissionOrder) -> None:
     """Parses a mission order's entry rule dicts into entry rule objects."""
     rolling_rule_id = 0
     for campaign in mission_order.campaigns:
-        entry_rule = {
+        entry_rule: 'EntryRuleDict' = {
             "rules": campaign.option_entry_rules,
             "amount": -1
         }
-        campaign.entry_rule = _dict_to_entry_rule(mission_order, entry_rule, campaign, rolling_rule_id)
+        campaign.entry_rule = cast(
+            SubRuleEntryRule,
+            _dict_to_entry_rule(mission_order, entry_rule, campaign, rolling_rule_id)
+        )
         rolling_rule_id += 1
         for layout in campaign.layouts:
             entry_rule = {
                 "rules": layout.option_entry_rules,
                 "amount": -1
             }
-            layout.entry_rule = _dict_to_entry_rule(mission_order, entry_rule, layout, rolling_rule_id)
+            layout.entry_rule = cast(
+                SubRuleEntryRule,
+                _dict_to_entry_rule(mission_order, entry_rule, layout, rolling_rule_id)
+            )
             rolling_rule_id += 1
             for mission in layout.missions:
                 entry_rule = {
                     "rules": mission.option_entry_rules,
                     "amount": -1
                 }
-                mission.entry_rule = _dict_to_entry_rule(mission_order, entry_rule, mission, rolling_rule_id)
+                mission.entry_rule = cast(
+                    SubRuleEntryRule,
+                    _dict_to_entry_rule(mission_order, entry_rule, mission, rolling_rule_id)
+                )
                 rolling_rule_id += 1
                 # Manually make a rule for prev missions
                 if len(mission.prev) > 0:
@@ -128,7 +145,7 @@ def resolve_unlocks(mission_order: SC2MOGenMissionOrder):
 
 def _dict_to_entry_rule(
     mission_order: SC2MOGenMissionOrder,
-    data: dict[str, Any],
+    data: 'EntryRuleDict',
     start_node: MissionOrderNode,
     rule_id: int = -1
 ) -> EntryRule:
@@ -157,60 +174,117 @@ def _dict_to_entry_rule(
         for address in data["scope"]:
             resolved = _resolve_address(mission_order, address, start_node)
             objects.extend((obj, address) for obj in resolved)
-        visual_reqs = [obj.get_visual_requirement(start_node) for (obj, _) in objects]
-        missions: list[SC2MOGenMission]
-        if "amount" in data:
-            missions = [mission for (obj, _) in objects for mission in obj.get_missions() if not mission.option_empty]
-            if len(missions) == 0:
-                raise ValueError(f"Count rule did not find any missions at scopes: {data['scope']}")
-            return CountMissionsEntryRule(missions, data["amount"], visual_reqs)
-        missions = []
-        for (obj, address) in objects:
-            obj.important_beat_event = True
-            exits = obj.get_exits()
-            if len(exits) == 0:
-                raise ValueError(
-                    f"Address \"{address}\" found an unbeatable object. "
-                    "This should mean the address contains \"..\" too often."
-                )
-            missions.extend(exits)
-        return BeatMissionsEntryRule(missions, visual_reqs)
-    raise ValueError(f"Invalid data for entry rule: {data}")
+        missions: list[SC2MOGenMission] = []
+        visual_reqs: list[str | SC2MOGenMission] = []
+        amount = data["amount"]
+        for obj, address in objects:
+            if isinstance(obj, SC2MOGenMission):
+                if not obj.option_empty:
+                    missions.append(obj)
+                    visual_reqs.append(obj)
+            else:
+                if amount > 0:
+                    this_node_missions = [mission for mission in obj.get_missions() if not mission.option_empty]
+                    missions.extend(this_node_missions)
+                    visual_reqs.append(obj.get_visual_requirement(start_node))
+                else:
+                    obj.important_beat_event = True
+                    exits = [mission for mission in obj.get_exits() if not mission.option_empty]
+                    if not exits:
+                        raise OptionError(
+                            f"Address \"{address}\" found an unbeatable object. "
+                            "This likely means the address contains too many '..' terms."
+                        )
+                    missions.extend(exits)
+                    visual_reqs.append(obj.get_visual_requirement(start_node))
+        if len(missions) == 0:
+            raise OptionError(f"Count rule did not find any missions at scopes: {data['scope']}")
+        if amount < 0:
+            amount = len(missions)
+        return CountMissionsEntryRule(missions, amount, visual_reqs)
+    raise OptionError(f"Invalid data for entry rule: {data}")
 
 
 def _resolve_address(mission_order: SC2MOGenMissionOrder, address: str, start_node: MissionOrderNode) -> list[MissionOrderNode]:
     """Tries to find a node in the mission order by following the given address."""
-    if address.startswith("../") or address == "..":
+    if address.startswith(".."):
+        cursor = start_node.id
+    elif address.startswith("."):
         # Relative address, starts from searching object
-        cursor = start_node
+        cursor = parent_id(start_node.id)
     else:
         # Absolute address, starts from the top
-        cursor = mission_order
+        cursor = mission_order.id
     address_so_far = ""
-    for term in address.split("/"):
-        if len(address_so_far) > 0:
-            address_so_far += "/"
-        address_so_far += term
-        if term == "..":
-            cursor = cursor.get_parent(address_so_far, address)
+    id_to_node = mission_order.get_id_to_node()
+    terms = address.split("/")
+    search_info: tuple[SC2MOGenMission, SC2MOGenLayout] | tuple[()]
+    if isinstance(start_node, SC2MOGenMission):
+        parent_node = id_to_node[parent_id(start_node.id)]
+        assert isinstance(parent_node, SC2MOGenLayout)
+        search_info = (start_node, parent_node)
+    else:
+        search_info = ()
+    for index, term in enumerate(terms):
+        address_so_far = "/".join(terms[:index+1])
+        term = term.strip()
+        if not term:
+            continue
+        int_term: int | None = None
+        try:
+            int_term = int(term)
+        except:
+            pass
+        if term == ".":
+            continue
+        elif term == "..":
+            cursor = parent_id(cursor)
+        elif int_term is not None and int_term >= 0:
+            element = id_to_node[cursor]
+            if int_term >= len(element.children()):
+                raise OptionError(
+                    f'Address "{address_so_far}" (from "{address}") is out of range; '
+                    f'container only has {len(element.children())} children'
+                )
+            cursor = (*cursor, int(term))
+            if cursor not in id_to_node:
+                raise OptionError(f'Address "{address_so_far}" (from "{address}") points to a node that doesn\'t exist')
+        elif int_term is not None:
+            element = id_to_node[cursor]
+            normalized_term = len(element.children()) + int_term
+            if normalized_term < 0:
+                raise OptionError(
+                    f'Address "{address_so_far}" (from "{address}") is out of range; '
+                    f'container only has {len(element.children())} children'
+                )
+            cursor = (*cursor, normalized_term)
+            if cursor not in id_to_node:
+                raise OptionError(f'Address "{address_so_far}" (from "{address}") points to a node that doesn\'t exist')
         else:
-            result = cursor.search(term)
-            if result is None:
-                raise ValueError(f"Address \"{address_so_far}\" (from \"{address}\") tried to find a child for a mission.")
-            if len(result) == 0:
-                raise ValueError(f"Address \"{address_so_far}\" (from \"{address}\") could not find a {cursor.child_type_name()}.")
-            if len(result) > 1:
+            element = id_to_node[cursor]
+            if isinstance(element, SC2MOGenMission):
+                raise OptionError(f"Address \"{address_so_far}\" (from \"{address}\") tried to find a child for a mission.")
+            search_result = element.search(term, search_info)
+            if len(search_result) == 0:
+                raise OptionError(f"Address \"{address_so_far}\" (from \"{address}\") could not find a child node.")
+            if len(search_result) > 1:
                 # Layouts are allowed to end with multiple missions via an index function
-                if type(result[0]) == SC2MOGenMission and address_so_far == address:
-                    return result
-                raise ValueError((f"Address \"{address_so_far}\" (from \"{address}\") found more than one {cursor.child_type_name()}."))
-            cursor = result[0]
-        if cursor == start_node:
-            raise ValueError(
+                if index >= len(terms) - 1:
+                    return search_result
+                raise OptionError(
+                    f"Address \"{address_so_far}\" (from \"{address}\") found more than one child node. "
+                    "This is only allowed if the address has no further terms."
+                )
+            cursor = search_result[0].id
+        if cursor == start_node.id:
+            raise OptionError(
                 f"Address \"{address_so_far}\" (from \"{address}\") returned to original object. "
                 "This is not allowed to avoid circular requirements."
             )
-    return [cursor]
+    result = id_to_node.get(cursor)
+    if result is None:
+        return []
+    return [result]
 
 
 ########################
@@ -382,6 +456,7 @@ def fill_missions(
     ]
     locked_ids = [lookup_name_to_mission[mission].id for mission in locked_missions]
     prefer_close_difficulty = world.options.difficulty_curve.value == world.options.difficulty_curve.option_standard
+    id_to_node = mission_order.get_id_to_node()
 
     def set_mission_in_slot(slot: SC2MOGenMission, mission: SC2Mission):
         slot.mission = mission
@@ -394,7 +469,10 @@ def fill_missions(
         locked_ids = [locked for locked in locked_ids if locked != mission_id]
         mission = lookup_id_to_mission[mission_id]
         if mission in mission_pools.get_used_missions():
-            raise ValueError(f"Mission slot at address \"{mission_slot.get_address_to_node()}\" tried to plando an already plando'd mission.")
+            raise OptionError(
+                f"Mission slot at address \"{mission_slot.get_address_to_node(id_to_node)}\" "
+                "tried to plando an already plando'd mission."
+            )
         mission_pools.pull_specific_mission(mission)
         set_mission_in_slot(mission_slot, mission)
         regions.append(mission_slot.region)
@@ -442,28 +520,32 @@ def fill_missions(
     # Pick goal missions first with stricter difficulty matching, and starting with harder goals
     for goal_slot in sorted_goals:
         try:
-            mission = mission_pools.pull_random_mission(world, goal_slot, prefer_close_difficulty=True)
+            mission = mission_pools.pull_random_mission(
+                world, goal_slot, id_to_node, prefer_close_difficulty=True
+            )
             set_mission_in_slot(goal_slot, mission)
             regions.append(goal_slot.region)
             all_slots.remove(goal_slot)
         except IndexError:
             raise IndexError(
-                f"Slot at address \"{goal_slot.get_address_to_node()}\" ran out of possible missions to place "
-                f"with {len(all_slots)} empty slots remaining."
+                f"Slot at address \"{goal_slot.get_address_to_node(id_to_node)}\" "
+                f"ran out of possible missions to place with {len(all_slots)} empty slots remaining."
             )
 
     # Pick random missions
     remaining_count = len(all_slots)
     for mission_slot in all_slots:
         try:
-            mission = mission_pools.pull_random_mission(world, mission_slot, prefer_close_difficulty=prefer_close_difficulty)
+            mission = mission_pools.pull_random_mission(
+                world, mission_slot, id_to_node, prefer_close_difficulty=prefer_close_difficulty
+            )
             set_mission_in_slot(mission_slot, mission)
             regions.append(mission_slot.region)
             remaining_count -= 1
         except IndexError:
             raise IndexError(
-                f"Slot at address \"{mission_slot.get_address_to_node()}\" ran out of possible missions to place "
-                f"with {remaining_count} empty slots remaining."
+                f"Slot at address \"{mission_slot.get_address_to_node(id_to_node)}\" "
+                f"ran out of possible missions to place with {remaining_count} empty slots remaining."
             )
 
     world.multiworld.regions += regions
@@ -1171,8 +1253,9 @@ def resolve_generic_keys(mission_order: SC2MOGenMissionOrder) -> None:
     layout_numbered_keys = 1
     campaign_numbered_keys = 1
     progression_tracks: dict[int, list[tuple[MissionOrderNode, ItemEntryRule]]] = {}
+    id_to_node = mission_order.get_id_to_node()
     for (node, item_rules) in mission_order.keys_to_resolve.items():
-        key_name = node.get_key_name()
+        key_name = node.get_key_name(id_to_node)
         # Generic keys in mission slots should always resolve to an existing key
         # Layouts and campaigns may need to be switched for numbered keys
         if isinstance(node, SC2MOGenLayout) and key_name not in named_layout_key_item_table:
@@ -1235,14 +1318,16 @@ def resolve_generic_keys(mission_order: SC2MOGenMissionOrder) -> None:
         # Sort keys to change by layout
         new_unique_tracks: dict[MissionOrderNode, list[tuple[MissionOrderNode, ItemEntryRule]]] = {}
         for (node, item_rule) in progression_tracks[track]:
+            parent = cast(SC2MOGenLayout | SC2MOGenCampaign, id_to_node[parent_id(node.id)])
             if isinstance(node, SC2MOGenMission):
                 # Unique tracks for layouts take priority over campaigns
-                if node.parent().option_unique_progression_track == track:
-                    new_unique_tracks.setdefault(node.parent(), []).append((node, item_rule))
-                elif node.parent().parent().option_unique_progression_track == track:
-                    new_unique_tracks.setdefault(node.parent().parent(), []).append((node, item_rule))
-            elif isinstance(node, SC2MOGenLayout) and node.parent().option_unique_progression_track == track:
-                new_unique_tracks.setdefault(node.parent(), []).append((node, item_rule))
+                grandparent = cast(SC2MOGenCampaign| SC2MOGenMissionOrder, id_to_node[parent_id(parent.id)])
+                if parent.option_unique_progression_track == track:
+                    new_unique_tracks.setdefault(parent, []).append((node, item_rule))
+                elif isinstance(grandparent, SC2MOGenCampaign) and grandparent.option_unique_progression_track == track:
+                    new_unique_tracks.setdefault(grandparent, []).append((node, item_rule))
+            elif isinstance(parent, SC2MOGenCampaign) and parent.option_unique_progression_track == track:
+                new_unique_tracks.setdefault(parent, []).append((node, item_rule))
         # Remove found keys from their original progression track
         for (container_node, rule_list) in new_unique_tracks.items():
             for node_and_rule in rule_list:
@@ -1263,7 +1348,7 @@ def resolve_generic_keys(mission_order: SC2MOGenMissionOrder) -> None:
                     f"{key}: {item_rule.items_to_check[key]}" for key in find_progressive_keys(item_rule, track)
                 )
         affected_key_list_string = "\n- " + "\n- ".join(
-            f"{node.get_address_to_node()}: {affected_keys}"
+            f"{node.get_address_to_node(id_to_node)}: {affected_keys}"
             for (node, affected_keys) in affected_key_list.items()
         )
         raise ValueError(
@@ -1280,11 +1365,12 @@ def resolve_generic_keys(mission_order: SC2MOGenMissionOrder) -> None:
         while next_free in progression_tracks:
             next_free += 1
         container_node = nodes_to_assign.pop(0)
+        # It's guaranteed by the sorting above that the container is either a layout or a campaign
+        assert isinstance(container_node, (SC2MOGenLayout, SC2MOGenCampaign))
         progression_tracks[next_free] = want_unique.pop(container_node)
         # Replace the affected keys in nodes with their correct counterparts
         key_name = f"{GENERIC_PROGRESSIVE_KEY_NAME} {next_free}"
         for (node, item_rule) in progression_tracks[next_free]:
-            # It's guaranteed by the sorting above that the container is either a layout or a campaign
             replace_progressive_keys(item_rule, container_node.option_unique_progression_track, key_name, 1)
 
     # Give progressive keys a more fitting name if there's only one track and they all apply to the same type of node

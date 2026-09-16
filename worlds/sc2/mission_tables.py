@@ -590,27 +590,6 @@ campaign_race_exceptions: dict[SC2Mission, SC2Race] = {
 }
 
 
-def get_goal_location(mission: SC2Mission) -> str | None:
-    """
-
-    :param mission:
-    :return: Goal location assigned to the goal mission
-    """
-    campaign = mission.campaign
-    primary_campaign_goal = campaign_final_mission_locations[campaign]
-    if primary_campaign_goal is not None:
-        if primary_campaign_goal.mission == mission:
-            return primary_campaign_goal.location
-
-    campaign_alt_goals = campaign_alt_final_mission_locations[campaign]
-    if mission in campaign_alt_goals:
-        return campaign_alt_goals.get(mission)
-
-    return (mission.mission_name + ": Defeat") \
-        if mission in [SC2Mission.IN_UTTER_DARKNESS, SC2Mission.IN_UTTER_DARKNESS_T, SC2Mission.IN_UTTER_DARKNESS_Z] \
-        else mission.mission_name + ": Victory"
-
-
 def get_campaign_potential_goal_missions(campaign: SC2Campaign) -> list[SC2Mission]:
     """
 

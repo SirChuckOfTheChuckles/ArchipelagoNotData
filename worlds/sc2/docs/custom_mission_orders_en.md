@@ -8,6 +8,8 @@
   - [Basic structure](#basic-structure)
   - [Interactions with other YAML options](#interactions-with-other-yaml-options)
   - [Instructions for building a mission order](#instructions-for-building-a-mission-order)
+  - [Indexing](#indexing)
+    - [Index Variables for all layouts](#index-variables-for-all-layouts)
   - [Shared options](#shared-options)
     - [Display Name](#display-name)
     - [Unique name](#unique-name)
@@ -35,12 +37,14 @@
     - [Empty](#empty)
     - [Next](#next)
     - [Victory Cache](#victory-cache)
+    - [Heroes](#heroes)
   - [Layout Types](#layout-types)
     - [Column](#column)
     - [Grid](#grid)
       - [Grid Index Functions](#grid-index-functions)
         - [point(x, y)](#pointx-y)
         - [rect(x, y, width, height)](#rectx-y-width-height)
+      - [Grid Index Variables](#grid-index-variables)
     - [Canvas](#canvas)
       - [Canvas Index Functions](#canvas-index-functions)
         - [group(character)](#groupcharacter)
@@ -54,6 +58,7 @@
     - [Blitz](#blitz)
       - [Blitz Index Functions](#blitz-index-functions)
         - [row(height)](#rowheight)
+      - [Blitz Index Variables](#blitz-index-variables)
 </details>
 
 ## What is this?
@@ -71,7 +76,7 @@ Custom Mission Orders consist of three kinds of structures:
 - Campaigns contain layouts (like Mar Sara)
 - Layouts contain mission slots (like Liberation Day)
 
-As a note, layouts are also called questlines in the UI. Layouts and questlines refer to the same thing, though this document will only use layouts.
+As a note, layouts are also called questlines in the UI. Layouts and questlines refer to the same thing, though this document will only use the term layouts.
 
 To illustrate, the following is what the default custom mission order currently looks like. If you're not sure what some options mean, they will be explained in more depth later.
 ```yaml
@@ -260,9 +265,40 @@ To summarize:
 - Use the `mission_pool` and `difficulty` options to add flavor
 - Finally, generate and have fun!
 
+## Indexing
+
+There are a few places where you may need to specify a particular campaign, layout, or mission:
+- A layout's `missions.index` key, used to specify options for a particular mission slot
+- An entry rule requirement
+- A mission's `next` option
+
+This is done with index specifiers, which look like a file path. A specifier like `"My Campaign/My Layout/2"` refers to the third mission inside the layout called "My Layout" inside the campaign "My Campaign". Note that numeric specifiers are 0-indexed, so the first mission in this layout would be `"My Campaign/My Layout/0"`.
+
+Campaigns and layouts may be referred to by name or their index, so `"0/0/0"` could refer to the first mission in the first layout in the first campaign. Missions aren't named, however they may be referred to through index functions. The common index functions are `"exits"`, `"entrances"`, and `"all"`. Layouts may also define layout-specific index functions such as grid's `point(x, y)` function to select a slot at specific x, y coordinates. Missions specified numerically or by index function that are out of bounds or empty and simply ignored.
+
+Index specifiers may also be relative, so having mission 0 of "My Layout" specify a `next: '../1'` means refers to mission 1 in the same layout, but `next: '../../other layout/1'` refers to mission 1 in a different layout.
+Be aware that as index functions like `exits` or `point(x, y)` can return multiple missions, they can't be used as a middle term of a path, only a final one. So `./point(1, 1)` is valid, but `./point(1, 1)/../0` is not.
+
+Some layouts also specify variables that may be used for relative indexing if the starting search term is a mission -- that is, for mission entry rules and next options, but not for `mission.index` specifiers. This can be used to specify relational entry rules. For example, making the middle two columns of a 4x4 grid require specifically the mission slots to their left looks like:
+```yaml
+custom_mission_order:
+  My Campaign:
+    My Layout:
+      type: grid
+      size: 16
+      width: 4
+      missions:
+      - {index: 'rect(1, 0, 2, 4)', entry_rules: {scope: 'point(x-1, y)'}}
+```
+
+Note that variables are always relative to the starting mission in its starting layout. So you can use the x, y coordinates of a mission in a grid as variables when specifying a mission in a different layout, which may not be a grid.
+
+### Index Variables for all layouts
+- `index`: the index of the mission within its layout. The first mission is 0, the next is 1, and so on. Note that empty mission slots still consume an index.
+
 ## Shared options
 
-These are the options that are shared between at least two of campaigns, layouts and missions. All the options below are listed with their defaults.
+These are the options that are shared between at least two of campaigns, layouts, and missions. All the options below are listed with their defaults.
 
 ---
 ### Display Name
@@ -685,9 +721,9 @@ Available static presets are the following:
 - `Mini NCO`
 
 For these presets, the layout names used to override settings match the names shown in the client, with some exceptions:
-- Prophecy, Prologue and Epilogue contain a single Gauntlet each, which are named `Prophecy`, `Prologue` and `Epilogue` respectively.
-- The Gauntlets in the Mini variants of the above are also named `Prophecy`, `Prologue` and `Epilogue`.
-- NCO and Mini NCO contain three columns each, named `Mission Pack 1`, `Mission Pack 2` and `Mission Pack 3`.
+- Prophecy, Prologue, and Epilogue contain a single Gauntlet each, which are named `Prophecy`, `Prologue`, and `Epilogue` respectively.
+- The Gauntlets in the Mini variants of the above are also named `Prophecy`, `Prologue`, and `Epilogue`.
+- NCO and Mini NCO contain three columns each, named `Mission Pack 1`, `Mission Pack 2`, and `Mission Pack 3`.
 
 #### Preset Options
 All static presets accept these options, as shown in the example above:
@@ -955,6 +991,11 @@ Grid supports the following index functions:
 ##### rect(x, y, width, height)
 `rect(x, y, width, height)` returns the indices within the rectangle defined by the starting point at the X and Y coordinates and the width and height arguments. In the above example, `rect(1, 2, 3, 2)` returns the indices `11, 12, 13, 16, 17, 18`.
 
+#### Grid Index Variables
+Grid supports the following index variables:
+* `x`: the x coordinate of the mission
+* `y`: the y coordinate of the mission
+
 ---
 ### Canvas
 ```yaml
@@ -1117,3 +1158,8 @@ Blitz supports the following index function:
 
 ##### row(height)
 `row(height)` returns the indices of the row at the given zero-based height. In the above example, `row(1)` would return `5, 6, 7, 8, 9`.
+
+#### Blitz Index Variables
+Blitz supports the following index variables:
+* `x`: the x coordinate of the mission
+* `y`: the y coordinate of the mission
