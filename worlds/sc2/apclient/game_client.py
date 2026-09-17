@@ -224,7 +224,7 @@ class MissionClient:
             return candidate_mission_ids[0]
         return None
 
-    def sync_active_mission(self, map_file: str, mission_race: str) -> bool:
+    def sync_active_mission(self, map_file: str, mission_race: str, save_loaded: bool = False) -> bool:
         """Validate the reported mission and queue setup if client accounting changes."""
         current_mission = lookup_id_to_mission[self.mission_id]
         current_mission_race = get_mission_race_name(self.mission_id)
@@ -235,8 +235,9 @@ class MissionClient:
             if warning_key not in self.warned_identity_mismatches:
                 self.warned_identity_mismatches.add(warning_key)
                 logger.warning(
-                    "Loaded save reports map %s (%s), but no valid mission mapping was found "
+                    "%s reports map %s (%s), but no valid mission mapping was found "
                     "from %s (%s). Mission checks and setup are paused until the map is identified.",
+                    "Loaded save" if save_loaded else "Game",
                     map_file or "unknown map",
                     mission_race or "unknown race",
                     current_mission.map_file,
@@ -247,11 +248,18 @@ class MissionClient:
             return False
 
         next_mission = lookup_id_to_mission[resolved_mission_id]
-        logger.info(
-            "Detected mission switch from %s to %s via loaded save.",
-            current_mission.mission_name,
-            next_mission.mission_name,
-        )
+        if save_loaded:
+            logger.info(
+                "Detected mission switch from %s to %s via loaded save.",
+                current_mission.mission_name,
+                next_mission.mission_name,
+            )
+        else:
+            logger.debug(
+                "Game mission metadata changed client mission from %s to %s.",
+                current_mission.mission_name,
+                next_mission.mission_name,
+            )
         self.mission_id = resolved_mission_id
         self.reset_mission_state()
         self.setup_pending = True
@@ -261,6 +269,13 @@ class MissionClient:
         if self.ctx.slot is not None and self.ctx.slot in self.ctx.slot_info:
             return self.ctx.slot_info[self.ctx.slot].name
         return self.ctx.auth or ""
+
+    def begin_save_load(self) -> None:
+        """Reset per-load state before mission and identity messages are emitted."""
+        if not self.warning_load_active:
+            self.warned_identity_mismatches.clear()
+            self.warning_load_active = True
+            self.mission_checks_override = False
 
     def check_save_identity(
         self,
@@ -276,10 +291,7 @@ class MissionClient:
 
         if self.ctx.slot is None:
             return
-        if not self.warning_load_active:
-            self.warned_identity_mismatches.clear()
-            self.warning_load_active = True
-            self.mission_checks_override = False
+        self.begin_save_load()
 
         saved_slot_name = banks.decode_bank_identity(saved_slot_value) if saved_slot_value else ""
         saved_world_id = banks.decode_bank_identity(saved_world_id_value) if saved_world_id_value else ""
@@ -310,7 +322,7 @@ class MissionClient:
 
         candidate_warnings: dict[tuple[str, str, str], str] = {}
         mismatch_suffix = (
-            "Checks from this loaded mission will not be sent. Items will continue to be processed."
+            "Checks from this loaded mission will not be sent."
         )
         if slot_mismatch:
             candidate_warnings[("slot", saved_slot_name, current_slot_name)] = (
@@ -345,7 +357,18 @@ class MissionClient:
         for warning in warnings:
             logger.warning(warning)
         if warnings:
-            error = banks.send_ap_message(warnings)
+            if slot_mismatch or world_mismatch:
+                logger.warning(
+                    'Checks can be re-enabled by entering "-debug" in-game, and '
+                    'then typing "-enablechecks".'
+                )
+                game_warnings = [
+                    "WARNING: Mismatching slot or world ID detected. "
+                    "Checks from this loaded mission will not be sent. See client for details."
+                ]
+            else:
+                game_warnings = warnings
+            error = banks.send_ap_message(game_warnings)
             if isinstance(error, Error):
                 logger.error(error.message)
 
@@ -518,6 +541,19 @@ class MissionClient:
                 # Wait an arbitrary amount of frames before trying again
                 self.trade_reply_cooldown = 60
 
+    def report_save_load_status(self, message: str, *, in_game: bool = True) -> None:
+        """Report a load transition once; message delivery must not interrupt setup."""
+        logger.info(message)
+        if not in_game:
+            return
+        try:
+            error = banks.send_ap_message([message])
+        except OSError as error:
+            logger.error("Could not send save-load status: %s", error)
+            return
+        if isinstance(error, Error):
+            logger.error(error.message)
+
     def get_locations(self) -> int:
         result = banks.read_location_info()
         if isinstance(result, Error):
@@ -531,15 +567,43 @@ class MissionClient:
             save_loaded,
             checks_override,
         ) = result
+        refresh_requested = save_loaded.strip() == "1"
+        refresh_acknowledged = (
+            not refresh_requested and self.load_refresh_in_progress and not self.setup_pending
+        )
+        mission_switched = False
+        if self.ctx.slot is not None:
+            if refresh_requested:
+                self.begin_save_load()
+            if mission_map or refresh_requested:
+                mission_switched = self.sync_active_mission(mission_map, mission_race, refresh_requested)
         self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
         self.apply_mission_check_override(checks_override)
         if self.ctx.slot is None:
             return 0
-        mission_switched = False
-        if mission_map or save_loaded.strip() == "1":
-            mission_switched = self.sync_active_mission(mission_map, mission_race)
         if not self.mission_mapping_valid:
             return 0
+        if refresh_acknowledged and not mission_switched:
+            saved_slot = banks.decode_bank_identity(saved_slot_name)
+            saved_world = banks.decode_bank_identity(saved_world_id)
+            current_slot = self.get_slot_name()
+            current_world = self.ctx.world_id
+            mismatch = (
+                bool(saved_slot and current_slot and saved_slot != current_slot)
+                or bool(saved_world and current_world and saved_world != current_world)
+            )
+            if mismatch and self.mission_checks_override:
+                status = "Identity mismatch; checks enabled by debug override."
+            elif mismatch or self.mission_checks_blocked:
+                status = "Identity mismatch; mission checks remain blocked."
+            elif saved_slot and current_slot and saved_world and current_world:
+                status = "Slot and World ID match."
+            else:
+                status = "Identity could not be fully verified because slot or World ID information is missing."
+            self.report_save_load_status(
+                "Save refresh acknowledged by game. " + status,
+                in_game=not (mismatch or self.mission_checks_blocked or self.save_warning_code),
+            )
         self.refresh_after_save_load(save_loaded, mission_switched)
         if self.setup_pending:
             return 0
