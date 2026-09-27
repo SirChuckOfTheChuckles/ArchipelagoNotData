@@ -1159,7 +1159,7 @@ item_table = {
     item_names.BULWARK_COMPANY_JUMP_JETS_MKII:
         ItemData(955 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 289, SC2Race.TERRAN,
                  parent=item_names.BULWARK_COMPANY),
-    item_names.BULWARK_COMPANY_NEURAL_SHUTDOWN:
+    item_names.BULWARK_COMPANY_ANTI_AIR_COUNTERMEASURES:
         ItemData(956 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 290, SC2Race.TERRAN,
                  parent=item_names.BULWARK_COMPANY),
     item_names.BLACKHAMMER_HAMMER_OF_THE_LAW:
@@ -1174,6 +1174,30 @@ item_table = {
     item_names.BLACKHAMMER_BULWARK_FIELD:
         ItemData(960 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 294, SC2Race.TERRAN,
                  parent=item_names.BLACKHAMMER),
+    item_names.SON_OF_KORHAL_PROMOTION_GRANTED:
+        ItemData(961 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 295, SC2Race.TERRAN,
+                 parent=item_names.SON_OF_KORHAL),
+    item_names.AEGIS_GUARD_PROMOTION_GRANTED:
+        ItemData(962 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 296, SC2Race.TERRAN,
+                 parent=item_names.AEGIS_GUARD),
+    item_names.FIELD_RESPONSE_THETA_PROMOTION_GRANTED:
+        ItemData(963 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 297, SC2Race.TERRAN,
+                 parent=item_names.FIELD_RESPONSE_THETA),
+    item_names.EMPERORS_SHADOW_PROMOTION_GRANTED:
+        ItemData(964 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 298, SC2Race.TERRAN,
+                 parent=item_names.EMPERORS_SHADOW),
+    item_names.BULWARK_COMPANY_PROMOTION_GRANTED:
+        ItemData(965 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 299, SC2Race.TERRAN,
+                 parent=item_names.BULWARK_COMPANY),
+    item_names.SHOCK_DIVISION_PROMOTION_GRANTED:
+        ItemData(966 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 300, SC2Race.TERRAN,
+                 parent=item_names.SHOCK_DIVISION),
+    item_names.BLACKHAMMER_PROMOTION_GRANTED:
+        ItemData(967 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 301, SC2Race.TERRAN,
+                 parent=item_names.BLACKHAMMER),
+    item_names.NIGHT_WOLF_PROMOTION_GRANTED:
+        ItemData(968 + SC2WOL_ITEM_ID_OFFSET, TerranItemType.Item, 302, SC2Race.TERRAN,
+                 parent=item_names.NIGHT_WOLF),
 
     # HotS
     item_names.ZERGLING:
