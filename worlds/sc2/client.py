@@ -19,7 +19,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, NamedTuple, Type, Sequence, Iterable
+from typing import TYPE_CHECKING, Any, NamedTuple, Type, Sequence, Iterable, Mapping, cast
 
 # CommonClient import first to trigger ModuleUpdater
 from CommonClient import CommonContext, server_loop, ClientCommandProcessor, gui_enabled, get_base_parser, handle_url_arg
@@ -65,6 +65,9 @@ from NetUtils import (
     NetworkItem, JSONtoTextParser, JSONMessagePart, add_json_item, add_json_location, add_json_text, JSONTypes
 )
 from MultiServer import mark_raw
+
+if TYPE_CHECKING:
+    from .slot_data_config import Sc2SlotDataDict, Sc2SlotDataDictV3
 
 
 sc2_logger = logging.getLogger("Starcraft2")
@@ -814,7 +817,6 @@ class SC2Context(CommonContext):
         self.generic_upgrade_missions = 0
         self.generic_upgrade_research = 0
         self.generic_upgrade_research_speedup: int = GenericUpgradeResearchSpeedup.default
-        self.generic_upgrade_items = 0
         self.location_inclusions: dict[LocationType, int] = {}
         self.location_inclusions_by_flag: dict[LocationFlag, int] = {}
         self.plando_locations: list[str] = []
@@ -841,7 +843,7 @@ class SC2Context(CommonContext):
         self.enabled_heroes: frozenset[str] = EnabledHeroes.default
         self.base_hero_presence: dict[SC2Mission, int] = {}
         self.hero_presence: dict[SC2Mission, int] = {}
-        self.mercenary_highlanders: bool = False
+        self.mercenary_highlanders: int = 0
         self.kerrigan_levels_per_mission_completed = 0
         self.trade_enabled: int = EnableVoidTrade.default
         self.trade_age_limit: int = VoidTradeAgeLimit.default
@@ -855,7 +857,7 @@ class SC2Context(CommonContext):
         self.difficulty_damage_modifier: int = DifficultyDamageModifier.default
         self.mission_order_scouting = MissionOrderScouting.option_none
         self.mission_item_classification: dict[str, int] | None = None
-        self.show_war_council_nerfs: bool = False
+        self.show_war_council_nerfs: int = 0
 
     async def server_auth(self, password_requested: bool = False) -> None:
         self.game = STARCRAFT2
@@ -904,7 +906,7 @@ class SC2Context(CommonContext):
         elif str(SC2World.settings.game_speed).casefold() == 'faster':
             self.game_speed = GameSpeed.option_faster
 
-    def unpack_hero_presence(self, slot_data: dict[str, str]) -> dict[SC2Mission, int]:
+    def unpack_hero_presence(self, slot_data: Mapping[str, str | int]) -> dict[SC2Mission, int]:
         result: dict[SC2Mission, int] = {}
         for key, value in slot_data.items():
             if "." not in key:
@@ -983,17 +985,20 @@ class SC2Context(CommonContext):
                 }
             ]))
 
-            self.difficulty = args["slot_data"]["game_difficulty"]
-            self.world_id = args["slot_data"].get("world_id", "")
-            self.game_speed = args["slot_data"].get("game_speed", GameSpeed.option_default)
-            self.all_in_choice = args["slot_data"]["all_in_map"]
-            self.slot_data_version = args["slot_data"].get("version", 2)
+            slot_data: 'Sc2SlotDataDict' = args["slot_data"]
+            v3_data = cast('Sc2SlotDataDictV3', slot_data)
+
+            self.difficulty = slot_data["game_difficulty"]
+            self.world_id = slot_data.get("world_id", "")
+            self.game_speed = slot_data.get("game_speed", GameSpeed.option_default)
+            self.all_in_choice = slot_data["all_in_map"]
+            self.slot_data_version = slot_data.get("version", 2)
 
             self._apply_host_settings_to_options()
 
             if self.slot_data_version < 4:
                 # Maintaining backwards compatibility with older slot data
-                slot_req_table: dict = args["slot_data"]["mission_req"]
+                slot_req_table = v3_data["mission_req"]
 
                 first_item = list(slot_req_table.keys())[0]
                 if first_item in [str(campaign.id) for campaign in SC2Campaign]:
@@ -1007,7 +1012,8 @@ class SC2Context(CommonContext):
                         }
                 else:
                     # Old format
-                    mission_req_table = {SC2Campaign.GLOBAL: {
+                    mission_req_table = {
+                        SC2Campaign.GLOBAL: {
                             mission: self.parse_mission_info(mission_info)
                             for mission, mission_info in slot_req_table.items()
                         }
@@ -1034,7 +1040,7 @@ class SC2Context(CommonContext):
                                 ]
                             ) for layout_data in campaign_data["layouts"]
                         ]
-                    ) for campaign_data in args["slot_data"]["custom_mission_order"]
+                    ) for campaign_data in slot_data["custom_mission_order"]
                 ]
             self.mission_id_to_entry_rules = {
                 mission.mission_id: MissionEntryRules(mission.entry_rule, layout.entry_rule, campaign.entry_rule)
@@ -1042,90 +1048,92 @@ class SC2Context(CommonContext):
                 for column in layout.missions for mission in column
             }
 
-            self.mission_order = args["slot_data"].get("mission_order", MissionOrder.option_vanilla)
+            self.mission_order = slot_data.get("mission_order", MissionOrder.option_vanilla)
             if self.slot_data_version < 4:
-                self.final_mission_ids = [args["slot_data"].get("final_mission", SC2Mission.ALL_IN.id)]
+                self.final_mission_ids = [v3_data.get("final_mission", SC2Mission.ALL_IN.id)]
             else:
-                self.final_mission_ids = args["slot_data"].get("final_mission_ids", [SC2Mission.ALL_IN.id])
+                self.final_mission_ids = slot_data.get("final_mission_ids", [SC2Mission.ALL_IN.id])
                 self.final_locations = [get_location_id(mission_id, 0) for mission_id in self.final_mission_ids]
 
             self.player_color_raynor = _remap_color_option(
                 self.slot_data_version,
-                args["slot_data"].get("player_color_terran_raynor", ColorChoice.option_blue)
+                slot_data.get("player_color_terran_raynor", ColorChoice.option_blue)
             )
             self.player_color_zerg = _remap_color_option(
                 self.slot_data_version,
-                args["slot_data"].get("player_color_zerg", ColorChoice.option_orange)
+                slot_data.get("player_color_zerg", ColorChoice.option_orange)
             )
             self.player_color_zerg_primal = _remap_color_option(
                 self.slot_data_version,
-                args["slot_data"].get("player_color_zerg_primal", ColorChoice.option_purple)
+                slot_data.get("player_color_zerg_primal", ColorChoice.option_purple)
             )
             self.player_color_protoss = _remap_color_option(
                 self.slot_data_version,
-                args["slot_data"].get("player_color_protoss", ColorChoice.option_blue)
+                slot_data.get("player_color_protoss", ColorChoice.option_blue)
             )
             self.player_color_nova = _remap_color_option(
                 self.slot_data_version,
-                args["slot_data"].get("player_color_nova", ColorChoice.option_dark_grey)
+                slot_data.get("player_color_nova", ColorChoice.option_dark_grey)
             )
-            self.show_war_council_nerfs = args["slot_data"].get("war_council_nerfs", WarCouncilNerfs.option_false)
-            self.mercenary_highlanders = args["slot_data"].get("mercenary_highlanders", MercenaryHighlanders.option_false)
-            self.generic_upgrade_missions = args["slot_data"].get("generic_upgrade_missions", GenericUpgradeMissions.default)
-            self.max_upgrade_level = args["slot_data"].get("max_upgrade_level", MaxUpgradeLevel.default)
-            self.generic_upgrade_items = args["slot_data"].get("generic_upgrade_items", GenericUpgradeItems.option_individual_items)
-            self.generic_upgrade_research = args["slot_data"].get("generic_upgrade_research", GenericUpgradeResearch.option_vanilla)
-            self.generic_upgrade_research_speedup = args["slot_data"].get("generic_upgrade_research_speedup", GenericUpgradeResearchSpeedup.default)
-            self.kerrigan_primal_status = args["slot_data"].get("kerrigan_primal_status", KerriganPrimalStatus.option_vanilla)
-            self.kerrigan_levels_per_mission_completed = args["slot_data"].get("kerrigan_levels_per_mission_completed", 0)
-            self.kerrigan_levels_per_mission_completed_cap = args["slot_data"].get("kerrigan_levels_per_mission_completed_cap", -1)
-            self.kerrigan_total_level_cap = args["slot_data"].get("kerrigan_total_level_cap", -1)
-            self.enable_morphling = args["slot_data"].get("enable_morphling", EnableMorphling.option_false)
-            self.grant_story_tech = args["slot_data"].get("grant_story_tech", GrantStoryTech.option_no_grant)
-            self.grant_story_levels = args["slot_data"].get("grant_story_levels", GrantStoryLevels.option_additive)
-            self.grant_hero_items = set(args["slot_data"].get("grant_hero_items", []))
-            required_tactics = args["slot_data"].get("required_tactics", RequiredTactics.option_basic)
-            self.take_over_ai_allies = args["slot_data"].get("take_over_ai_allies", TakeOverAIAllies.option_false)
-            self.spear_of_adun_presence = args["slot_data"].get("spear_of_adun_presence", SpearOfAdunPresence.option_not_present)
-            self.spear_of_adun_present_in_no_build = args["slot_data"].get("spear_of_adun_present_in_no_build", SpearOfAdunPresentInNoBuild.option_false)
+            self.show_war_council_nerfs = slot_data.get("war_council_nerfs", WarCouncilNerfs.option_false)
+            self.mercenary_highlanders = slot_data.get("mercenary_highlanders", MercenaryHighlanders.option_false)
+            self.generic_upgrade_missions = slot_data.get("generic_upgrade_missions", GenericUpgradeMissions.default)
+            self.max_upgrade_level = slot_data.get("max_upgrade_level", MaxUpgradeLevel.default)
+            self.generic_upgrade_research = slot_data.get("generic_upgrade_research", GenericUpgradeResearch.option_vanilla)
+            self.generic_upgrade_research_speedup = slot_data.get("generic_upgrade_research_speedup", GenericUpgradeResearchSpeedup.default)
+            self.kerrigan_primal_status = slot_data.get("kerrigan_primal_status", KerriganPrimalStatus.option_vanilla)
+            self.kerrigan_levels_per_mission_completed = slot_data.get("kerrigan_levels_per_mission_completed", 0)
+            self.kerrigan_levels_per_mission_completed_cap = slot_data.get("kerrigan_levels_per_mission_completed_cap", -1)
+            self.kerrigan_total_level_cap = slot_data.get("kerrigan_total_level_cap", -1)
+            self.enable_morphling = slot_data.get("enable_morphling", EnableMorphling.option_false)
+            self.grant_story_tech = slot_data.get("grant_story_tech", GrantStoryTech.option_no_grant)
+            self.grant_story_levels = slot_data.get("grant_story_levels", GrantStoryLevels.option_additive)
+            self.grant_hero_items = set(slot_data.get("grant_hero_items", []))
+            required_tactics = slot_data.get("required_tactics", RequiredTactics.option_basic)
+            self.take_over_ai_allies = slot_data.get("take_over_ai_allies", TakeOverAIAllies.option_false)
+            self.spear_of_adun_presence = slot_data.get("spear_of_adun_presence", SpearOfAdunPresence.option_not_present)
+            self.spear_of_adun_present_in_no_build = slot_data.get("spear_of_adun_present_in_no_build", SpearOfAdunPresentInNoBuild.option_false)
             if self.slot_data_version < 4:
-                self.spear_of_adun_passive_ability_presence = args["slot_data"].get("spear_of_adun_autonomously_cast_ability_presence", SpearOfAdunPassiveAbilityPresence.option_not_present)
-                self.spear_of_adun_passive_present_in_no_build = args["slot_data"].get("spear_of_adun_autonomously_cast_present_in_no_build", SpearOfAdunPassivesPresentInNoBuild.option_false)
+                self.spear_of_adun_passive_ability_presence = v3_data.get("spear_of_adun_autonomously_cast_ability_presence", SpearOfAdunPassiveAbilityPresence.option_not_present)
+                self.spear_of_adun_passive_present_in_no_build = v3_data.get("spear_of_adun_autonomously_cast_present_in_no_build", SpearOfAdunPassivesPresentInNoBuild.option_false)
             else:
-                self.spear_of_adun_passive_ability_presence = args["slot_data"].get("spear_of_adun_passive_ability_presence", SpearOfAdunPassiveAbilityPresence.option_not_present)
-                self.spear_of_adun_passive_present_in_no_build = args["slot_data"].get("spear_of_adun_passive_present_in_no_build", SpearOfAdunPassivesPresentInNoBuild.option_false)
-            self.minerals_per_item = args["slot_data"].get("minerals_per_item", 15)
-            self.vespene_per_item = args["slot_data"].get("vespene_per_item", 15)
-            self.starting_supply_per_item = args["slot_data"].get("starting_supply_per_item", 2)
-            self.maximum_supply_per_item = args["slot_data"].get("maximum_supply_per_item", options.MaximumSupplyPerItem.default)
-            self.maximum_supply_reduction_per_item = args["slot_data"].get("maximum_supply_reduction_per_item", options.MaximumSupplyReductionPerItem.default)
-            self.lowest_maximum_supply = args["slot_data"].get("lowest_maximum_supply", options.LowestMaximumSupply.default)
-            self.research_cost_reduction_per_item = args["slot_data"].get("research_cost_reduction_per_item", options.ResearchCostReductionPerItem.default)
-            hero_presence_args = args["slot_data"].get("hero_presence","0")
-            if hero_presence_args != "0":
-                self.base_hero_presence = self.unpack_hero_presence(hero_presence_args)
-            else:
+                self.spear_of_adun_passive_ability_presence = slot_data.get("spear_of_adun_passive_ability_presence", SpearOfAdunPassiveAbilityPresence.option_not_present)
+                self.spear_of_adun_passive_present_in_no_build = slot_data.get("spear_of_adun_passive_present_in_no_build", SpearOfAdunPassivesPresentInNoBuild.option_false)
+            self.minerals_per_item = slot_data.get("minerals_per_item", 15)
+            self.vespene_per_item = slot_data.get("vespene_per_item", 15)
+            self.starting_supply_per_item = slot_data.get("starting_supply_per_item", options.StartingSupplyPerItem.default)
+            self.maximum_supply_per_item = slot_data.get("maximum_supply_per_item", options.MaximumSupplyPerItem.default)
+            self.maximum_supply_reduction_per_item = slot_data.get("maximum_supply_reduction_per_item", options.MaximumSupplyReductionPerItem.default)
+            self.lowest_maximum_supply = slot_data.get("lowest_maximum_supply", options.LowestMaximumSupply.default)
+            self.research_cost_reduction_per_item = slot_data.get("research_cost_reduction_per_item", options.ResearchCostReductionPerItem.default)
+            hero_presence_args = slot_data.get("hero_presence")
+            if hero_presence_args is None:
+                # slot data predates creation of hero_presence
                 self.base_hero_presence = self.default_hero_presence(True)
+            else:
+                self.base_hero_presence = self.unpack_hero_presence(hero_presence_args)
             # # TODO (Snarky): NCO Nova is currently disabled. Revisit if enabled.
             # # Generic Nova presence never made it to live, so it doesn't need compat code
             # if self.slot_data_version < 4:
-            #     if args["slot_data"].get("nova_covert_ops_only", True):
+            #     if v3_data.get("nova_covert_ops_only", True):
             #     else:
             # if self.slot_data_version < 5:
-            #     if args["slot_data"].get("use_nova_wol_fallback", True):
+            #     if slot_data.get("use_nova_wol_fallback", True):
             #     else:
             if self.slot_data_version < 5:
-                if args["slot_data"].get("kerrigan_presence", True):
+                if slot_data.get("kerrigan_presence", 0) == 0:
+                    # vanilla
                     self.base_hero_presence = self.default_hero_presence(True)
                 else:
+                    # not_present
                     self.base_hero_presence = self.default_hero_presence(False)
             self.reset_runtime_hero_presence()
-            self.trade_enabled = args["slot_data"].get("enable_void_trade", EnableVoidTrade.option_false)
-            self.trade_age_limit = args["slot_data"].get("void_trade_age_limit", VoidTradeAgeLimit.default)
-            self.trade_workers_allowed = args["slot_data"].get("void_trade_workers", VoidTradeWorkers.default)
-            self.difficulty_damage_modifier = args["slot_data"].get("difficulty_damage_modifier", DifficultyDamageModifier.option_true)
-            self.mission_order_scouting = args["slot_data"].get("mission_order_scouting", MissionOrderScouting.option_none)
-            self.mission_item_classification = args["slot_data"].get("mission_item_classification")
+            self.trade_enabled = slot_data.get("enable_void_trade", EnableVoidTrade.option_false)
+            self.trade_age_limit = slot_data.get("void_trade_age_limit", VoidTradeAgeLimit.default)
+            self.trade_workers_allowed = slot_data.get("void_trade_workers", VoidTradeWorkers.default)
+            self.difficulty_damage_modifier = slot_data.get("difficulty_damage_modifier", DifficultyDamageModifier.option_true)
+            self.mission_order_scouting = slot_data.get("mission_order_scouting", MissionOrderScouting.option_none)
+            self.mission_item_classification = slot_data.get("mission_item_classification")
 
             if self.slot_data_version < 5 and required_tactics > RequiredTactics.option_chaos:
                 # Locking Grant Story Tech/Levels if no logic
@@ -1136,17 +1144,17 @@ class SC2Context(CommonContext):
                 LocationType.VICTORY: LocationInclusion.option_enabled, # Victory checks are always enabled
                 LocationType.VICTORY_CACHE: LocationInclusion.option_enabled, # Victory checks are always enabled
                 LocationType.STARTER_CACHE: LocationInclusion.option_enabled, # Cache checks are always enabled
-                LocationType.VANILLA: args["slot_data"].get("vanilla_locations", VanillaLocations.default),
-                LocationType.EXTRA: args["slot_data"].get("extra_locations", ExtraLocations.default),
-                LocationType.CHALLENGE: args["slot_data"].get("challenge_locations", ChallengeLocations.default),
-                LocationType.MASTERY: args["slot_data"].get("mastery_locations", MasteryLocations.default),
+                LocationType.VANILLA: slot_data.get("vanilla_locations", VanillaLocations.default),
+                LocationType.EXTRA: slot_data.get("extra_locations", ExtraLocations.default),
+                LocationType.CHALLENGE: slot_data.get("challenge_locations", ChallengeLocations.default),
+                LocationType.MASTERY: slot_data.get("mastery_locations", MasteryLocations.default),
             }
             self.location_inclusions_by_flag = {
-                LocationFlag.BASEBUST: args["slot_data"].get("basebust_locations", BasebustLocations.default),
-                LocationFlag.SPEEDRUN: args["slot_data"].get("speedrun_locations", SpeedrunLocations.default),
-                LocationFlag.PREVENTATIVE: args["slot_data"].get("preventative_locations", PreventativeLocations.default),
+                LocationFlag.BASEBUST: slot_data.get("basebust_locations", BasebustLocations.default),
+                LocationFlag.SPEEDRUN: slot_data.get("speedrun_locations", SpeedrunLocations.default),
+                LocationFlag.PREVENTATIVE: slot_data.get("preventative_locations", PreventativeLocations.default),
             }
-            self.plando_locations = args["slot_data"].get("plando_locations", [])
+            self.plando_locations = slot_data.get("plando_locations", [])
 
             self.build_location_to_mission_mapping()
 

@@ -3,6 +3,7 @@ import functools
 from dataclasses import fields, Field, dataclass
 from typing import TYPE_CHECKING, Iterable, Any, Type, Iterator, Mapping, NamedTuple
 from datetime import timedelta
+import random
 
 from Options import (
     Choice, Toggle, DefaultOnToggle, OptionSet, Range,
@@ -11,6 +12,7 @@ from Options import (
     OptionCounter,
     Visibility,
     OptionError,
+    random_weighted_range,
 )
 from Utils import get_fuzzy_results
 from BaseClasses import PlandoOptions
@@ -126,6 +128,30 @@ def build_hero_presence_aliases() -> dict[str, str]:
 
 
 HERO_PRESENCE_OPTION_ALIASES: dict[str, str] = build_hero_presence_aliases()
+
+
+def parse_random_range(
+    option_name: str, data: str, default_lower_bound: int, default_upper_bound: int
+) -> tuple[str, int, int]:
+    """
+    Parses out details from a potential random-range-x-y,
+    returning the random distribution string and the bounds
+    """
+    text = data.lower()
+    if text.startswith("random-range-"):
+        split = text.split("-")
+        try:
+            bounds = [int(split[-2]), int(split[-1])]
+        except ValueError:
+            raise OptionError(f"Invalid random range {data} for option {option_name}")
+        bounds.sort()
+        if split[2] in ("low", "middle", "high"):
+            text = f"random-{split[2]}"
+        else:
+            text = "random"
+        return text, bounds[0], bounds[1]
+    else:
+        return text, default_lower_bound, default_upper_bound
 
 
 def get_option_error_name(option: OptionSet) -> str:
@@ -1544,6 +1570,15 @@ class FillerPercentage(Range):
     range_end = 70
     default = 0
 
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 0, 20) )
+        return super(FillerPercentage, cls).from_text(text)
+
 
 class MineralsPerItem(Range):
     """
@@ -1553,6 +1588,15 @@ class MineralsPerItem(Range):
     range_start = 0
     range_end = 200
     default = 25
+
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 1, 10) * 5)
+        return super(MineralsPerItem, cls).from_text(text)
 
 
 class VespenePerItem(Range):
@@ -1564,6 +1608,15 @@ class VespenePerItem(Range):
     range_end = 200
     default = 25
 
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 1, 10) * 5)
+        return super(VespenePerItem, cls).from_text(text)
+
 
 class StartingSupplyPerItem(Range):
     """
@@ -1573,6 +1626,15 @@ class StartingSupplyPerItem(Range):
     range_start = 0
     range_end = 16
     default = 2
+
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 1, 3))
+        return super(StartingSupplyPerItem, cls).from_text(text)
 
 
 class MaximumSupplyPerItem(Range):
@@ -1584,6 +1646,15 @@ class MaximumSupplyPerItem(Range):
     range_end = 10
     default = 1
 
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 1, 3))
+        return super(MaximumSupplyPerItem, cls).from_text(text)
+
 
 class MaximumSupplyReductionPerItem(Range):
     """
@@ -1593,6 +1664,15 @@ class MaximumSupplyReductionPerItem(Range):
     range_start = 1
     range_end = 10
     default = 1
+
+    @classmethod
+    def from_text(cls, text: str) -> Range:
+        text = text.lower()
+        if text.startswith("random"):
+            if text.startswith("random-range"):
+                return cls.custom_range(text)
+            return cls(random_weighted_range(text, 1, 3))
+        return super(MaximumSupplyReductionPerItem, cls).from_text(text)
 
 
 class LowestMaximumSupply(Range):
@@ -1640,6 +1720,20 @@ class FillerItemsDistribution(ItemDict):
         if any(item_count < 0 for item_count in value.values()):
             raise Exception("Cannot have negative item weight.")
         super(ItemDict, self).__init__(value)
+
+    @classmethod
+    def from_any(cls, data: Any) -> ItemDict:
+        if isinstance(data, str) and data.lower().startswith("random"):
+            text, bound_low, bound_high = parse_random_range(
+                OPTION_NAME.get(cls, cls.__name__),
+                data,
+                3, 8
+            )
+            return cls({
+                item_name: random_weighted_range(text, bound_low, bound_high)
+                for item_name in cls.default.keys()
+            })
+        return super(FillerItemsDistribution, cls).from_any(data)
 
 
 @dataclass
