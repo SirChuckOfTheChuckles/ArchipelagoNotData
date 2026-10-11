@@ -794,6 +794,7 @@ class SC2Context(CommonContext):
         self.raw_text_parser = SC2JSONtoTextParser(self)  # type: ignore
 
         self.data_out_of_date: bool = False
+        self.world_id = ""
         self.difficulty = -1
         self.game_speed = -1
         self.all_in_choice = 0
@@ -988,6 +989,7 @@ class SC2Context(CommonContext):
             v3_data = cast('Sc2SlotDataDictV3', slot_data)
 
             self.difficulty = slot_data["game_difficulty"]
+            self.world_id = slot_data.get("world_id", "")
             self.game_speed = slot_data.get("game_speed", GameSpeed.option_default)
             self.all_in_choice = slot_data["all_in_map"]
             self.slot_data_version = slot_data.get("version", 2)

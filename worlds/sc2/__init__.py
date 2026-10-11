@@ -1,4 +1,3 @@
-from dataclasses import fields
 import logging
 import os
 
@@ -37,7 +36,7 @@ from .options import (
     KerriganPrimalStatus, StarterUnit, SpearOfAdunPresence,
     SpearOfAdunPassiveAbilityPresence, Starcraft2Options,
     GrantStoryTech, GenericUpgradeResearch, RequiredTactics,
-    upgrade_included_names, EnableVoidTrade, FillerItemsDistribution, MissionOrderScouting, option_groups,
+    upgrade_included_names, FillerItemsDistribution, option_groups,
     VanillaItemsOnly, ExcludeOverpoweredItems,
     is_mission_in_soa_presence,
 )
@@ -53,6 +52,7 @@ from worlds.LauncherComponents import components, Component, launch as launch_co
 from .presets import sc2_options_presets
 
 logger = logging.getLogger("Starcraft 2")
+
 
 def launch_client(*args: str):
     from .client import launch
