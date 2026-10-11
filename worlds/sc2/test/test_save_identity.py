@@ -7,7 +7,8 @@ from uuid import UUID
 from BaseClasses import MultiWorld
 from test.general import setup_multiworld
 
-from .. import SC2World, get_sc2_world_id
+from .. import SC2World
+from ..slot_data_config import get_sc2_world_id
 from ..client import SC2Context
 from ..options import MissionOrderScouting
 

@@ -1,10 +1,12 @@
 
+import uuid
 from typing import TYPE_CHECKING, TypedDict, NotRequired, Required, Any, Literal
 from dataclasses import fields
 from . import options, mission_tables, tables, locations
 
 
 if TYPE_CHECKING:
+    from BaseClasses import MultiWorld
     from . import SC2World
 
 
@@ -99,10 +101,20 @@ def pack_hero_presence(presence: dict[mission_tables.SC2Mission, tables.HeroFlag
     return result
 
 
+def get_sc2_world_id(multiworld: 'MultiWorld') -> str:
+    """Return one random generation ID shared by every SC2 slot in this multiworld."""
+    world_id = getattr(multiworld, "_sc2_world_id", None)
+    if world_id is None:
+        world_id = uuid.uuid4().hex
+        setattr(multiworld, "_sc2_world_id", world_id)
+    return world_id
+
+
 def fill_slot_data(world: 'SC2World') -> Sc2SlotDataDict:
     assert world.logic
     slot_data: Sc2SlotDataDict = {
         "version": 5,
+        "world_id": get_sc2_world_id(world.multiworld),
         "game_difficulty": int(world.options.game_difficulty),
         "all_in_map": int(world.options.all_in_map),
         "mission_order": int(world.options.mission_order),

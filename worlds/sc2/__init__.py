@@ -1,6 +1,5 @@
 import logging
 import os
-import uuid
 
 from collections import Counter
 from typing import Any, ClassVar, Callable, Mapping
@@ -54,14 +53,6 @@ from .presets import sc2_options_presets
 
 logger = logging.getLogger("Starcraft 2")
 
-
-def get_sc2_world_id(multiworld: MultiWorld) -> str:
-    """Return one random generation ID shared by every SC2 slot in this multiworld."""
-    world_id = getattr(multiworld, "_sc2_world_id", None)
-    if world_id is None:
-        world_id = uuid.uuid4().hex
-        setattr(multiworld, "_sc2_world_id", world_id)
-    return world_id
 
 def launch_client(*args: str):
     from .client import launch
@@ -300,9 +291,7 @@ class SC2World(World):
         return self.random.choices(tuple(self.filler_items_distribution), weights=self.filler_items_distribution.values())[0]  # type: ignore
 
     def fill_slot_data(self) -> Mapping[str, Any]:
-        slot_data = slot_data_config.fill_slot_data(self)
-        slot_data["world_id"] = get_sc2_world_id(self.multiworld)
-        return slot_data
+        return slot_data_config.fill_slot_data(self)
 
     def pre_fill(self) -> None:
         assert self.logic is not None
