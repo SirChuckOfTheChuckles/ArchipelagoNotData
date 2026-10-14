@@ -12,13 +12,14 @@ import time
 import Utils
 from Utils import async_start
 from NetUtils import ClientStatus, NetworkItem
+from itertools import islice
 
 from . import banks, user_paths
 from .failable import Error
 from .transfer_data import normalized_unit_types
 from .. import options, locations, item, rules
 from .. import SC2World
-from ..item import item_tables, item_names, item_groups
+from ..item import item_tables, item_names, item_groups, item_mod_ids
 from ..item import FactionlessItemType
 from ..mission_tables import (
     lookup_id_to_mission,
@@ -45,12 +46,21 @@ class MissionClient:
         'mission_id',
         'switcher_process',
         'sc2_pid',
+        'next_process_check',
         'bonuses',
         'trade_reply_cooldown',
         'last_received_update',
         'last_trade_cargo',
         'update_period_seconds',
         'start_time',
+        'warned_identity_mismatches',
+        'warning_load_active',
+        'load_refresh_in_progress',
+        'mission_checks_blocked',
+        'mission_checks_override',
+        'save_warning_code',
+        'mission_mapping_valid',
+        'setup_pending',
     ]
 
     def __init__(self, ctx: 'SC2Context', mission_id: int, process: subprocess.Popen) -> None:
@@ -62,12 +72,21 @@ class MissionClient:
         self.mission_id = mission_id
         self.switcher_process = process
         self.sc2_pid: int | None = None
+        self.next_process_check = 0.0
         self.bonuses = [False for _ in range(MAX_BONUS)]
         self.trade_reply_cooldown: int = 0
         self.last_received_update: int = 0
         self.last_trade_cargo: set = set()
         self.update_period_seconds = 0.5
         self.start_time = time.time_ns()
+        self.warned_identity_mismatches: set[tuple[str, str, str]] = set()
+        self.warning_load_active = False
+        self.load_refresh_in_progress = False
+        self.mission_checks_blocked = False
+        self.mission_checks_override = False
+        self.save_warning_code = ""
+        self.mission_mapping_valid = True
+        self.setup_pending = True
 
     def check_game_running(self) -> bool:
         if not self.running:
@@ -94,7 +113,22 @@ class MissionClient:
             kill_pid(self.sc2_pid)
         self.running = False
 
-    def do_setup(self) -> None:
+    def do_setup(self) -> bool:
+        """Queue a complete setup, retaining a retry request if any bank write fails."""
+        self.setup_pending = True
+        try:
+            error = self.write_setup_banks()
+        except OSError as error:
+            logger.error("Could not refresh mission banks: %s", error)
+            return False
+        if isinstance(error, Error):
+            logger.error(error.message)
+            return False
+        self.last_received_update = len(self.ctx.items_received)
+        self.setup_pending = False
+        return True
+
+    def write_setup_banks(self) -> None | Error[str]:
         mission = lookup_id_to_mission[self.mission_id]
         start_items = calculate_items(self.ctx, self.mission_id)
         missions_beaten = self.missions_beaten_count()
@@ -121,8 +155,8 @@ class MissionClient:
         nova_presence = 0  # unused for now
         if is_kerrigan_primal(self.ctx, kerrigan_level):
             primal_item = item_tables.item_table[item_names.KERRIGAN_PRIMAL_FORM]
-            flag_word = get_item_flag_word(item_names.KERRIGAN_PRIMAL_FORM)
-            start_items[primal_item.race][flag_word] |= 1 << primal_item.number
+            primal_id = item_mod_ids.item_id_table[item_names.KERRIGAN_PRIMAL_FORM]
+            start_items[primal_item.race][primal_id.item_type.flag_word] |= 1 << primal_id.index
         error = banks.send_options(
             f" {difficulty}"
             f" {generic_upgrade_options}"
@@ -146,22 +180,225 @@ class MissionClient:
             f" {hero_presence}"
         )
         if isinstance(error, Error):
-            logger.error(error.message)
-            return
-        self.update_tech(start_items, kerrigan_level)
+            return error
+        error = self.update_tech(start_items, kerrigan_level)
+        if isinstance(error, Error):
+            return error
         objectives = ""
         if uncollected_objectives:
             objectives = " ".join(f"{str(objective)}" for objective in uncollected_objectives)
-        error = banks.send_core_options(
+        return banks.send_core_options(
             self.get_resources(start_items),
             self.get_colors(),
             objectives,
-            "1"
+            "1",
+            self.get_slot_name(),
+            self.ctx.world_id,
+            self.save_warning_code,
         )
+
+    def reset_mission_state(self) -> None:
+        self.mission_completed = self.ctx.is_mission_completed(self.mission_id)
+        self.bonuses = [
+            locations.get_location_id(self.mission_id, bonus_id + 1) in self.ctx.checked_locations
+            for bonus_id in range(MAX_BONUS)
+        ]
+
+    def resolve_mission_id_from_map_file(self, map_file: str, mission_race: str) -> int | None:
+        candidate_mission_ids = [
+            mission_id
+            for mission_id in self.ctx.mission_id_to_location_ids
+            if mission_id in lookup_id_to_mission
+            and lookup_id_to_mission[mission_id].map_file == map_file
+        ]
+        if not candidate_mission_ids:
+            return None
+        if mission_race:
+            candidate_mission_ids = [
+                mission_id
+                for mission_id in candidate_mission_ids
+                if get_mission_race_name(mission_id) == mission_race
+            ]
+        if self.mission_id in candidate_mission_ids:
+            return self.mission_id
+        if len(candidate_mission_ids) == 1:
+            return candidate_mission_ids[0]
+        return None
+
+    def sync_active_mission(self, map_file: str, mission_race: str, save_loaded: bool = False) -> bool:
+        """Validate the reported mission and queue setup if client accounting changes."""
+        current_mission = lookup_id_to_mission[self.mission_id]
+        current_mission_race = get_mission_race_name(self.mission_id)
+        resolved_mission_id = self.resolve_mission_id_from_map_file(map_file, mission_race)
+        self.mission_mapping_valid = resolved_mission_id is not None
+        if resolved_mission_id is None:
+            warning_key = ("mission", map_file, mission_race)
+            if warning_key not in self.warned_identity_mismatches:
+                self.warned_identity_mismatches.add(warning_key)
+                logger.warning(
+                    "%s reports map %s (%s), but no valid mission mapping was found "
+                    "from %s (%s). Mission checks and setup are paused until the map is identified.",
+                    "Loaded save" if save_loaded else "Game",
+                    map_file or "unknown map",
+                    mission_race or "unknown race",
+                    current_mission.map_file,
+                    current_mission_race or "unknown race",
+                )
+            return False
+        if resolved_mission_id == self.mission_id:
+            return False
+
+        next_mission = lookup_id_to_mission[resolved_mission_id]
+        if save_loaded:
+            logger.info(
+                "Detected mission switch from %s to %s via loaded save.",
+                current_mission.mission_name,
+                next_mission.mission_name,
+            )
+        else:
+            logger.debug(
+                "Game mission metadata changed client mission from %s to %s.",
+                current_mission.mission_name,
+                next_mission.mission_name,
+            )
+        self.mission_id = resolved_mission_id
+        self.reset_mission_state()
+        self.setup_pending = True
+        return True
+
+    def get_slot_name(self) -> str:
+        if self.ctx.slot is not None and self.ctx.slot in self.ctx.slot_info:
+            return self.ctx.slot_info[self.ctx.slot].name
+        return self.ctx.auth or ""
+
+    def begin_save_load(self) -> None:
+        """Reset per-load state before mission and identity messages are emitted."""
+        if not self.warning_load_active:
+            self.warned_identity_mismatches.clear()
+            self.warning_load_active = True
+            self.mission_checks_override = False
+
+    def check_save_identity(
+        self,
+        saved_slot_value: str,
+        saved_world_id_value: str,
+        save_loaded_value: str,
+    ) -> None:
+        """Warn about loaded-save identity problems and block checks on definite mismatches."""
+        if save_loaded_value.strip() != "1":
+            self.warning_load_active = False
+            self.load_refresh_in_progress = False
+            return
+
+        if self.ctx.slot is None:
+            return
+        self.begin_save_load()
+
+        saved_slot_name = banks.decode_bank_identity(saved_slot_value) if saved_slot_value else ""
+        saved_world_id = banks.decode_bank_identity(saved_world_id_value) if saved_world_id_value else ""
+        current_slot_name = self.get_slot_name()
+        current_world_id = self.ctx.world_id
+        slot_mismatch = bool(
+            saved_slot_name and current_slot_name and saved_slot_name != current_slot_name
+        )
+        world_mismatch = bool(
+            saved_world_id and current_world_id and saved_world_id != current_world_id
+        )
+
+        self.mission_checks_blocked = (
+            (slot_mismatch or world_mismatch) and not self.mission_checks_override
+        )
+        if slot_mismatch and world_mismatch:
+            self.save_warning_code = "SlotAndWorldMismatch"
+        elif slot_mismatch:
+            self.save_warning_code = "SlotMismatch"
+        elif world_mismatch:
+            self.save_warning_code = "WorldMismatch"
+        elif not saved_world_id:
+            self.save_warning_code = "LegacySave"
+        elif not current_world_id:
+            self.save_warning_code = "LegacyConnectedWorld"
+        else:
+            self.save_warning_code = ""
+
+        candidate_warnings: dict[tuple[str, str, str], str] = {}
+        mismatch_suffix = (
+            "Checks from this loaded mission will not be sent."
+        )
+        if slot_mismatch:
+            candidate_warnings[("slot", saved_slot_name, current_slot_name)] = (
+                "WARNING: This save was created with a different slot. "
+                f'Saved slot: "{saved_slot_name}"; connected slot: "{current_slot_name}". '
+                + mismatch_suffix
+            )
+
+        if not saved_world_id:
+            candidate_warnings[("world-legacy-save", "", current_world_id)] = (
+                "WARNING: This save was made on an older version and has no World ID. "
+                "The missing World ID alone does not block checks or items."
+            )
+        elif not current_world_id:
+            candidate_warnings[("world-legacy-connected", saved_world_id, "")] = (
+                "WARNING: The connected multiworld was made on an older version and has no "
+                "World ID, so this save cannot be verified. "
+                "The missing World ID alone does not block checks or items."
+            )
+        elif world_mismatch:
+            candidate_warnings[("world", saved_world_id, current_world_id)] = (
+                "WARNING: This save was created in a different multiworld. "
+                f'Saved World ID: "{saved_world_id}"; connected World ID: "{current_world_id}". '
+                + mismatch_suffix
+            )
+
+        warnings = [
+            message for key, message in candidate_warnings.items()
+            if key not in self.warned_identity_mismatches
+        ]
+        self.warned_identity_mismatches.update(candidate_warnings)
+        for warning in warnings:
+            logger.warning(warning)
+        if warnings:
+            if slot_mismatch or world_mismatch:
+                logger.warning(
+                    'Checks can be re-enabled by entering "-debug" in-game, and '
+                    'then typing "-enablechecks".'
+                )
+                game_warnings = [
+                    "WARNING: Mismatching slot or world ID detected. "
+                    "Checks from this loaded mission will not be sent. See client for details."
+                ]
+            else:
+                game_warnings = warnings
+            error = banks.send_ap_message(game_warnings)
+            if isinstance(error, Error):
+                logger.error(error.message)
+
+    def apply_mission_check_override(self, checks_override_value: str) -> None:
+        """Apply the current game's in-game -enablechecks request."""
+        if checks_override_value.strip() != "1" or not self.mission_checks_blocked:
+            return
+
+        self.mission_checks_override = True
+        self.mission_checks_blocked = False
+        warning = (
+            "WARNING OVERRIDE: Mission checks were re-enabled from the running SC2 mission."
+        )
+        logger.warning(warning)
+        error = banks.send_ap_message([warning])
         if isinstance(error, Error):
             logger.error(error.message)
-            return
-        self.last_received_update = len(self.ctx.items_received)
+
+    def refresh_after_save_load(self, save_loaded_value: str, mission_switched: bool) -> None:
+        refresh_requested = save_loaded_value.strip() == "1"
+        if not refresh_requested:
+            self.load_refresh_in_progress = False
+        elif not self.load_refresh_in_progress:
+            self.setup_pending = True
+
+        if mission_switched:
+            self.setup_pending = True
+        if self.setup_pending and self.do_setup():
+            self.load_refresh_in_progress = refresh_requested
 
     async def client_loop(self) -> None:
         while self.running:
@@ -169,10 +406,12 @@ class MissionClient:
             try:
                 await self.on_step()
             except Exception as ex:
-                logger.error(ex)
+                logger.exception(ex)
 
     async def on_step(self) -> None:
         # @assume setup is done
+        if not self.running:
+            return
         if self.sc2_pid is None:
             if not self.is_switcher_process_closed():
                 # Still starting up
@@ -180,9 +419,11 @@ class MissionClient:
             self.sc2_pid = get_sc2_pid()
             logger.debug(f"sc2 process ID is {self.sc2_pid}")
             return
-        elif self.update_number % 10 == 0:
+        elif time.monotonic() >= self.next_process_check:
+            self.next_process_check = time.monotonic() + 5.0
             if not self.check_game_running():
                 logger.debug("sc2 process exited")
+                return
         game_state = 0
         error = banks.send_ap_messages_from_queue(self.ctx.announcements)
         if isinstance(error, Error):
@@ -223,6 +464,8 @@ class MissionClient:
                 async_start(self.ctx.trade_receive(5))
 
         game_state = self.get_locations()
+        if not self.mission_mapping_valid or self.setup_pending or self.ctx.slot is None:
+            return
 
         if game_state & 1:
             self.update_number += 1
@@ -248,7 +491,7 @@ class MissionClient:
             self.last_received_update = len(self.ctx.items_received)
 
         if game_state & 1:
-            if game_state & (1 << 1) and not self.mission_completed:
+            if not self.mission_checks_blocked and game_state & (1 << 1) and not self.mission_completed:
                 victory_locations = [locations.get_location_id(self.mission_id, 0)]
                 send_victory = (
                     self.mission_id in self.ctx.final_mission_ids
@@ -282,12 +525,13 @@ class MissionClient:
                     self.mission_completed = True
                     self.ctx.finished_game = True
 
-            for x, completed in enumerate(self.bonuses):
-                if not completed and game_state & (1 << (x + 2)):
-                    await self.ctx.send_msgs(
-                        [{"cmd": 'LocationChecks',
-                            "locations": [locations.get_location_id(self.mission_id, x + 1)]}])
-                    self.bonuses[x] = True
+            if not self.mission_checks_blocked:
+                for x, completed in enumerate(self.bonuses):
+                    if not completed and game_state & (1 << (x + 2)):
+                        await self.ctx.send_msgs(
+                            [{"cmd": 'LocationChecks',
+                                "locations": [locations.get_location_id(self.mission_id, x + 1)]}])
+                        self.bonuses[x] = True
 
             # Send Void Trade results
             if self.ctx.trade_response is not None and self.trade_reply_cooldown == 0:
@@ -298,12 +542,74 @@ class MissionClient:
                 # Wait an arbitrary amount of frames before trying again
                 self.trade_reply_cooldown = 60
 
+    def report_save_load_status(self, message: str, *, in_game: bool = True) -> None:
+        """Report a load transition once; message delivery must not interrupt setup."""
+        logger.info(message)
+        if not in_game:
+            return
+        try:
+            error = banks.send_ap_message([message])
+        except OSError as error:
+            logger.error("Could not send save-load status: %s", error)
+            return
+        if isinstance(error, Error):
+            logger.error(error.message)
+
     def get_locations(self) -> int:
-        result = banks.read_locations()
+        result = banks.read_location_info()
         if isinstance(result, Error):
             return 0
-        if (result.strip()):  # may be "" or " "
-            return int(result)
+        (
+            game_state,
+            mission_map,
+            mission_race,
+            saved_slot_name,
+            saved_world_id,
+            save_loaded,
+            checks_override,
+        ) = result
+        refresh_requested = save_loaded.strip() == "1"
+        refresh_acknowledged = (
+            not refresh_requested and self.load_refresh_in_progress and not self.setup_pending
+        )
+        mission_switched = False
+        if self.ctx.slot is not None:
+            if refresh_requested:
+                self.begin_save_load()
+            if mission_map or refresh_requested:
+                mission_switched = self.sync_active_mission(mission_map, mission_race, refresh_requested)
+        self.check_save_identity(saved_slot_name, saved_world_id, save_loaded)
+        self.apply_mission_check_override(checks_override)
+        if self.ctx.slot is None:
+            return 0
+        if not self.mission_mapping_valid:
+            return 0
+        if refresh_acknowledged and not mission_switched:
+            saved_slot = banks.decode_bank_identity(saved_slot_name)
+            saved_world = banks.decode_bank_identity(saved_world_id)
+            current_slot = self.get_slot_name()
+            current_world = self.ctx.world_id
+            mismatch = (
+                bool(saved_slot and current_slot and saved_slot != current_slot)
+                or bool(saved_world and current_world and saved_world != current_world)
+            )
+            if mismatch and self.mission_checks_override:
+                status = "Identity mismatch; checks enabled by debug override."
+            elif mismatch or self.mission_checks_blocked:
+                status = "Identity mismatch; mission checks remain blocked."
+            elif saved_slot and current_slot and saved_world and current_world:
+                status = "Slot and World ID match."
+            else:
+                status = "Identity could not be fully verified because slot or World ID information is missing."
+            self.report_save_load_status(
+                "Save refresh acknowledged by game. " + status,
+                in_game=not (mismatch or self.mission_checks_blocked or self.save_warning_code),
+            )
+        self.refresh_after_save_load(save_loaded, mission_switched)
+        if self.setup_pending:
+            return 0
+        if (game_state.strip()):  # may be "" or " "
+            return int(game_state)
         return 0
 
     def get_trade_units_sent(self) -> str:
@@ -384,10 +690,19 @@ class MissionClient:
             kerrigan_level,
         ))
 
-    def get_trap_items(self, current_items: dict[SC2Race, list[int]]) -> str:
-        return ("{} {}".format(
-            current_items[SC2Race.ANY][get_item_flag_word(item_names.TRAP_GHOST_SPAWN)],
-            current_items[SC2Race.ANY][get_item_flag_word(item_names.TRAP_VOID_DUPLICATE)],
+    def get_mutator_items(self, current_items: dict[SC2Race, list[int]]) -> str:
+        if (self.ctx.ghost_spawn_level == -1):
+            ghost_spawn = current_items[SC2Race.ANY][get_item_flag_word(item_names.MUTATOR_GHOST_SPAWN)]
+        else:
+            ghost_spawn = self.ctx.ghost_spawn_level
+        if (self.ctx.void_duplicate_level == -1):
+            void_duplicate = current_items[SC2Race.ANY][get_item_flag_word(item_names.MUTATOR_VOID_DUPLICATE)]
+        else:
+            void_duplicate = self.ctx.void_duplicate_level
+        return ("{} {} {}".format(
+            ghost_spawn,
+            void_duplicate,
+            current_items[SC2Race.ANY][get_item_flag_word(item_names.MUTATOR_ENABLE_CLOAK)],
         ))
 
     def update_tech(self, current_items: dict[SC2Race, list[int]], kerrigan_level: int) -> None | Error[str]:
@@ -396,13 +711,15 @@ class MissionClient:
             self.get_zerg_tech(current_items),
             self.get_protoss_tech(current_items),
             self.get_misc_tech(current_items, kerrigan_level),
-            self.get_trap_items(current_items),
+            self.get_mutator_items(current_items),
         )
 
     def update_core_options(self, current_items: dict[SC2Race, list[int]]) -> None | Error[str]:
         return banks.send_core_options(
             self.get_resources(current_items),
-            self.get_colors()
+            self.get_colors(),
+            slot_name=self.get_slot_name(),
+            world_id=self.ctx.world_id,
         )
 
 
@@ -766,10 +1083,12 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
         name = item_tables.lookup_id_to_name.get(network_item.item)
         if name is None:
             continue
-        item_data: item.ItemData = item_list[name]
-
-        if item_data.type.flag_word < 0:
+        item_id = item_mod_ids.item_id_table.get(name)
+        if item_id is None:
             continue
+        if item_id.item_type.flag_word < 0:
+            continue
+        item_data: item.ItemData = item_list[name]
 
         if ctx.slot_data_version < 5:
             if name in item_groups.item_name_groups[item_groups.ItemGroupNames.TERRAN_STIMPACKS]:
@@ -781,19 +1100,19 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
 
         # exists exactly once
         if item_data.quantity == 1 or name in item_groups.item_name_groups[item_groups.ItemGroupNames.UNRELEASED_ITEMS]:
-            accumulators[item_data.race][item_data.type.flag_word] |= 1 << item_data.number
+            accumulators[item_data.race][item_id.item_type.flag_word] |= 1 << item_id.index
 
         # exists multiple times
         elif item_data.quantity > 1:
-            flaggroup = item_data.type.flag_word
+            flaggroup = item_id.item_type.flag_word
             # Generic upgrades apply only to Weapon / Armor upgrades
-            if item_data.number >= 0:
-                bit_mask = ((1 << item_data.quantity.bit_length()) - 1 ) << item_data.number
+            if item_id.index >= 0:
+                bit_mask = ((1 << item_data.quantity.bit_length()) - 1 ) << item_id.index
                 current_amount = accumulators[item_data.race][flaggroup] & bit_mask
-                new_amount = current_amount + (1 << item_data.number)
-                max_amount = item_data.quantity << item_data.number
+                new_amount = current_amount + (1 << item_id.index)
+                max_amount = item_data.quantity << item_id.index
                 if new_amount <= max_amount:
-                    accumulators[item_data.race][flaggroup] += 1 << item_data.number
+                    accumulators[item_data.race][flaggroup] += 1 << item_id.index
             else:
                 if name == item_names.PROGRESSIVE_PROTOSS_GROUND_UPGRADE:
                     shields_from_ground_upgrade += 1
@@ -804,41 +1123,43 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
 
             # Regen bio-steel nerf with API3 - undo for older games
             if ctx.slot_data_version < 3 and name == item_names.PROGRESSIVE_REGENERATIVE_BIO_STEEL:
-                current_level = (accumulators[item_data.race][flaggroup] >> item_data.number) % 4
+                current_level = (accumulators[item_data.race][flaggroup] >> item_id.index) % 4
                 if current_level == 2:
                     # Switch from level 2 to level 3 for compatibility
-                    accumulators[item_data.race][flaggroup] += 1 << item_data.number
+                    accumulators[item_data.race][flaggroup] += 1 << item_id.index
         # sum
         # Fillers, deprecated items
         else:
             if name == item_names.PROGRESSIVE_ORBITAL_COMMAND:
                 orbital_command_count += 1
             elif name == item_names.STARTING_MINERALS:
-                accumulators[item_data.race][item_data.type.flag_word] += ctx.minerals_per_item
+                accumulators[item_data.race][item_id.item_type.flag_word] += ctx.minerals_per_item
             elif name == item_names.STARTING_VESPENE:
-                accumulators[item_data.race][item_data.type.flag_word] += ctx.vespene_per_item
+                accumulators[item_data.race][item_id.item_type.flag_word] += ctx.vespene_per_item
             elif name == item_names.STARTING_SUPPLY:
-                accumulators[item_data.race][item_data.type.flag_word] += ctx.starting_supply_per_item
+                accumulators[item_data.race][item_id.item_type.flag_word] += ctx.starting_supply_per_item
             elif name == item_names.UPGRADE_RESEARCH_COST:
-                accumulators[item_data.race][item_data.type.flag_word] += ctx.research_cost_reduction_per_item
-            elif item_data.type == FactionlessItemType.Level:
-                accumulators[item_data.race][item_data.type.flag_word] += item_data.number
+                accumulators[item_data.race][item_id.item_type.flag_word] += ctx.research_cost_reduction_per_item
+            elif item_id.item_type == FactionlessItemType.Level:
+                accumulators[item_data.race][item_id.item_type.flag_word] += item_id.index
             else:
-                accumulators[item_data.race][item_data.type.flag_word] += 1
+                accumulators[item_data.race][item_id.item_type.flag_word] += 1
 
     if mission_id in ctx.grant_hero_items:
         if nova_weapon_count == 0:
             # todo(mm): Replace this with some other in-game buff when the mod can be updated
             # Grant rifle
             item_data = item_tables.item_table[item_names.NOVA_C20A_CANISTER_RIFLE]
-            accumulators[item_data.race][item_data.type.flag_word] |= 1 << item_data.number
+            item_id = item_mod_ids.item_id_table[item_names.NOVA_C20A_CANISTER_RIFLE]
+            accumulators[item_data.race][item_id.item_type.flag_word] |= 1 << item_id.index
 
     # Fix Shields from generic upgrades by unit class (Maximum of ground/air upgrades)
     if shields_from_ground_upgrade > 0 or shields_from_air_upgrade > 0:
         shield_upgrade_level = max(shields_from_ground_upgrade, shields_from_air_upgrade)
         shield_upgrade_item = item_list[item_names.PROGRESSIVE_PROTOSS_SHIELDS]
+        shield_upgrade_id = item_mod_ids.item_id_table[item_names.PROGRESSIVE_PROTOSS_SHIELDS]
         for _ in range(0, shield_upgrade_level):
-            accumulators[shield_upgrade_item.race][shield_upgrade_item.type.flag_word] += 1 << shield_upgrade_item.number
+            accumulators[shield_upgrade_item.race][shield_upgrade_id.item_type.flag_word] += 1 << shield_upgrade_id.index
 
     # Deprecated Orbital Command handling (Backwards compatibility):
     if orbital_command_count > 0:
@@ -850,52 +1171,58 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
         ]
         replacement_item_ids = [item_tables.item_table[item_name].code for item_name in orbital_command_replacement_items]
         if sum(item_id in replacement_item_ids for item_id in items) > 0:
-            logger.warning(inspect.cleandoc("""
-                Both old Orbital Command and its replacements are present in the world. Skipping compatibility handling.
-            """))
+            logger.warning(
+                "Both old Orbital Command and its replacements are present in the world. "
+                "Skipping compatibility handling."
+            )
         else:
             # None of replacement items are present
             # L1: MULE and Scanner Sweep
-            scanner_sweep_data = item_tables.item_table[item_names.COMMAND_CENTER_SCANNER_SWEEP]
-            mule_data = item_tables.item_table[item_names.COMMAND_CENTER_MULE]
-            accumulators[scanner_sweep_data.race][scanner_sweep_data.type.flag_word] += 1 << scanner_sweep_data.number
-            accumulators[mule_data.race][mule_data.type.flag_word] += 1 << mule_data.number
+            scanner_sweep_id = item_mod_ids.item_id_table[item_names.COMMAND_CENTER_SCANNER_SWEEP]
+            mule_id = item_mod_ids.item_id_table[item_names.COMMAND_CENTER_MULE]
+            accumulators[SC2Race.TERRAN][scanner_sweep_id.item_type.flag_word] += 1 << scanner_sweep_id.index
+            accumulators[SC2Race.TERRAN][mule_id.item_type.flag_word] += 1 << mule_id.index
             if orbital_command_count >= 2:
                 # L2 MULE and Scanner Sweep usable even in Planetary Fortress Mode
-                planetary_orbital_module_data = item_tables.item_table[item_names.PLANETARY_FORTRESS_ORBITAL_MODULE]
-                accumulators[planetary_orbital_module_data.race][planetary_orbital_module_data.type.flag_word] += \
-                    1 << planetary_orbital_module_data.number
+                planetary_orbital_id = item_mod_ids.item_id_table[item_names.PLANETARY_FORTRESS_ORBITAL_MODULE]
+                accumulators[SC2Race.TERRAN][planetary_orbital_id.item_type.flag_word] += (
+                    1 << planetary_orbital_id.index
+                )
 
     # Progressive Stimpack handling (Backwards compatibility):
     if ctx.slot_data_version < 5:
         for name, count in stimpack_count.items():
             if count > 1:
                 # stimpack level 2, grant medpack to upgrade to super stim
-                medpack_item_data: item.ItemData = item_list[compat_stimpack_to_medpack[name]]
-                accumulators[medpack_item_data.race][medpack_item_data.type.flag_word] |= (
-                    1 << medpack_item_data.number
+                medpack_item_id = item_mod_ids.item_id_table[compat_stimpack_to_medpack[name]]
+                accumulators[SC2Race.TERRAN][medpack_item_id.item_type.flag_word] |= (
+                    1 << medpack_item_id.index
                 )
-    # Progressive Transport Hook handling (Backwards compatibility):
+        # Progressive Transport Hook handling (Backwards compatibility):
         if transport_hook_count >= 2:
             transport_hook_replacement_items = (
                 item_names.SHOCK_DIVISION,
                 item_names.SHOCK_DIVISION_ARMAMENT_STABILIZERS,
             )
             for replacement_item_name in transport_hook_replacement_items:
-                replacement_item_data = item_list[replacement_item_name]
-                accumulators[replacement_item_data.race][replacement_item_data.type.flag_word] |= (
-                    1 << replacement_item_data.number
+                replacement_race = item_list[replacement_item_name].race
+                replacement_item_id = item_mod_ids.item_id_table[replacement_item_name]
+                accumulators[replacement_race][replacement_item_id.item_type.flag_word] |= (
+                    1 << replacement_item_id.index
                 )
 
+    # Handle scaling with completed missions
+    total_missions = len([mission for campaign in ctx.custom_mission_order
+        for layout in campaign.layouts for column in layout.missions for mission in column if mission.mission_id > 0])
+    completed = len([mission_id for mission_id in ctx.mission_id_to_location_ids if ctx.is_mission_completed(mission_id)])
+    mutator_count_available = min(len(ctx.mutation_rate_order), ctx.mutation_rate_limit) if ctx.mutation_rate_order else 0
+    mutator_count = 0
 
-    # Upgrades from completed missions
+    # W/A upgrade missions
     if ctx.generic_upgrade_missions > 0:
-        total_missions = sum(len(column) for campaign in ctx.custom_mission_order for layout in campaign.layouts for column in layout.missions)
-        num_missions = int((ctx.generic_upgrade_missions / 100) * total_missions)
-        completed = len([mission_id for mission_id in ctx.mission_id_to_location_ids if ctx.is_mission_completed(mission_id)])
-        upgrade_count = min(completed // num_missions, ctx.max_upgrade_level) if num_missions > 0 else ctx.max_upgrade_level
-        upgrade_count = min(upgrade_count, item_tables.WEAPON_ARMOR_UPGRADE_MAX_LEVEL)
-
+        missions_per_upgrade = int((ctx.generic_upgrade_missions / 100) * total_missions)
+        upgrade_count = min(completed // missions_per_upgrade, ctx.max_upgrade_level) if missions_per_upgrade > 0 else ctx.max_upgrade_level
+        upgrade_count = min(upgrade_count, item_tables.WA_MAX_LEVEL)
         # Equivalent to "Progressive Weapon/Armor Upgrade" item
         global_upgrades: set[str] = options.upgrade_included_names[options.GenericUpgradeItems.option_bundle_all]
         for global_upgrade in global_upgrades:
@@ -903,6 +1230,48 @@ def calculate_items(ctx: 'SC2Context', mission_id: int) -> dict[SC2Race, list[in
             upgrade_flaggroup = item.race_to_item_type[race]["Upgrade"].flag_word
             for bundled_number in get_bundle_upgrade_member_numbers(global_upgrade):
                 accumulators[race][upgrade_flaggroup] += upgrade_count << bundled_number
+
+    # Mutators on mission completion
+    if (
+        ctx.mutation_rate_source == options.MutationRateSource.option_completion_scaling
+        and ctx.mutation_rate_limit > 0
+        and mutator_count_available > 0
+    ):
+        missions_per_mutator = total_missions * ctx.mutation_rate_endpoint / (mutator_count_available * 100)
+        mutator_count = min(int(completed / missions_per_mutator), ctx.mutation_rate_limit) if missions_per_mutator > 0 else ctx.mutation_rate_limit
+
+    # Handle scaling with mission order depth
+    current_depth = ctx.mission_id_to_depth[mission_id]
+    max_depth = ctx.max_depth
+
+    # Mutators on mission depth
+    if (
+        ctx.mutation_rate_source == options.MutationRateSource.option_depth_scaling
+        and ctx.mutation_rate_limit > 0
+        and mutator_count_available > 0
+        and max_depth > 0
+    ):
+        if (ctx.mutation_rate_endpoint > 0):
+            mutator_count = min(
+                int((current_depth * mutator_count_available * 100) / (max_depth * ctx.mutation_rate_endpoint )),
+                ctx.mutation_rate_limit
+            )
+        else:
+            # endpoint == 0, apply all mutators immediately
+            mutator_count = mutator_count_available
+
+    # Cloak handling, only allow mutators to cloak units after a certain depth
+    if ctx.detector_items > 0 and current_depth >= ctx.detector_items:
+        cloak_item = item_tables.item_table[item_names.MUTATOR_ENABLE_CLOAK]
+        cloak_item_id = item_mod_ids.item_id_table[item_names.MUTATOR_ENABLE_CLOAK]
+        accumulators[cloak_item.race][cloak_item_id.item_type.flag_word] += 1 << cloak_item_id.index
+
+    # apply mutators
+    if mutator_count > 0:
+        for mutator in islice(ctx.mutation_rate_order, mutator_count):
+            mutator_item = item_tables.item_table[mutator]
+            mutator_item_id = item_mod_ids.item_id_table[mutator]
+            accumulators[mutator_item.race][mutator_item_id.item_type.flag_word] += 1 << mutator_item_id.index
 
     return accumulators
 
@@ -912,7 +1281,7 @@ def get_bundle_upgrade_member_numbers(bundled_item: str) -> list[int]:
     if bundled_item in (item_names.PROGRESSIVE_PROTOSS_GROUND_UPGRADE, item_names.PROGRESSIVE_PROTOSS_AIR_UPGRADE):
         # Shields are handled as a maximum of those two
         upgrade_elements = [item_name for item_name in upgrade_elements if item_name != item_names.PROGRESSIVE_PROTOSS_SHIELDS]
-    return [item_tables.item_table[item_name].number for item_name in upgrade_elements]
+    return [item_mod_ids.item_id_table[item_name].index for item_name in upgrade_elements]
 
 
 def calc_difficulty(difficulty: int) -> Literal['C', 'N', 'H', 'B', 'X']:
@@ -1090,5 +1459,16 @@ def get_mission_variant(mission_id: int) -> int:
     return 0
 
 
+def get_mission_race_name(mission_id: int) -> str:
+    mission_flags = lookup_id_to_mission[mission_id].flags
+    if MissionFlag.Terran in mission_flags:
+        return "Terran"
+    if MissionFlag.Zerg in mission_flags:
+        return "Zerg"
+    if MissionFlag.Protoss in mission_flags:
+        return "Protoss"
+    return ""
+
+
 def get_item_flag_word(item_name: str) -> int:
-    return item_tables.item_table[item_name].type.flag_word
+    return item_mod_ids.item_id_table[item_name].item_type.flag_word

@@ -209,7 +209,7 @@ class SC2Logic:
         return state.count(item.name, self.player)  # type: ignore[arg-type]
 
     def _wa_upgrade_count_generic_filtering(self, item: VirtualItem, state: CollectionState) -> int:
-        return item_tables.WEAPON_ARMOR_UPGRADE_MAX_LEVEL
+        return item_tables.WA_MAX_LEVEL
 
     def _wa_upgrade_count_generic_placement(self, item: VirtualItem, state: CollectionState) -> int:
         return (
@@ -2081,7 +2081,10 @@ class SC2Logic:
         )
 
     def _protoss_mobile_multi_item_detection(self, state: CollectionState) -> bool:
-        return state.has_all((item_names.VANGUARD, item_names.VANGUARD_FLARE), self.player)
+        return (
+            state.has_all((item_names.VANGUARD, item_names.VANGUARD_FLARE), self.player)
+            or state.has_all((item_names.MIRAGE, item_names.MIRAGE_OBSERVER_MODULE), self.player)
+        )
 
     @series(LogicSeries.MacroPower, SC2Race.PROTOSS, 0)
     def protoss_macro_rating(self, state: CollectionState) -> int:
@@ -2136,6 +2139,8 @@ class SC2Logic:
             item_names.PHOTON_CANNON,
             item_names.KHAYDARIN_MONOLITH,
             item_names.NEXUS_OVERCHARGE,
+            item_names.PSI_SPIRE,
+            item_names.LAUNCH_BAY,
         ):
             if state.has(item, self.player):
                 rating += 3

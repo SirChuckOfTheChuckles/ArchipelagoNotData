@@ -618,22 +618,30 @@ item_descriptions = {
     item_names.STARTING_SUPPLY: "Increases the starting supply for all missions.",
     item_names.NOTHING: "Does nothing. Used to remove a location from the game.",
     item_names.MAX_SUPPLY: "Increases the maximum supply cap for all missions.",
-    item_names.TRAP_GHOST_SPAWN: inspect.cleandoc("""
-        Trap Item.
+    item_names.MUTATOR_GHOST_SPAWN: inspect.cleandoc("""
+        Mutator
 
         Creates a Nuclear Silo building for an enemy player.
         The Nuclear Silo periodically spawns Ghost attack waves,
         which will be able to use Nuclear Strikes.
-        Ghosts may use additional abilities, based on difficulty level.
+        Ghosts may use additional abilities, based on mutator level.
 
         Only works in build missions.
     """),
-    item_names.TRAP_VOID_DUPLICATE: inspect.cleandoc("""
-        Trap Item.
+    item_names.MUTATOR_VOID_DUPLICATE: inspect.cleandoc("""
+        Mutator
 
         Increases the size of enemy attack waves.
         Wave units are duplicated as Void Shades.
         +20% wave size per level, +100% wave size max.
+
+        Only works in build missions.
+    """),
+    item_names.MUTATOR_ENABLE_CLOAK: inspect.cleandoc("""
+        Mutator
+
+        Allows other Mutators to send cloaked units.
+        Does nothing by itself.
     """),
     item_names.REDUCED_MAX_SUPPLY: "Trap Item. Decreases the maximum supply cap for all missions.",
     item_names.SHIELD_REGENERATION: "Increases shield regeneration of all own units.",
@@ -840,7 +848,7 @@ item_descriptions = {
     item_names.INFESTED_MISSILE_TURRET_ACID_SPORE_VENTS: "Infested Missile Turrets gain a secondary weapon that applies Devourer Acid Spores in an area around the target.",
     item_names.TYRANNOZOR_TYRANTS_PROTECTION: "Tyrannozors grant nearby friendly units 1 armor.",
     item_names.TYRANNOZOR_BARRAGE_OF_SPIKES: _ability_desc("Tyrannozors", "Barrage of Spikes", "deals 60 damage to enemy ground units around the Tyrannozor"),
-    item_names.TYRANNOZOR_IMPALING_STRIKE: "Tyrannozor melee attacks have a 20% chance to stun for 2 seconds.",
+    item_names.TYRANNOZOR_IMPALING_STRIKE: "Tyrannozor melee attacks stun for 1.5 seconds. Each unit can only be stunned every 6 seconds.",
     item_names.TYRANNOZOR_HEALING_ADAPTATION: "Tyrannozors regenerate life quickly when out of combat.",
     item_names.BILE_LAUNCHER_ARTILLERY_DUCTS: "Increases Bile Launcher range by +8.",
     item_names.BILE_LAUNCHER_RAPID_BOMBARMENT: "Bile Launchers attack 40% faster.",
@@ -1018,6 +1026,8 @@ item_descriptions = {
     item_names.PHOTON_CANNON: "Protoss defensive structure. Can attack ground and air units.",
     item_names.KHAYDARIN_MONOLITH: "Advanced Protoss defensive structure. Has superior range and damage, but is very expensive and attacks slowly.",
     item_names.SHIELD_BATTERY: "Protoss defensive structure. Restores shields to nearby friendly units and structures.",
+    item_names.PSI_SPIRE: "Protoss defensive structure. Casts Psionic Storm on enemies.\nCan attack ground and air units.",
+    item_names.LAUNCH_BAY: "Protoss defensive structure. Releases Interceptors to attack enemies.\nCan attack ground and air units.",
     item_names.PROBE_NERAZIM_COATING: "Probes are permanently cloaked.",
     item_names.SUPPLICANT_BLOOD_SHIELD: "Increases the armor value of Supplicant shields.",
     item_names.SUPPLICANT_SOUL_AUGMENTATION: "Increases Supplicant max shields by +25.",
@@ -1300,7 +1310,9 @@ item_descriptions = {
     item_names.SUPERIOR_WARP_GATES: "Protoss Warp Gates can hold up to 3 charges of unit warp-ins.",
     item_names.ENHANCED_TARGETING: "Protoss defensive structures gain +2 range.",
     item_names.OPTIMIZED_ORDNANCE: "Increases the attack speed of Protoss defensive structures by 25%.",
-    item_names.KHALAI_INGENUITY: "Pylons, Photon Cannons, Monoliths, and Shield Batteries warp in near-instantly.",
+    item_names.KHALAI_INGENUITY: "Pylons and Protoss defensive structures warp in near-instantly.",
+    item_names.PHOTON_CANNON_REPULSOR_SHELL: "Increases Photon Cannon Shields and Shield Regeneration.",
+    item_names.PHOTON_CANNON_PHASE_CANNON: "Allows Photon Cannons to transform into a mobile Phase Cannon form, which cannot attack.",
     item_names.AMPLIFIED_ASSIMILATORS: "Assimilators produce Vespene gas 25% faster.",
     item_names.PROGRESSIVE_WARP_RELOCATE: inspect.cleandoc("""
         Level 1: Protoss structures can be moved anywhere within pylon power after a brief delay. Max 3 charges, shared globally.
@@ -1317,8 +1329,13 @@ item_descriptions = {
     item_names.OPERATIONAL_EFFICIENCY_ROBOTICS_BAY: "Removes the vespene cost and halves the mineral cost of Robotics Bays.\nAlso allows building a Robotics Bay without a Robotics Facility.",
     item_names.OPERATIONAL_EFFICIENCY_TEMPLAR_ARCHIVE: "Removes the vespene cost and halves the mineral cost of Templar Archives.\nAlso allows building a Templar Archive without a Gateway.",
     item_names.OPERATIONAL_EFFICIENCY_DARK_SHRINE: "Removes the vespene cost and halves the mineral cost of Dark Shrines.\nAlso allows building a Dark Shrine without a Gateway.",
+    item_names.KHAYDARIN_MONOLITH_RAPID_POWER_CYCLING: "Reduces the charging time for Khaydarin Monoliths.",
+    item_names.KHAYDARIN_MONOLITH_KHAYDARIN_SURGE: "Khaydarin Monolith attacks stun enemy targets, with a maximum uptime.\nCan stun Heroic targets, with a lower maximum uptime.",
+    item_names.PSI_SPIRE_POWER_GRID_STABILIZER: "Psi Spires gain increased range and area of effect.",
+    item_names.PSI_SPIRE_ELECTROMAGNETIC_DISRUPTION: "Psi Spires reduce damage and speed of enemies.",
+    item_names.LAUNCH_BAY_GRAVITON_CATAPULT: "Launch Bays can launch Interceptors more quickly.",
+    item_names.LAUNCH_BAY_FOCUSED_LENS: "Launch Bay Interceptor weapons ignore armor.",
 }
-
 # Key descriptions
 key_descriptions = {
     key: GENERIC_KEY_DESC
